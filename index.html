@@ -332,74 +332,388 @@
     (v.last === null || typeof v.last === "string");
   const isLetter = (v) => typeof v === "object" && typeof v.text === "string" && typeof v.forDay === "string";
   const isText = (v) => typeof v === "string";
-  const readChecks = () => {
-    const v = store.get("checks", DEFAULT_CHECKS, Array.isArray);
-    const items = v.filter((t) => typeof t === "string" && t.trim()).slice(0, 6);
-    return items.length ? items : DEFAULT_CHECKS;
-  };
 
   // ---------- content ----------
   // Public-domain translations and texts. One per day, cycling.
-  const PASSAGES = [
-    {
-      text: [
-        "In the morning when thou risest unwillingly, let this thought be present: I am rising to the work of a human being.",
-        "Why then am I dissatisfied if I am going to do the things for which I exist and for which I was brought into the world? Or have I been made for this, to lie in the bed-clothes and keep myself warm?"
-      ],
-      source: "Marcus Aurelius, Meditations V.1 (tr. George Long, 1862)",
-      prompt: "What is the work you are rising to today?"
-    },
-    {
-      text: [
-        "Every morning was a cheerful invitation to make my life of equal simplicity, and I may say innocence, with Nature herself.",
-        "Morning brings back the heroic ages. To be awake is to be alive."
-      ],
-      source: "Henry David Thoreau, Walden, ch. 2 (1854)",
-      prompt: "What would a simpler version of this morning look like?"
-    },
-    {
-      text: [
-        "Set yourself free for your own sake; gather and save your time, which till lately has been forced from you, or filched away, or has merely slipped from your hands.",
-        "Nothing, Lucilius, is ours, except time."
-      ],
-      source: "Seneca, Moral Letters to Lucilius, Letter I (tr. R. M. Gummere, 1917)",
-      prompt: "Where did your time slip away yesterday? Where will you guard it today?"
-    },
-    {
-      text: [
-        "We must learn to reawaken and keep ourselves awake, not by mechanical aids, but by an infinite expectation of the dawn, which does not forsake us in our soundest sleep.",
-        "Every man is tasked to make his life, even in its details, worthy of the contemplation of his most elevated and critical hour."
-      ],
-      source: "Henry David Thoreau, Walden, ch. 2 (1854)",
-      prompt: "What small detail of today could you make worthy of your best hour?"
-    },
-    {
-      text: [
-        "Begin the morning by saying to thyself, I shall meet with the busy-body, the ungrateful, arrogant, deceitful, envious, unsocial.",
-        "All these things happen to them by reason of their ignorance of what is good and evil. I can neither be injured by any of them, nor can I be angry with my kinsman, nor hate him. For we are made for co-operation."
-      ],
-      source: "Marcus Aurelius, Meditations II.1 (tr. George Long, 1862)",
-      prompt: "Who might test your patience today, and how do you want to meet them?"
-    },
-    {
-      text: [
-        "Men seek retreats for themselves, houses in the country, sea-shores, and mountains; and thou too art wont to desire such things very much.",
-        "But this is altogether a mark of the most common sort of men, for it is in thy power whenever thou shalt choose to retire into thyself."
-      ],
-      source: "Marcus Aurelius, Meditations IV.3 (tr. George Long, 1862)",
-      prompt: "Where is your quiet place today, if you don't need a screen for it?"
-    },
-    {
-      text: [
-        "I went to the woods because I wished to live deliberately, to front only the essential facts of life, and see if I could not learn what it had to teach, and not, when I came to die, discover that I had not lived.",
-        "Our life is frittered away by detail. Simplify, simplify."
-      ],
-      source: "Henry David Thoreau, Walden, ch. 2 (1854)",
-      prompt: "What is one essential thing you want to front today?"
-    }
+  // Short quotes from real people, with a traceable source. Well-known misattributions are left out on purpose.
+  // Each person gets their own shuffled order, one new quote per morning.
+  const QUOTES = [
+    {"text": "In the morning when thou risest unwillingly, let this thought be present: I am rising to the work of a human being.", "who": "Marcus Aurelius", "source": "Meditations V.1, tr. George Long"},
+    {"text": "No longer talk at all about the kind of man that a good man ought to be, but be such.", "who": "Marcus Aurelius", "source": "Meditations X.16, tr. George Long"},
+    {"text": "Such as are thy habitual thoughts, such also will be the character of thy mind; for the soul is dyed by the thoughts.", "who": "Marcus Aurelius", "source": "Meditations V.16, tr. George Long"},
+    {"text": "Confine thyself to the present.", "who": "Marcus Aurelius", "source": "Meditations VII.29, tr. George Long"},
+    {"text": "The universe is transformation: life is opinion.", "who": "Marcus Aurelius", "source": "Meditations IV.3, tr. George Long"},
+    {"text": "Very little indeed is necessary for living a happy life.", "who": "Marcus Aurelius", "source": "Meditations VII.67, tr. George Long"},
+    {"text": "Nothing, Lucilius, is ours, except time.", "who": "Seneca", "source": "Letters to Lucilius I, tr. R. M. Gummere"},
+    {"text": "Hold every hour in your grasp.", "who": "Seneca", "source": "Letters to Lucilius I, tr. R. M. Gummere"},
+    {"text": "Lay hold of to-day's task, and you will not need to depend so much upon to-morrow's.", "who": "Seneca", "source": "Letters to Lucilius I, tr. R. M. Gummere"},
+    {"text": "While we are postponing, life speeds by.", "who": "Seneca", "source": "Letters to Lucilius I, tr. R. M. Gummere"},
+    {"text": "Begin at once to live, and count each separate day as a separate life.", "who": "Seneca", "source": "Letters to Lucilius CI, tr. R. M. Gummere"},
+    {"text": "No man was ever wise by chance.", "who": "Seneca", "source": "Letters to Lucilius LXXVI, tr. R. M. Gummere"},
+    {"text": "It is not that we have a short time to live, but that we waste a lot of it.", "who": "Seneca", "source": "On the Shortness of Life"},
+    {"text": "First say to yourself what you would be; and then do what you have to do.", "who": "Epictetus", "source": "Discourses III.23"},
+    {"text": "No great thing is created suddenly.", "who": "Epictetus", "source": "Discourses I.15"},
+    {"text": "If you want to improve, be content to be thought foolish and stupid.", "who": "Epictetus", "source": "Enchiridion 13"},
+    {"text": "Men are disturbed not by the things which happen, but by the opinions about the things.", "who": "Epictetus", "source": "Enchiridion 5"},
+    {"text": "Some things are in our control and others not.", "who": "Epictetus", "source": "Enchiridion 1"},
+    {"text": "Morning is when I am awake and there is a dawn in me.", "who": "Henry David Thoreau", "source": "Walden"},
+    {"text": "To be awake is to be alive.", "who": "Henry David Thoreau", "source": "Walden"},
+    {"text": "Only that day dawns to which we are awake.", "who": "Henry David Thoreau", "source": "Walden"},
+    {"text": "The morning, which is the most memorable season of the day, is the awakening hour.", "who": "Henry David Thoreau", "source": "Walden"},
+    {"text": "Our life is frittered away by detail. Simplify, simplify.", "who": "Henry David Thoreau", "source": "Walden"},
+    {"text": "Things do not change; we change.", "who": "Henry David Thoreau", "source": "Walden"},
+    {"text": "If one advances confidently in the direction of his dreams, he will meet with a success unexpected in common hours.", "who": "Henry David Thoreau", "source": "Walden"},
+    {"text": "Write it on your heart that every day is the best day in the year.", "who": "Ralph Waldo Emerson", "source": "Society and Solitude"},
+    {"text": "Finish each day and be done with it. You have done what you could.", "who": "Ralph Waldo Emerson", "source": "letter to his daughter"},
+    {"text": "The creation of a thousand forests is in one acorn.", "who": "Ralph Waldo Emerson", "source": "Essays, \"History\""},
+    {"text": "Nothing great was ever achieved without enthusiasm.", "who": "Ralph Waldo Emerson", "source": "Essays, \"Circles\""},
+    {"text": "Early to bed and early to rise, makes a man healthy, wealthy, and wise.", "who": "Benjamin Franklin", "source": "Poor Richard's Almanack"},
+    {"text": "Well done is better than well said.", "who": "Benjamin Franklin", "source": "Poor Richard's Almanack"},
+    {"text": "Lost time is never found again.", "who": "Benjamin Franklin", "source": "Poor Richard's Almanack"},
+    {"text": "Dost thou love life? Then do not squander time, for that's the stuff life is made of.", "who": "Benjamin Franklin", "source": "Poor Richard's Almanack"},
+    {"text": "You may delay, but time will not.", "who": "Benjamin Franklin", "source": "The Way to Wealth"},
+    {"text": "Diligence is the mother of good luck.", "who": "Benjamin Franklin", "source": "Poor Richard's Almanack"},
+    {"text": "Plough deep while sluggards sleep.", "who": "Benjamin Franklin", "source": "The Way to Wealth"},
+    {"text": "Sloth, like rust, consumes faster than labour wears.", "who": "Benjamin Franklin", "source": "The Way to Wealth"},
+    {"text": "The sleeping fox catches no poultry.", "who": "Benjamin Franklin", "source": "The Way to Wealth"},
+    {"text": "There will be sleeping enough in the grave.", "who": "Benjamin Franklin", "source": "Poor Richard's Almanack"},
+    {"text": "Never leave that till to-morrow, which you can do to-day.", "who": "Benjamin Franklin", "source": "Poor Richard's Almanack"},
+    {"text": "Lose an hour in the morning, and you will be all day hunting for it.", "who": "Richard Whately", "source": "Detached Thoughts and Apophthegms"},
+    {"text": "Well begun is half done.", "who": "Aristotle", "source": "Politics, quoting a proverb"},
+    {"text": "One swallow does not make a summer, nor does one day.", "who": "Aristotle", "source": "Nicomachean Ethics, tr. W. D. Ross"},
+    {"text": "We become just by doing just acts, temperate by doing temperate acts, brave by doing brave acts.", "who": "Aristotle", "source": "Nicomachean Ethics, tr. W. D. Ross"},
+    {"text": "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", "who": "Will Durant", "source": "The Story of Philosophy, summing up Aristotle"},
+    {"text": "The journey of a thousand miles begins with one step.", "who": "Lao Tzu", "source": "Tao Te Ching, ch. 64"},
+    {"text": "He who has begun has half done. Dare to be wise; begin!", "who": "Horace", "source": "Epistles I.2"},
+    {"text": "Seize the day, put very little trust in tomorrow.", "who": "Horace", "source": "Odes I.11"},
+    {"text": "Dripping water hollows out a stone.", "who": "Ovid", "source": "Letters from Pontus"},
+    {"text": "They can because they think they can.", "who": "Virgil", "source": "Aeneid V"},
+    {"text": "We know what we are, but know not what we may be.", "who": "William Shakespeare", "source": "Hamlet"},
+    {"text": "Our doubts are traitors, and make us lose the good we oft might win, by fearing to attempt.", "who": "William Shakespeare", "source": "Measure for Measure"},
+    {"text": "To strive, to seek, to find, and not to yield.", "who": "Alfred, Lord Tennyson", "source": "Ulysses"},
+    {"text": "I'll tell you how the Sun rose – a ribbon at a time.", "who": "Emily Dickinson", "source": "poem 318"},
+    {"text": "Think in the morning. Act in the noon. Eat in the evening. Sleep in the night.", "who": "William Blake", "source": "The Marriage of Heaven and Hell"},
+    {"text": "The busy bee has no time for sorrow.", "who": "William Blake", "source": "The Marriage of Heaven and Hell"},
+    {"text": "The childhood shows the man, as morning shows the day.", "who": "John Milton", "source": "Paradise Regained"},
+    {"text": "Why, sometimes I've believed as many as six impossible things before breakfast.", "who": "Lewis Carroll", "source": "Through the Looking-Glass"},
+    {"text": "Isn't it nice to think that tomorrow is a new day with no mistakes in it yet?", "who": "L. M. Montgomery", "source": "Anne of Green Gables"},
+    {"text": "All we have to decide is what to do with the time that is given us.", "who": "J. R. R. Tolkien", "source": "The Fellowship of the Ring"},
+    {"text": "It does not do to dwell on dreams and forget to live.", "who": "J. K. Rowling", "source": "Harry Potter and the Philosopher's Stone"},
+    {"text": "In the depth of winter, I finally learned that within me there lay an invincible summer.", "who": "Albert Camus", "source": "Return to Tipasa"},
+    {"text": "He who has a why to live can bear almost any how.", "who": "Friedrich Nietzsche", "source": "Twilight of the Idols"},
+    {"text": "A man who dares to waste one hour of time has not discovered the value of life.", "who": "Charles Darwin", "source": "letter to his sister, 1836"},
+    {"text": "Nothing is so fatiguing as the eternal hanging on of an uncompleted task.", "who": "William James", "source": "letter"},
+    {"text": "Ever tried. Ever failed. No matter. Try again. Fail again. Fail better.", "who": "Samuel Beckett", "source": "Worstward Ho"},
+    {"text": "How we spend our days is, of course, how we spend our lives.", "who": "Annie Dillard", "source": "The Writing Life"},
+    {"text": "Tell me, what is it you plan to do with your one wild and precious life?", "who": "Mary Oliver", "source": "The Summer Day"},
+    {"text": "How wonderful it is that nobody need wait a single moment before starting to improve the world.", "who": "Anne Frank", "source": "her diary"},
+    {"text": "Do what you can, with what you have, where you are.", "who": "Theodore Roosevelt", "source": "his autobiography, quoting Squire Bill Widener"},
+    {"text": "If you can't fly then run, if you can't run then walk, if you can't walk then crawl, but whatever you do you have to keep moving forward.", "who": "Martin Luther King Jr.", "source": "Spelman College, 1960"},
+    {"text": "If there is no struggle, there is no progress.", "who": "Frederick Douglass", "source": "speech, 1857"},
+    {"text": "Although the world is full of suffering, it is full also of the overcoming of it.", "who": "Helen Keller", "source": "Optimism"},
+    {"text": "Alone we can do so little; together we can do so much.", "who": "Helen Keller", "source": ""},
+    {"text": "However difficult life may seem, there is always something you can do and succeed at.", "who": "Stephen Hawking", "source": ""},
+    {"text": "Nothing in life is to be feared, it is only to be understood.", "who": "Marie Curie", "source": ""},
+    {"text": "Waking up this morning, I smile. Twenty-four brand new hours are before me.", "who": "Thich Nhat Hanh", "source": "Present Moment Wonderful Moment"},
+    {"text": "Inspiration is for amateurs. The rest of us just show up and get to work.", "who": "Chuck Close", "source": ""},
+    {"text": "The best way to predict the future is to invent it.", "who": "Alan Kay", "source": ""},
+    {"text": "You miss 100% of the shots you don't take.", "who": "Wayne Gretzky", "source": ""},
+    {"text": "Hard work beats talent when talent doesn't work hard.", "who": "Tim Notke", "source": "high-school basketball coach"},
+    {"text": "The only way to do great work is to love what you do.", "who": "Steve Jobs", "source": "Stanford commencement, 2005"},
+    {"text": "Stay hungry. Stay foolish.", "who": "Steve Jobs", "source": "Stanford commencement, 2005, quoting the Whole Earth Catalog"},
+    {"text": "Discipline equals freedom.", "who": "Jocko Willink", "source": ""},
+    {"text": "If you want to change the world, start off by making your bed.", "who": "Admiral William H. McRaven", "source": "University of Texas commencement, 2014"},
+    {"text": "If you make your bed every morning you will have accomplished the first task of the day.", "who": "Admiral William H. McRaven", "source": "University of Texas commencement, 2014"},
+    {"text": "You do not rise to the level of your goals. You fall to the level of your systems.", "who": "James Clear", "source": "Atomic Habits"},
+    {"text": "Every action you take is a vote for the type of person you wish to become.", "who": "James Clear", "source": "Atomic Habits"},
+    {"text": "Habits are the compound interest of self-improvement.", "who": "James Clear", "source": "Atomic Habits"},
+    {"text": "What you do every day matters more than what you do once in a while.", "who": "Gretchen Rubin", "source": "The Happiness Project"},
+    {"text": "Life is what happens to you while you're busy making other plans.", "who": "John Lennon", "source": "\"Beautiful Boy\""},
+    {"text": "The early bird catches the worm.", "who": "English proverb", "source": ""},
+    {"text": "Fall seven times, stand up eight.", "who": "Japanese proverb", "source": ""},
+    {"text": "The morning hour has gold in its mouth.", "who": "German proverb", "source": ""},
+    {"text": "Slow and steady wins the race.", "who": "Aesop", "source": "The Tortoise and the Hare"},
+    {"text": "Rome was not built in a day.", "who": "Proverb", "source": ""},
+    {"text": "Little by little, one goes far.", "who": "Spanish proverb", "source": ""},
+    {"text": "The best time to plant a tree was twenty years ago. The second best time is now.", "who": "Proverb", "source": ""},
+    {"text": "Be not afraid of going slowly; be afraid only of standing still.", "who": "Chinese proverb", "source": ""},
+    {"text": "Bird by bird, buddy. Just take it bird by bird.", "who": "Anne Lamott", "source": "Bird by Bird"},
+    {"text": "The superior man is modest in his speech, but exceeds in his actions.", "who": "Confucius", "source": "Analects XIV.29, tr. James Legge"}
   ];
 
-  const DEFAULT_CHECKS = ["Feet on the floor", "Glass of water", "Open the curtains"];
+  // A question to sit under the quote; rotates by day
+  const PROMPTS = [
+    "What are you rising to today?",
+    "What would the disciplined version of you do first?",
+    "What's the smallest step you can take in the next hour?",
+    "What will tomorrow-you thank you for doing today?",
+    "What can you leave off today's list?",
+    "Where will your time go today, on purpose?",
+    "Who could use the best of you today?",
+    "What's one thing you won't do today?",
+    "What would make today good, even if nothing else goes right?",
+    "What are you avoiding that would take ten minutes?",
+    "Which line of this do you need most today?",
+    "If only one thing gets done today, what should it be?"
+  ];
+
+  // Ways to get going in the morning. Many work from a bed or a chair, so everyone can do some.
+  // Each morning shows three of them, and any two count.
+  const MOVES = [
+    "Open the curtains or blinds",
+    "Turn on the brightest light in the room",
+    "Let daylight hit your face for a minute",
+    "Open a window, even just a crack",
+    "Take three deep breaths of fresh air",
+    "Step outside for sixty seconds",
+    "Look at the sky for a moment",
+    "Sit by a window",
+    "Find one thing outside that's moving",
+    "Open the door to your room",
+    "Notice what the weather is doing",
+    "Look at something far away for ten breaths",
+    "Name one colour you can see outside",
+    "Take a photo of the morning sky",
+    "Get five minutes of sunlight outside",
+    "Step onto a balcony, porch or doorway",
+    "Drink a full glass of water",
+    "Refill your water bottle",
+    "Drink water before anything else",
+    "Make tea or coffee, slowly",
+    "Eat something small",
+    "Take your morning medication or vitamins",
+    "Put the kettle on",
+    "Make yourself breakfast",
+    "Wash one cup or dish",
+    "Grab a piece of fruit",
+    "Rinse your mouth with cold water",
+    "Pack a snack for later",
+    "Eat breakfast away from your bed",
+    "Have your drink by a window",
+    "Pour a glass of water for someone else too",
+    "Sit up and put your feet on the floor",
+    "Sit on the edge of the bed for ten breaths",
+    "Stretch your arms above your head",
+    "Roll your shoulders five times",
+    "Turn your neck slowly left and right",
+    "Stretch your fingers wide, then make fists",
+    "Point and flex your toes ten times",
+    "Twist gently to each side",
+    "Circle your wrists and ankles",
+    "Shrug your shoulders to your ears, then drop them",
+    "Stretch like a cat",
+    "Give yourself one big yawn and stretch",
+    "Tap your arms and legs to wake them up",
+    "Massage your hands for thirty seconds",
+    "Rub your face and ears to wake them up",
+    "Take ten slow breaths, hand on your belly",
+    "Sit tall for one full minute",
+    "Move from your bed to a chair, sofa or floor",
+    "Move to a different room",
+    "Do ten arm circles",
+    "Do ten squats or ten sit-to-stands",
+    "Do ten wall push-ups",
+    "Hold a plank for twenty seconds",
+    "Do twenty jumping jacks",
+    "March in place for one minute",
+    "Dance to one song",
+    "Do a one-minute stretch",
+    "Go to the kitchen and back",
+    "Do one lap around your home",
+    "Go outside to the end of the street",
+    "Do five minutes of yoga",
+    "Stretch your legs for thirty seconds",
+    "Balance on one foot for twenty seconds",
+    "Squeeze your shoulder blades together ten times",
+    "Press your palms together hard for ten seconds",
+    "Lift your knees one at a time, ten each",
+    "Roll your ankles in slow circles",
+    "Stretch your back over the back of a chair",
+    "Take the stairs once",
+    "Go around the block",
+    "Stretch in a doorway",
+    "Leave your bedroom",
+    "Sit somewhere that isn't your bed",
+    "Brush your teeth",
+    "Splash cold water on your face",
+    "Wash your face",
+    "Take a shower",
+    "End your shower with ten seconds of cold",
+    "Brush or tie back your hair",
+    "Get dressed for the day",
+    "Change out of what you slept in",
+    "Put on deodorant",
+    "Put on something you like wearing",
+    "Moisturise your face and hands",
+    "Put on sunscreen",
+    "Put on your glasses or put in your contacts",
+    "Put on your shoes",
+    "Look in the mirror and say good morning",
+    "Comb your hair",
+    "Put on your watch or jewellery",
+    "Do your skincare or shave",
+    "Floss",
+    "Put on socks",
+    "Pick out your outfit",
+    "Put your pyjamas away",
+    "Put on lip balm",
+    "Clean your glasses",
+    "Put on a scent you like",
+    "Put on anything you use every day: glasses, hearing aids, a brace",
+    "Set up any mobility aid you use for the day",
+    "Hang up your towel",
+    "Make your bed",
+    "Straighten your pillows and blanket",
+    "Put one thing back where it belongs",
+    "Clear your nightstand",
+    "Check your bag has what you need today",
+    "Put dirty clothes in the laundry basket",
+    "Take one cup or plate back to the kitchen",
+    "Throw away one piece of rubbish",
+    "Clear one surface for thirty seconds",
+    "Put your phone on charge away from the bed",
+    "Fold one thing",
+    "Water a plant",
+    "Feed your pet",
+    "Let the dog out",
+    "Take out the rubbish",
+    "Wipe down the sink",
+    "Load or unload the dishwasher",
+    "Put your keys where you'll find them",
+    "Tidy your desk",
+    "Set your bag by the door",
+    "Put away one thing you've been ignoring",
+    "Start a load of laundry",
+    "Put your shoes by the door",
+    "Refill your pet's water",
+    "Charge anything you'll need today",
+    "Write down one thing you're grateful for",
+    "Write your top task for today",
+    "Read one page of a real book",
+    "Say your one thing for today out loud",
+    "Check your calendar, and only your calendar",
+    "Write three words about how you feel",
+    "Plan the first hour of your day",
+    "Think of one person you're glad exists",
+    "Sit in silence for one minute",
+    "Smile at yourself in the mirror, even if it feels silly",
+    "Hum or sing one song",
+    "Put on music you like",
+    "Say one kind thing about yourself",
+    "Remember one good thing from yesterday",
+    "Put the hardest task first on today's list",
+    "Write one sentence in a journal",
+    "Solve one crossword clue or puzzle",
+    "Learn one new word",
+    "Practise an instrument for five minutes",
+    "Pray or meditate for a minute, if that's your thing",
+    "Decide what you'll eat for lunch",
+    "Decide what would make today a good day",
+    "Set one small goal for the morning",
+    "Look at a photo that makes you happy",
+    "Stick a note with today's goal where you'll see it",
+    "Name three things you can hear",
+    "Name five things you can see",
+    "Read your plan for the day out loud",
+    "Work on one thing for five minutes with a timer",
+    "Draw, knit or fix something for five minutes",
+    "Check the weather and dress for it",
+    "Say good morning to someone at home",
+    "Text someone good morning, then close the chat",
+    "Hug someone, or your pet",
+    "Call a family member for two minutes",
+    "Make breakfast for someone else",
+    "Leave a kind note for someone",
+    "Tell someone your one thing for today",
+    "Check on someone you live with",
+    "Thank someone for something small",
+    "Send a friend a voice note",
+    "Give your pet some attention",
+    "Ask someone how they slept",
+    "Help someone with a morning task",
+    "Wave at a neighbour",
+    "Make a plan to see a friend this week",
+    "Take your pet for a short walk",
+    "Turn off your alarm from across the room",
+    "Put on your favourite song and get up before it ends",
+    "Open every curtain in your home",
+    "Stand up for one full minute, or sit up straight",
+    "Stretch your arms out wide and hold for ten breaths",
+    "Wiggle your fingers and toes for thirty seconds",
+    "Take five breaths in through your nose, out through your mouth",
+    "Drink a glass of water standing by the window",
+    "Put your feet on something cold: the floor, a tile, a window sill",
+    "Swap your bed for your desk",
+    "Sit in a chair by the window with your drink",
+    "Wash your hands with cold water",
+    "Brush your teeth with your other hand",
+    "Put your bedding back in place",
+    "Get your breakfast ready before you check anything",
+    "Say three things you're looking forward to",
+    "Set your intention before you touch another app",
+    "Write tomorrow-you a quick note now",
+    "Get your first task ready so it's easy to start",
+    "Prepare your water and snacks for the day",
+    "Put on real clothes, even if you're staying in",
+    "Get to the kitchen before your phone does",
+    "Take a lap of the room while you breathe slowly",
+    "Stretch your chest by clasping your hands behind you",
+    "Touch your toes, your knees or your shins",
+    "Open a window and take five slow breaths",
+    "Water a plant or check on something growing",
+    "Tidy your bed area for one minute",
+    "Put your phone in another room for ten minutes",
+    "Do something kind for yourself before anyone else",
+    "Clean one small thing",
+    "Look outside and guess the temperature",
+    "Stand in the sun for a minute",
+    "Put on a jacket and step outside",
+    "Sit on your doorstep for a minute",
+    "Make your drink and don't look at a screen until it's done"
+  ];
+
+  // Takes `n` items from a per-person shuffled deck stored under `key`, refilling it when it runs out
+  function drawFromDeck(key, size, n, avoid = []) {
+    let deck = store.get(key, [], Array.isArray).filter((i) => Number.isInteger(i) && i >= 0 && i < size);
+    const out = [];
+    while (out.length < n) {
+      if (!deck.length) {
+        deck = [...Array(size).keys()];
+        for (let i = deck.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [deck[i], deck[j]] = [deck[j], deck[i]];
+        }
+        deck = deck.filter((i) => !avoid.includes(i) && !out.includes(i)).concat(deck.filter((i) => avoid.includes(i) || out.includes(i)));
+      }
+      const i = deck.shift();
+      if (!out.includes(i)) out.push(i);
+    }
+    store.set(key, deck);
+    return out;
+  }
+  const isIndexList = (size) => (v) => Array.isArray(v) && v.length > 0 && v.every((i) => Number.isInteger(i) && i >= 0 && i < size);
+
+  // Today's quote stays the same for the whole day, then the next one in this person's deck
+  function quoteFor(day) {
+    const saved = store.get("quoteDay", null, (v) => typeof v === "object" && v.day === day && isIndexList(QUOTES.length)([v.i]));
+    if (saved) return QUOTES[saved.i];
+    const [i] = drawFromDeck("quoteDeck", QUOTES.length, 1, [store.get("quoteDay", {}, (v) => typeof v === "object").i]);
+    store.set("quoteDay", { day, i });
+    return QUOTES[i];
+  }
+
+  // Today's three get-up options, or the person's own list if they wrote one
+  const isMyMoves = (v) => Array.isArray(v) && v.some((t) => typeof t === "string" && t.trim());
+  function movesFor(day, reshuffle = false) {
+    const mine = store.get("myMoves", null, isMyMoves);
+    if (mine) return { items: mine.filter((t) => typeof t === "string" && t.trim()).slice(0, 6), mine: true };
+    let picks = store.get("moves:" + day, null, isIndexList(MOVES.length));
+    if (!picks || reshuffle) {
+      picks = drawFromDeck("moveDeck", MOVES.length, 3, picks || []);
+      store.set("moves:" + day, picks);
+    }
+    return { items: picks.map((i) => MOVES[i]), mine: false };
+  }
 
   // Opening lines for the wake screen. *word* is highlighted.
   const WAKE_LINES = [
@@ -550,7 +864,7 @@
   // Everything a run records belongs to the day it started, even if it finishes after midnight
   const newRun = () => {
     const today = dayKey();
-    return { today, startedAt: Date.now(), passage: PASSAGES[dayNumber(today) % PASSAGES.length] };
+    return { today, startedAt: Date.now(), quote: quoteFor(today), prompt: PROMPTS[dayNumber(today) % PROMPTS.length] };
   };
   let run = newRun();
   let wakeLine = pickWakeLine();
@@ -692,51 +1006,61 @@
 
     read() {
       card.innerHTML = `
-        <p class="eyebrow">Read · one passage, about 1 minute</p>
+        <p class="eyebrow">Read · one line from someone who's been there</p>
         <div class="passage">
-          ${run.passage.text.map((t) => `<p>${esc(t)}</p>`).join("")}
-          <span class="source">${esc(run.passage.source)}</span>
-          <p class="prompt">${esc(run.passage.prompt)}</p>
+          <p>“${esc(run.quote.text)}”</p>
+          <span class="source">${esc(run.quote.who)}${run.quote.source ? `, ${esc(run.quote.source)}` : ""}</span>
+          <p class="prompt">${esc(run.prompt)}</p>
         </div>
         <div class="btnrow"><button class="primary" id="go" type="button">Carry it with me</button></div>`;
       $("#go").onclick = next;
     },
 
-    move(keepChecked = new Set()) {
-      const items = readChecks();
+    move(keepChecked = new Set(), reshuffle = false) {
+      const { items, mine } = movesFor(run.today, reshuffle);
+      const need = Math.min(2, items.length);
       card.innerHTML = `
         <p class="eyebrow">Move · get vertical</p>
-        <h2>Out of bed. The phone can come with you.</h2>
+        <h2>Do any ${need === 2 ? "two" : need} of these. Wake your body up before your thumb.</h2>
         <ul class="checks">
           ${items.map((t, i) => `<li><label><input type="checkbox" id="chk${i}"${keepChecked.has(t) ? " checked" : ""}><span>${esc(t)}</span></label></li>`).join("")}
         </ul>
+        ${mine ? "" : `<button class="quiet" id="reshuffle" type="button">Show me different ones</button>`}
         <details class="doors">
           <summary>Change these steps</summary>
           <div class="inner">
-            <label class="field" for="checkEdit">One per line
+            <label class="field" for="checkEdit">Your own steps, one per line (up to 6)
               <textarea id="checkEdit">${esc(items.join("\n"))}</textarea></label>
-            <div><button type="button" id="checkSave">Save steps</button> <span class="saved" id="checkSaved" hidden>Saved</span></div>
+            <div class="btnrow">
+              <button type="button" id="checkSave">Use my steps</button>
+              ${mine ? `<button class="quiet" id="checkMix" type="button">Back to the daily mix</button>` : ""}
+            </div>
+            <span class="saved" id="checkSaved" hidden>Saved</span>
           </div>
         </details>
-        <div class="btnrow"><button class="primary" id="go" type="button" disabled>Check all three to continue</button></div>`;
+        <div class="btnrow"><button class="primary" id="go" type="button" disabled>Tick ${need} to continue</button></div>`;
       const boxes = [...card.querySelectorAll(".checks input")];
       const go = $("#go");
       const sync = () => {
-        const all = boxes.every((b) => b.checked);
-        go.disabled = !all;
-        go.textContent = all ? "I'm up" : `Check all ${boxes.length} to continue`;
+        const done = boxes.filter((b) => b.checked).length;
+        go.disabled = done < need;
+        go.textContent = done >= need ? "I'm up" : `${done} of ${need} done`;
       };
       boxes.forEach((b) => (b.onchange = sync));
       sync();
       go.onclick = next;
+      const reshuffleBtn = $("#reshuffle");
+      if (reshuffleBtn) reshuffleBtn.onclick = () => screens.move(new Set(), true);
+      const ticked = () => new Set(boxes.filter((b) => b.checked).map((b) => items[boxes.indexOf(b)]));
       $("#checkSave").onclick = () => {
-        const ticked = new Set(boxes.filter((b) => b.checked).map((b) => items[boxes.indexOf(b)]));
         const lines = $("#checkEdit").value.split("\n").map((s) => s.trim()).filter(Boolean).slice(0, 6);
-        store.set("checks", lines.length ? lines : DEFAULT_CHECKS);
-        screens.move(ticked);
+        store.set("myMoves", lines.length ? lines : null);
+        screens.move(ticked());
         $("details.doors").open = true;
         $("#checkSaved").hidden = false;
       };
+      const mixBtn = $("#checkMix");
+      if (mixBtn) mixBtn.onclick = () => { store.set("myMoves", null); screens.move(); };
     },
 
     plan() {
@@ -862,11 +1186,11 @@
 
   // ---------- setup: a one-time tour the first time someone opens the app ----------
   const HABITS = {
-    social: { label: "Social media", hint: "Instagram, TikTok, Reddit", app: "Instagram", thing: "the feed", tally: "posts seen",
+    social: { label: "Social media", hint: "Instagram, Snapchat, TikTok…", app: "your social app", thing: "the feed", tally: "posts seen",
       finale: "Tomorrow, the first thing you see will be *yours*." },
     games: { label: "A game", hint: "“just one match”… then five", app: "your game", thing: "your game", tally: "matches played",
       finale: "Tomorrow, the first thing you win is the *morning*." },
-    video: { label: "YouTube or videos", hint: "Shorts, “one more video”", app: "YouTube", thing: "the next video", tally: "videos watched",
+    video: { label: "YouTube or videos", hint: "Shorts, “one more video”", app: "your video app", thing: "the next video", tally: "videos watched",
       finale: "Tomorrow, you're the one who picks what's *next*." },
     news: { label: "News or headlines", hint: "bad news before your eyes are open", app: "your news app", thing: "the headlines", tally: "headlines read",
       finale: "Tomorrow, the news can wait until you're *up*." },
@@ -884,7 +1208,7 @@
   const saveSetup = (patch) => store.set("setup", { ...store.get("setup", { done: false }, isSetup), ...patch });
 
   function homeScreenSteps(h) {
-    const move = `Hold the new sun icon and drag it to where <b>${esc(h.app)}</b> sits now. Then move ${esc(h.app)} somewhere your thumb won't find it on autopilot: another page, a folder, or off your phone entirely. Your call.`;
+    const move = `Drag the sun to where <b>${esc(h.app)}</b> sits now. Then move that app anywhere your thumb won't find it on autopilot.`;
     if (onHomeScreen) {
       return `<p class="check">✓ You opened this from your home screen. That's the hard part done.</p>
         <ol class="howto"><li>${move}</li></ol>`;
