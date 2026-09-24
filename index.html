@@ -1,0 +1,807 @@
+<meta charset="utf-8">
+<title>First Light</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0d22">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="First Light">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #eef0f6;
+    --surface: #ffffff;
+    --ink: #1a1f36;
+    --ink-soft: #545b78;
+    --line: #d7dbe8;
+    --sun: #f0a045;
+    --sun-deep: #d9772b;
+    --ok: #3f8f6b;
+    --focus: #4b63d6;
+    --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+    --read: "Newsreader", Georgia, "Times New Roman", serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --ground: #11152a;
+      --surface: #1a1f38;
+      --ink: #eceaf4;
+      --ink-soft: #a3a7c2;
+      --line: #2e3456;
+      --sun: #f5b25c;
+      --sun-deep: #f08c3c;
+      --ok: #6cc59b;
+      --focus: #8fa2ff;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --ground: #11152a;
+    --surface: #1a1f38;
+    --ink: #eceaf4;
+    --ink-soft: #a3a7c2;
+    --line: #2e3456;
+    --sun: #f5b25c;
+    --sun-deep: #f08c3c;
+    --ok: #6cc59b;
+    --focus: #8fa2ff;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--display);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app {
+    max-width: 560px;
+    margin: 0 auto;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding-inline: 16px;
+    padding-block: 12px 24px;
+    gap: 16px;
+  }
+
+  /* Horizon: a pre-dawn sky in both themes. The sun travels an arc,
+     one stop per finished step; the axis shows real clock times. */
+  .horizon {
+    position: relative;
+    border-radius: 18px;
+    overflow: hidden;
+    aspect-ratio: 16 / 7;
+    max-width: 100%;
+    background: #0a0d22;
+  }
+  .horizon svg { display: block; width: 100%; height: 100%; }
+  .horizon .arc-rest { fill: none; stroke: #8d93c9; stroke-opacity: .35; stroke-width: .8; stroke-dasharray: 2 3; }
+  .horizon .arc-done { fill: none; stroke: #f5b25c; stroke-width: 1.4; stroke-linecap: round; }
+  .horizon .stop { fill: #3a3f6e; }
+  .horizon .stop.passed { fill: #f5b25c; }
+  .horizon .ground { fill: #070918; }
+  .horizon .line { stroke: #ffffff; stroke-opacity: .18; stroke-width: .6; fill: none; }
+  .horizon .tick { font-family: var(--mono); font-size: 7.5px; fill: #9aa0c8; letter-spacing: .04em; }
+  .horizon .meta {
+    position: absolute; inset: 12px 14px auto 14px;
+    display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+    font-family: var(--mono); font-size: 12px; letter-spacing: .04em;
+    color: #e6e4f2;
+  }
+  .horizon .meta .stage { color: #f5b25c; }
+
+  .steps {
+    display: flex; gap: 6px; list-style: none; padding: 0; margin: 0;
+  }
+  .steps li {
+    flex: 1; height: 4px; border-radius: 2px; background: var(--line);
+    transition: background .4s;
+  }
+  .steps li.done { background: var(--sun-deep); }
+  .steps li.now { background: var(--sun); }
+
+  .card {
+    flex: 1;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .eyebrow {
+    font-family: var(--mono); font-size: 12px; text-transform: uppercase;
+    letter-spacing: .12em; color: var(--ink-soft); margin: 0;
+  }
+  h1, h2 {
+    font-weight: 700; margin: 0; text-wrap: balance; line-height: 1.12;
+    letter-spacing: -.01em;
+  }
+  h1 { font-size: clamp(30px, 8vw, 40px); }
+  h2 { font-size: clamp(24px, 6vw, 30px); }
+  p { margin: 0; }
+  .hl { font-style: normal; color: var(--sun-deep); }
+  .lede { color: var(--ink-soft); font-size: 17px; max-width: 60ch; }
+
+  .btnrow { display: flex; gap: 10px; flex-wrap: wrap; margin-top: auto; padding-top: 8px; }
+  button, .door {
+    font: inherit; font-weight: 600; font-size: 16px;
+    border-radius: 999px; padding: 14px 22px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+    text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  button.primary { background: var(--ink); color: var(--ground); border-color: var(--ink); flex: 1; }
+  button.quiet { background: transparent; border-color: transparent; color: var(--ink-soft); padding-inline: 12px; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button:focus-visible, .door:focus-visible, input:focus-visible, textarea:focus-visible {
+    outline: 3px solid var(--focus); outline-offset: 2px;
+  }
+
+  /* Breathe */
+  .breath {
+    display: grid; place-items: center; padding-block: 12px;
+  }
+  .breath .orb {
+    width: min(58vw, 220px); aspect-ratio: 1; max-width: 100%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 45%, var(--sun), var(--sun-deep));
+    transform: scale(.55);
+    transition: transform 4s ease-in-out;
+    display: grid; place-items: center;
+    color: #1a1f36; font-weight: 700; font-size: 20px;
+  }
+  .breath .count { font-family: var(--mono); color: var(--ink-soft); font-size: 13px; margin-top: 14px; }
+
+  /* Read */
+  .passage {
+    font-family: var(--read); font-size: 20px; line-height: 1.6;
+    max-width: 62ch;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .source { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); letter-spacing: .03em; }
+  .prompt {
+    font-family: var(--read); font-style: italic; font-size: 18px;
+    border-top: 1px solid var(--line); padding-top: 14px; color: var(--ink-soft);
+  }
+
+  /* Checklist */
+  .checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .checks label {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px;
+    background: var(--surface); cursor: pointer; font-size: 17px;
+  }
+  .checks input { width: 22px; height: 22px; accent-color: var(--ok); flex: none; }
+  .checks label:has(input:checked) { border-color: var(--ok); }
+  .checks label:has(input:checked) span { text-decoration: line-through; color: var(--ink-soft); }
+
+  .note {
+    font-family: var(--read); font-size: 19px; line-height: 1.55;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+    padding: 16px 18px; white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+  .note.empty { color: var(--ink-soft); font-style: italic; }
+  label.field { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
+  input[type="text"], textarea {
+    font: inherit; font-weight: 400; font-size: 17px;
+    border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
+    background: var(--surface); color: var(--ink); width: 100%;
+  }
+  textarea { font-family: var(--read); font-size: 18px; min-height: 96px; resize: vertical; }
+
+  /* Done */
+  .tally {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  }
+  .tally div {
+    border: 1px solid var(--line); border-radius: 14px; padding: 12px;
+    background: var(--surface); display: flex; flex-direction: column; gap: 2px;
+  }
+  .tally b { font-family: var(--mono); font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .tally span { font-size: 12px; color: var(--ink-soft); }
+
+  details.doors {
+    border: 1px dashed var(--line); border-radius: 14px; padding: 12px 16px;
+  }
+  details.doors summary { cursor: pointer; font-weight: 600; color: var(--ink-soft); }
+  .doors .inner { display: flex; flex-direction: column; gap: 12px; padding-top: 12px; }
+  .doors .gate { font-family: var(--mono); font-size: 13px; color: var(--ink-soft); }
+  .doorgrid { display: flex; flex-direction: column; gap: 10px; }
+  .doorline { display: flex; gap: 8px; }
+  .doorline input { flex: 1; min-width: 0; }
+  .door[aria-disabled="true"] { opacity: .4; pointer-events: none; }
+  .small { font-size: 13px; color: var(--ink-soft); }
+  .saved { font-family: var(--mono); font-size: 12px; color: var(--ok); }
+
+  .top { display: flex; justify-content: space-between; align-items: center; }
+  .brand { font-weight: 700; letter-spacing: -.01em; }
+  .brand i { font-style: normal; color: var(--sun-deep); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .breath .orb { transition: none; }
+  }
+</style>
+
+<div class="app">
+  <div class="top">
+    <span class="brand">First <i>Light</i></span>
+    <button class="quiet" id="restart" type="button" hidden>Start over</button>
+  </div>
+
+  <div class="horizon" aria-hidden="true">
+    <svg viewBox="0 0 320 140" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#0a0d22"></stop>
+          <stop offset="1" stop-color="#1b1d48"></stop>
+        </linearGradient>
+        <linearGradient id="dawnGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#2a3170" stop-opacity="0"></stop>
+          <stop offset=".7" stop-color="#6b4a78" stop-opacity=".55"></stop>
+          <stop offset="1" stop-color="#f0a045" stop-opacity=".75"></stop>
+        </linearGradient>
+        <radialGradient id="glowGrad">
+          <stop offset="0" stop-color="#ffd48a" stop-opacity=".9"></stop>
+          <stop offset=".35" stop-color="#f5a04a" stop-opacity=".45"></stop>
+          <stop offset="1" stop-color="#f5a04a" stop-opacity="0"></stop>
+        </radialGradient>
+      </defs>
+      <rect width="320" height="140" fill="url(#skyGrad)"></rect>
+      <rect id="dawn" width="320" height="140" fill="url(#dawnGrad)" opacity="0"></rect>
+      <g id="stars" fill="#dfe3ff">
+        <circle cx="38" cy="30" r=".7"></circle><circle cx="72" cy="52" r=".5"></circle>
+        <circle cx="118" cy="22" r=".6"></circle><circle cx="176" cy="44" r=".5"></circle>
+        <circle cx="214" cy="18" r=".8"></circle><circle cx="262" cy="58" r=".5"></circle>
+        <circle cx="296" cy="26" r=".6"></circle><circle cx="140" cy="70" r=".4"></circle>
+      </g>
+      <path id="arc" class="arc-rest" pathLength="1" d="M22 112 C 80 40, 190 18, 298 30"></path>
+      <path id="arcDone" class="arc-done" pathLength="1" stroke-dasharray="0 1" d="M22 112 C 80 40, 190 18, 298 30"></path>
+      <g id="stops"></g>
+      <g id="sun">
+        <circle r="30" fill="url(#glowGrad)"></circle>
+        <circle r="5" fill="#fff6e2" stroke="#f5b25c" stroke-width="1.6"></circle>
+      </g>
+      <path class="ground" d="M0 106 Q 160 100 320 106 L 320 140 L 0 140 Z"></path>
+      <path class="line" d="M0 106 Q 160 100 320 106"></path>
+      <text class="tick" x="16" y="124" id="tStart">06:42 start</text>
+      <text class="tick" x="304" y="124" text-anchor="end" id="tEnd">06:47 goal</text>
+    </svg>
+    <div class="meta"><span><span id="clock">06:42</span> · <span class="stage" id="stage">Pre-dawn</span></span><span id="date">Thu 24 Sep</span></div>
+  </div>
+
+  <ol class="steps" id="steps" aria-label="Progress"></ol>
+
+  <main class="card" id="card" aria-live="polite"></main>
+</div>
+
+<script>
+(() => {
+  // ---------- storage (per-device, optional) ----------
+  const store = {
+    get(k, fallback) {
+      try { const v = localStorage.getItem("fl." + k); return v == null ? fallback : JSON.parse(v); }
+      catch { return fallback; }
+    },
+    set(k, v) { try { localStorage.setItem("fl." + k, JSON.stringify(v)); } catch {} }
+  };
+
+  const dayKey = (d = new Date()) =>
+    d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  const dayOfYear = (d = new Date()) => Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5);
+
+  // ---------- content ----------
+  // Public-domain translations and texts. One per day, cycling.
+  const PASSAGES = [
+    {
+      text: [
+        "In the morning when thou risest unwillingly, let this thought be present: I am rising to the work of a human being.",
+        "Why then am I dissatisfied if I am going to do the things for which I exist and for which I was brought into the world? Or have I been made for this, to lie in the bed-clothes and keep myself warm?"
+      ],
+      source: "Marcus Aurelius, Meditations V.1 (tr. George Long, 1862)",
+      prompt: "What is the work you are rising to today?"
+    },
+    {
+      text: [
+        "Every morning was a cheerful invitation to make my life of equal simplicity, and I may say innocence, with Nature herself.",
+        "Morning brings back the heroic ages. To be awake is to be alive."
+      ],
+      source: "Henry David Thoreau, Walden, ch. 2 (1854)",
+      prompt: "What would a simpler version of this morning look like?"
+    },
+    {
+      text: [
+        "Set yourself free for your own sake; gather and save your time, which till lately has been forced from you, or filched away, or has merely slipped from your hands.",
+        "Nothing, Lucilius, is ours, except time."
+      ],
+      source: "Seneca, Moral Letters to Lucilius, Letter I (tr. R. M. Gummere, 1917)",
+      prompt: "Where did your time slip away yesterday? Where will you guard it today?"
+    },
+    {
+      text: [
+        "We must learn to reawaken and keep ourselves awake, not by mechanical aids, but by an infinite expectation of the dawn, which does not forsake us in our soundest sleep.",
+        "Every man is tasked to make his life, even in its details, worthy of the contemplation of his most elevated and critical hour."
+      ],
+      source: "Henry David Thoreau, Walden, ch. 2 (1854)",
+      prompt: "What small detail of today could you make worthy of your best hour?"
+    },
+    {
+      text: [
+        "Begin the morning by saying to thyself, I shall meet with the busy-body, the ungrateful, arrogant, deceitful, envious, unsocial.",
+        "All these things happen to them by reason of their ignorance of what is good and evil. I can neither be injured by any of them, nor can I be angry with my kinsman, nor hate him. For we are made for co-operation."
+      ],
+      source: "Marcus Aurelius, Meditations II.1 (tr. George Long, 1862)",
+      prompt: "Who might test your patience today, and how do you want to meet them?"
+    },
+    {
+      text: [
+        "Men seek retreats for themselves, houses in the country, sea-shores, and mountains; and thou too art wont to desire such things very much.",
+        "But this is altogether a mark of the most common sort of men, for it is in thy power whenever thou shalt choose to retire into thyself."
+      ],
+      source: "Marcus Aurelius, Meditations IV.3 (tr. George Long, 1862)",
+      prompt: "Where is your quiet place today, if you don't need a screen for it?"
+    },
+    {
+      text: [
+        "I went to the woods because I wished to live deliberately, to front only the essential facts of life, and see if I could not learn what it had to teach, and not, when I came to die, discover that I had not lived.",
+        "Our life is frittered away by detail. Simplify, simplify."
+      ],
+      source: "Henry David Thoreau, Walden, ch. 2 (1854)",
+      prompt: "What is one essential thing you want to front today?"
+    }
+  ];
+
+  const DEFAULT_CHECKS = ["Feet on the floor", "Glass of water", "Open the curtains"];
+
+  // Opening lines for the wake screen. *word* is highlighted.
+  const WAKE_LINES = [
+    "You opened this instead of the *feed*.",
+    "Your thumb found this first. That's the whole *trick*.",
+    "The feed can wait. It always *does*.",
+    "Nothing happened overnight that needs you in the next five *minutes*.",
+    "You chose the quiet door this *morning*.",
+    "The algorithm didn't get your first *thought* today.",
+    "Good call. The scroll would have taken *forty* minutes.",
+    "Your first minutes belong to *you*.",
+    "The world kept turning without your *likes*.",
+    "Nobody posted anything that beats a slow *breath*.",
+    "Reels will still be there. So will you, just more *awake*.",
+    "You picked the app that *ends*.",
+    "The first screen of the day sets the *tone*.",
+    "Every morning you open this, the habit gets *weaker*.",
+    "You're awake. The feed doesn't get to know *yet*.",
+    "Hold the phone. Just don't hand it your *attention*.",
+    "The best post of the day is the one you *skip*.",
+    "This is a five-minute app. Then it *lets you go*.",
+    "Your brain is booting up. Give it *clean* data.",
+    "No red dots here. Just a *start*.",
+    "You came here on purpose. That *counts*.",
+    "There's no infinite scroll here, only a *finish* line.",
+    "The feed wants your morning. You kept *it*.",
+    "You didn't reach for the noise. You reached for the *light*.",
+    "One small choice, made before anything else. *Nice*.",
+    "Your eyes just opened. Let them see something *real*.",
+    "The internet is still asleep. Be the one who's *up*.",
+    "You're not behind. Nothing important moved while you *slept*.",
+    "Today starts with you, not with *strangers*.",
+    "A calm first minute is a quiet *superpower*.",
+    "You opened a door with a *wall* behind it. Good.",
+    "The feed is loud. This is the *pause*.",
+    "Before the news, before the noise, *you*.",
+    "You chose five minutes over five *hours*.",
+    "The scroll never ends. Your morning *can*.",
+    "Yesterday's you would be *proud*.",
+    "This is the part of the day nobody can *sell*.",
+    "Your attention is worth more than an ad *slot*.",
+    "No one's watching this. Which makes it *honest*.",
+    "The best feeds have a last *page*.",
+    "Your brain on scroll is borrowed. This one is *yours*.",
+    "The feed would have picked your mood. You get to pick *instead*.",
+    "Sunrise doesn't need a *caption*.",
+    "Start slow. The day speeds up on its *own*.",
+    "You broke the loop again. That's how loops *break*.",
+    "The first tap of the day was a good *one*.",
+    "This moment doesn't need to be *shared*.",
+    "Something is different about today: you *started* it.",
+    "Muscle memory reached for the phone. You pointed it *here*.",
+    "You're awake before the *algorithm* is.",
+    "Five quiet minutes beat fifty loud *ones*.",
+    "There's nothing to catch up on. You're *already* here.",
+    "You can be the kind of person who starts *slowly*.",
+    "Your morning is not a *content* stream.",
+    "The group chat can wait for you to be *human*.",
+    "You're not missing out. You're *opting* in.",
+    "Every open here is a vote for the person you want to *be*.",
+    "Your phone is a tool this morning, not a *trap*.",
+    "Morning, unfiltered and *unsponsored*.",
+    "The feed learns what you like. This learns what you *need*.",
+    "You're here. That's already the hard *part*.",
+    "Start with a breath, not a *headline*.",
+    "The best notification today is your own *heartbeat*.",
+    "The day hasn't asked anything of you *yet*.",
+    "Your thumb is here. Your mind can *follow*.",
+    "You opened the one app that wants you to *leave*.",
+    "The world can wait. The *window* can't.",
+    "You're up before your *worries*.",
+    "The internet had all night. You get the *morning*.",
+    "Your first thought today is *free* of ads.",
+    "You already beat the scroll *once* today.",
+    "You didn't doomscroll. You *dawn*-scrolled.",
+    "The shortest path out of bed runs through *here*.",
+    "This isn't a feed. It's a *runway*.",
+    "You showed up for yourself *again*.",
+    "No trends. No takes. Just *today*.",
+    "You're allowed to have a *boring*, peaceful morning.",
+    "The bed is warm. The day is *warmer*.",
+    "Scrolling fills time. This *uses* it.",
+    "The feed can't give you back the *morning*. You kept it.",
+    "Today gets the *first* draft of you.",
+    "This app has a last screen. Your feed *doesn't*.",
+    "You're not the product this *morning*.",
+    "You picked the slower, *better* start.",
+    "Nothing here will make you *angry*.",
+    "Nobody here wants you to scroll *further*.",
+    "Waking up is enough of an *event*.",
+    "The feed will not miss you. Your day *will* notice.",
+    "Mornings are rare. Don't trade them for *reruns*.",
+    "The news of the day is that you're *awake*.",
+    "Look up soon. The *ceiling* has better lighting than Reels.",
+    "You don't have to earn the morning. Just *meet* it.",
+    "You turned the autopilot *off*.",
+    "Small habit, big *mornings*.",
+    "You took the phone out of the *loop*.",
+    "One screen. One job. Then *done*.",
+    "Today, you're the one *posting* the plan.",
+    "Your morning just got its *edges* back.",
+    "You opened this with your eyes half shut. *Respect*.",
+    "Scroll less, *live* more. Starting now.",
+    "The feed can refresh. So can *you*.",
+    "The first choice of the day was a *wise* one.",
+    "There's no algorithm here. Just a *sunrise*.",
+    "You pulled the handbrake on the *scroll*.",
+    "This is how good days quietly *begin*.",
+    "Consider this your morning *armour*.",
+    "Your brain wanted a hit. It's getting a *breath*.",
+    "No one online knows you're awake. *Enjoy* that.",
+    "Stay here five minutes. The *feed* stays there.",
+    "You're writing today's first *line*, not reading someone else's.",
+    "You chose the opening move. Well *played*.",
+    "You didn't wake up to the world. You woke up to *yourself*.",
+    "Here's to a morning with no *spoilers*.",
+    "You beat the reflex. Now let's beat the *bed*.",
+    "The day is a blank *page*. Let's keep it that way a moment longer.",
+    "The feed has no morning. *You* do.",
+    "Quiet first, loud *later*.",
+    "This minute is already *better* than a scroll.",
+    "You're early for your own *life*.",
+    "Welcome back. The sun kept your *seat*."
+  ];
+
+  // A new line every time the app opens, with no repeats until all of them have been shown.
+  function pickWakeLine() {
+    let bag = store.get("lineBag", []);
+    const last = store.get("lastLine", -1);
+    bag = Array.isArray(bag) ? bag.filter((i) => Number.isInteger(i) && i >= 0 && i < WAKE_LINES.length) : [];
+    if (!bag.length) {
+      bag = WAKE_LINES.map((_, i) => i);
+      for (let i = bag.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [bag[i], bag[j]] = [bag[j], bag[i]];
+      }
+      if (bag[0] === last && bag.length > 1) [bag[0], bag[1]] = [bag[1], bag[0]];
+    }
+    const pick = bag.shift();
+    store.set("lineBag", bag);
+    store.set("lastLine", pick);
+    return WAKE_LINES[pick];
+  }
+
+  // ---------- state ----------
+  const STEPS = ["wake", "breathe", "read", "move", "plan", "done"];
+  let step = 0;
+  const startedAt = Date.now();
+  const today = dayKey();
+  const passage = PASSAGES[dayOfYear() % PASSAGES.length];
+  const wakeLine = pickWakeLine();
+
+  const $ = (s, r = document) => r.querySelector(s);
+  const card = $("#card");
+  const stepsEl = $("#steps");
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  // ---------- horizon ----------
+  function tickClock() {
+    const d = new Date();
+    $("#clock").textContent = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    $("#date").textContent = d.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
+  }
+  // Where the sun sits on the arc for each step: just under the horizon at "wake", near the top at "done"
+  const STOPS = STEPS.map((_, i) => 0.04 + (i / (STEPS.length - 1)) * 0.92);
+  const STAGES = ["Pre-dawn", "Twilight", "First light", "Sunrise", "Morning", "Full morning"];
+  const arc = $("#arc");
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let sunAt = STOPS[0];
+  let sunAnim = 0;
+  const fmtTime = (ms) => new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+  $("#stops").innerHTML = STOPS.map((f) => {
+    const pt = arc.getPointAtLength(f * arc.getTotalLength());
+    return `<circle class="stop" r="1.6" cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}"></circle>`;
+  }).join("");
+
+  function drawSun(f) {
+    const pt = arc.getPointAtLength(f * arc.getTotalLength());
+    const t = (f - STOPS[0]) / (STOPS[STOPS.length - 1] - STOPS[0]);
+    $("#sun").setAttribute("transform", `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+    $("#arcDone").setAttribute("stroke-dasharray", `${f.toFixed(4)} 1`);
+    $("#dawn").setAttribute("opacity", (0.15 + 0.85 * t).toFixed(3));
+    $("#stars").setAttribute("opacity", (1 - t).toFixed(3));
+  }
+  function placeSun() {
+    const target = STOPS[step];
+    [...$("#stops").children].forEach((c, i) => c.classList.toggle("passed", i <= step));
+    $("#stage").textContent = STAGES[step];
+    $("#tStart").textContent = `${fmtTime(startedAt)} start`;
+    $("#tEnd").textContent = step === STEPS.length - 1
+      ? `${fmtTime(Date.now())} done`
+      : `${fmtTime(startedAt + 5 * 60000)} goal`;
+    cancelAnimationFrame(sunAnim);
+    if (reduceMotion) { sunAt = target; drawSun(sunAt); return; }
+    const from = sunAt, t0 = performance.now(), dur = 1400;
+    const ease = (x) => 1 - Math.pow(1 - x, 3);
+    const frame = (now) => {
+      const k = Math.min(1, (now - t0) / dur);
+      sunAt = from + (target - from) * ease(k);
+      drawSun(sunAt);
+      if (k < 1) sunAnim = requestAnimationFrame(frame);
+    };
+    sunAnim = requestAnimationFrame(frame);
+  }
+  function renderSteps() {
+    stepsEl.innerHTML = STEPS.map((_, i) =>
+      `<li class="${i < step ? "done" : i === step ? "now" : ""}"></li>`).join("");
+    $("#restart").hidden = step === 0;
+  }
+
+  // ---------- screens ----------
+  let breathTimer = null;
+  let gateTimer = null;
+  function clearTimers() {
+    clearInterval(breathTimer); breathTimer = null;
+    clearInterval(gateTimer); gateTimer = null;
+  }
+
+  const screens = {
+    wake() {
+      const streak = store.get("streak", { last: null, count: 0 });
+      const already = streak.last === today;
+      const h = new Date().getHours();
+      const hello = h < 5 ? "Still night out there" : h < 12 ? "Good morning" : "Hello again";
+      const line = esc(wakeLine).replace(/\*(.+?)\*/, '<em class="hl">$1</em>');
+      card.innerHTML = `
+        <p class="eyebrow">${hello} · ${already ? "already done today" : "five minutes, then you're free"}</p>
+        <h1>${line}</h1>
+        <p class="lede">Your thumb wanted something to hold on to. This gives it a short, finished job:
+          breathe, read one passage, get out of bed, pick your one thing. Then it ends.</p>
+        <p class="small">${streak.count > 0 ? `Current streak: ${streak.count} ${streak.count === 1 ? "morning" : "mornings"}.` : "Day one. Nothing to live up to yet."}</p>
+        <div class="btnrow"><button class="primary" id="go" type="button">Begin</button></div>`;
+      $("#go").onclick = next;
+    },
+
+    breathe() {
+      const CYCLES = 5, IN = 4, OUT = 6;
+      card.innerHTML = `
+        <p class="eyebrow">Breathe · about 50 seconds</p>
+        <h2>Five slow breaths before anything else.</h2>
+        <div class="breath"><div class="orb" id="orb">Ready</div><div class="count" id="bcount">0 of ${CYCLES}</div></div>
+        <div class="btnrow">
+          <button class="primary" id="bstart" type="button">Start breathing</button>
+          <button class="quiet" id="bskip" type="button">Skip</button>
+        </div>`;
+      const orb = $("#orb");
+      $("#bskip").onclick = next;
+      $("#bstart").onclick = () => {
+        $("#bstart").disabled = true;
+        let cycle = 0, phase = "in", left = IN;
+        const setPhase = () => {
+          orb.style.transitionDuration = (phase === "in" ? IN : OUT) + "s";
+          orb.style.transform = phase === "in" ? "scale(1)" : "scale(.55)";
+          orb.textContent = phase === "in" ? "In" : "Out";
+        };
+        setPhase();
+        breathTimer = setInterval(() => {
+          left--;
+          if (left > 0) return;
+          if (phase === "in") { phase = "out"; left = OUT; }
+          else {
+            cycle++;
+            $("#bcount").textContent = `${cycle} of ${CYCLES}`;
+            if (cycle >= CYCLES) {
+              clearInterval(breathTimer); breathTimer = null;
+              orb.textContent = "Done";
+              $("#bstart").textContent = "Continue";
+              $("#bstart").disabled = false;
+              $("#bstart").onclick = next;
+              return;
+            }
+            phase = "in"; left = IN;
+          }
+          setPhase();
+        }, 1000);
+      };
+    },
+
+    read() {
+      card.innerHTML = `
+        <p class="eyebrow">Read · one passage, about 1 minute</p>
+        <div class="passage">
+          ${passage.text.map((t) => `<p>${esc(t)}</p>`).join("")}
+          <span class="source">${esc(passage.source)}</span>
+          <p class="prompt">${esc(passage.prompt)}</p>
+        </div>
+        <div class="btnrow"><button class="primary" id="go" type="button">I read it</button></div>`;
+      $("#go").onclick = next;
+    },
+
+    move() {
+      const items = store.get("checks", DEFAULT_CHECKS);
+      card.innerHTML = `
+        <p class="eyebrow">Move · get vertical</p>
+        <h2>Out of bed. The phone can come with you.</h2>
+        <ul class="checks">
+          ${items.map((t, i) => `<li><label><input type="checkbox" id="chk${i}"><span>${esc(t)}</span></label></li>`).join("")}
+        </ul>
+        <details class="doors">
+          <summary>Change these steps</summary>
+          <div class="inner">
+            <label class="field" for="checkEdit">One per line
+              <textarea id="checkEdit">${esc(items.join("\n"))}</textarea></label>
+            <div><button type="button" id="checkSave">Save steps</button> <span class="saved" id="checkSaved" hidden>Saved</span></div>
+          </div>
+        </details>
+        <div class="btnrow"><button class="primary" id="go" type="button" disabled>Check all three to continue</button></div>`;
+      const boxes = [...card.querySelectorAll(".checks input")];
+      const go = $("#go");
+      const sync = () => {
+        const all = boxes.every((b) => b.checked);
+        go.disabled = !all;
+        go.textContent = all ? "I'm up" : `Check all ${boxes.length} to continue`;
+      };
+      boxes.forEach((b) => (b.onchange = sync));
+      sync();
+      go.onclick = next;
+      $("#checkSave").onclick = () => {
+        const lines = $("#checkEdit").value.split("\n").map((s) => s.trim()).filter(Boolean).slice(0, 6);
+        store.set("checks", lines.length ? lines : DEFAULT_CHECKS);
+        screens.move();
+        $("details.doors").open = true;
+        $("#checkSaved").hidden = false;
+      };
+    },
+
+    plan() {
+      const letter = store.get("letter", null); // { text, forDay }
+      const hasNote = letter && letter.text && letter.forDay <= today;
+      const intention = store.get("intent:" + today, "");
+      card.innerHTML = `
+        <p class="eyebrow">Plan · the only feed with an end</p>
+        <h2>A note from last night's you.</h2>
+        <div class="note ${hasNote ? "" : "empty"}">${hasNote ? esc(letter.text) :
+          "No note yet. At the end of today's run you can leave one for tomorrow morning. It shows up here, and nothing else does."}</div>
+        <label class="field" for="intent">The one thing that would make today count
+          <input type="text" id="intent" maxlength="120" placeholder="e.g. Send the draft to Priya before lunch" value="${esc(intention)}"></label>
+        <div class="btnrow"><button class="primary" id="go" type="button">That's my one thing</button></div>`;
+      $("#go").onclick = () => {
+        store.set("intent:" + today, $("#intent").value.trim());
+        next();
+      };
+    },
+
+    done() {
+      const mins = Math.max(1, Math.round((Date.now() - startedAt) / 60000));
+      const streak = recordStreak();
+      const intention = store.get("intent:" + today, "");
+      const letter = store.get("letter", null);
+      const draft = letter && letter.forDay > today ? letter.text : "";
+      card.innerHTML = `
+        <p class="eyebrow">Done · there is no more</p>
+        <h1>That's the whole thing. The sun is up.</h1>
+        ${intention ? `<p class="lede">Today: <strong>${esc(intention)}</strong></p>` : ""}
+        <div class="tally">
+          <div><b>${mins}</b><span>${mins === 1 ? "minute" : "minutes"}</span></div>
+          <div><b>${streak.count}</b><span>day streak</span></div>
+          <div><b>0</b><span>posts seen</span></div>
+        </div>
+        <label class="field" for="letter">Leave a note for tomorrow morning
+          <textarea id="letter" placeholder="Write it tonight, or now. It will be the first thing you read tomorrow.">${esc(draft)}</textarea></label>
+        <div><button type="button" id="saveLetter">Save for tomorrow</button> <span class="saved" id="letterSaved" hidden>Saved. See you at first light.</span></div>
+
+        <details class="doors" id="doors">
+          <summary>I need an app for one specific job</summary>
+          <div class="inner">
+            <p class="small">These links skip the home feeds and open straight to the useful part. The feed is still one tap away inside, so go in, do the job, come back.</p>
+            <p class="gate" id="gate">Opening in 10 s</p>
+            <div class="doorgrid">
+              <a class="door" id="dIg" aria-disabled="true" href="https://www.instagram.com/direct/inbox/" target="_blank" rel="noopener">Instagram messages only</a>
+              <form class="doorline" id="fYt">
+                <input type="text" id="qYt" aria-label="YouTube search" placeholder="How to fix a dishwasher filter">
+                <button type="submit" id="bYt" disabled>YouTube search</button>
+              </form>
+              <form class="doorline" id="fRd">
+                <input type="text" id="qRd" aria-label="Reddit search" placeholder="Search one subreddit or topic">
+                <button type="submit" id="bRd" disabled>Reddit search</button>
+              </form>
+            </div>
+          </div>
+        </details>
+
+        <div class="btnrow"><button class="primary" id="close" type="button">Put the phone down</button></div>`;
+
+      $("#saveLetter").onclick = () => {
+        const text = $("#letter").value.trim();
+        const tomorrow = dayKey(new Date(Date.now() + 864e5));
+        store.set("letter", text ? { text, forDay: tomorrow } : null);
+        $("#letterSaved").hidden = false;
+      };
+
+      const doors = $("#doors");
+      doors.addEventListener("toggle", () => {
+        if (!doors.open || gateTimer) return;
+        let left = 10;
+        gateTimer = setInterval(() => {
+          left--;
+          if (left > 0) { $("#gate").textContent = `Opening in ${left} s`; return; }
+          clearInterval(gateTimer);
+          $("#gate").textContent = "Open. Go in for the one job.";
+          $("#dIg").removeAttribute("aria-disabled");
+          $("#bYt").disabled = false;
+          $("#bRd").disabled = false;
+        }, 1000);
+      });
+      const openSearch = (base, input) => (e) => {
+        e.preventDefault();
+        const q = input.value.trim();
+        if (!q) { input.focus(); return; }
+        const a = document.createElement("a");
+        a.href = base + encodeURIComponent(q);
+        a.target = "_blank"; a.rel = "noopener";
+        document.body.appendChild(a); a.click(); a.remove();
+      };
+      $("#fYt").onsubmit = openSearch("https://www.youtube.com/results?search_query=", $("#qYt"));
+      $("#fRd").onsubmit = openSearch("https://www.reddit.com/search/?q=", $("#qRd"));
+
+      $("#close").onclick = () => {
+        card.innerHTML = `
+          <p class="eyebrow">See you tomorrow</p>
+          <h1>Go live the morning.</h1>
+          <p class="lede">This page has nothing else on it, on purpose.</p>`;
+      };
+    }
+  };
+
+  function recordStreak() {
+    const s = store.get("streak", { last: null, count: 0 });
+    if (s.last === today) return s;
+    const yesterday = dayKey(new Date(Date.now() - 864e5));
+    const out = { last: today, count: s.last === yesterday ? s.count + 1 : 1 };
+    store.set("streak", out);
+    return out;
+  }
+
+  function render() {
+    clearTimers();
+    renderSteps();
+    placeSun();
+    screens[STEPS[step]]();
+    window.scrollTo(0, 0);
+  }
+  function next() { if (step < STEPS.length - 1) { step++; render(); } }
+  $("#restart").onclick = () => { step = 0; render(); };
+
+  tickClock();
+  setInterval(tickClock, 30000);
+  render();
+})();
+</script>
