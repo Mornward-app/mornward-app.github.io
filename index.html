@@ -884,7 +884,7 @@
   const saveSetup = (patch) => store.set("setup", { ...store.get("setup", { done: false }, isSetup), ...patch });
 
   function homeScreenSteps(h) {
-    const move = `Hold the new sun icon and drag it to where <b>${esc(h.app)}</b> sits now. Move ${esc(h.app)} to your second page.`;
+    const move = `Hold the new sun icon and drag it to where <b>${esc(h.app)}</b> sits now. Then move ${esc(h.app)} somewhere your thumb won't find it on autopilot: another page, a folder, or off your phone entirely. Your call.`;
     if (onHomeScreen) {
       return `<p class="check">✓ You opened this from your home screen. That's the hard part done.</p>
         <ol class="howto"><li>${move}</li></ol>`;
