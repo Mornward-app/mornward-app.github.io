@@ -1,3 +1,5 @@
+<!doctype html>
+<html lang="en">
 <meta charset="utf-8">
 <title>First Light</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -22,6 +24,11 @@
     --sun-deep: #d9772b;
     --ok: #3f8f6b;
     --focus: #4b63d6;
+    /* Text-sized versions of the accent and green, dark enough to read on the light background */
+    --accent-text: #b0521a;
+    --ok-text: #2c6e51;
+    --field-line: #7f86a3;
+    --placeholder: #6b7190;
     --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
     --read: "Newsreader", Georgia, "Times New Roman", serif;
     --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
@@ -38,6 +45,10 @@
       --sun-deep: #f08c3c;
       --ok: #6cc59b;
       --focus: #8fa2ff;
+      --accent-text: #f08c3c;
+      --ok-text: #6cc59b;
+      --field-line: #6a72a0;
+      --placeholder: #a3a7c2;
     }
   }
   :root[data-theme="dark"] {
@@ -51,9 +62,15 @@
     --sun-deep: #f08c3c;
     --ok: #6cc59b;
     --focus: #8fa2ff;
+    --accent-text: #f08c3c;
+    --ok-text: #6cc59b;
+    --field-line: #6a72a0;
+    --placeholder: #a3a7c2;
   }
 
   * { box-sizing: border-box; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  [tabindex="-1"]:focus { outline: none; }
   [hidden] { display: none !important; }
   html, body { height: 100%; }
   body {
@@ -101,6 +118,8 @@
     color: #e6e4f2;
   }
   .horizon .meta .stage { color: #f5b25c; }
+  .horizon .meta > span { white-space: nowrap; }
+  @media (max-width: 380px) { .horizon .meta { font-size: 11px; inset: 10px 12px auto 12px; } }
 
   .steps {
     display: flex; gap: 6px; list-style: none; padding: 0; margin: 0;
@@ -127,8 +146,9 @@
   h1 { font-size: clamp(30px, 8vw, 40px); }
   h2 { font-size: clamp(24px, 6vw, 30px); }
   p { margin: 0; }
-  .hl { font-style: normal; color: var(--sun-deep); }
-  .lede { color: var(--ink-soft); font-size: 17px; max-width: 60ch; }
+  .hl { font-style: normal; color: var(--accent-text); }
+  .lede { color: var(--ink-soft); font-size: 17px; max-width: 60ch; overflow-wrap: anywhere; }
+  h1, h2, .passage, .card p { overflow-wrap: anywhere; }
 
   .btnrow { display: flex; gap: 10px; flex-wrap: wrap; margin-top: auto; padding-top: 8px; }
   button, .door {
@@ -179,6 +199,7 @@
     background: var(--surface); cursor: pointer; font-size: 17px;
   }
   .checks input { width: 22px; height: 22px; accent-color: var(--ok); flex: none; }
+  .checks label span { min-width: 0; overflow-wrap: anywhere; }
   .checks label:has(input:checked) { border-color: var(--ok); }
   .checks label:has(input:checked) span { text-decoration: line-through; color: var(--ink-soft); }
 
@@ -191,9 +212,10 @@
   label.field { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
   input[type="text"], textarea {
     font: inherit; font-weight: 400; font-size: 17px;
-    border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
+    border: 1px solid var(--field-line); border-radius: 12px; padding: 12px 14px;
     background: var(--surface); color: var(--ink); width: 100%;
   }
+  ::placeholder { color: var(--placeholder); opacity: 1; }
   textarea { font-family: var(--read); font-size: 18px; min-height: 96px; resize: vertical; }
 
   /* Done */
@@ -214,11 +236,12 @@
   .doors .inner { display: flex; flex-direction: column; gap: 12px; padding-top: 12px; }
   .doors .gate { font-family: var(--mono); font-size: 13px; color: var(--ink-soft); }
   .doorgrid { display: flex; flex-direction: column; gap: 10px; }
-  .doorline { display: flex; gap: 8px; }
-  .doorline input { flex: 1; min-width: 0; }
+  .doorline { display: flex; flex-direction: column; gap: 8px; }
+  .doorline input { min-width: 0; }
   .door[aria-disabled="true"] { opacity: .4; pointer-events: none; }
   .small { font-size: 13px; color: var(--ink-soft); }
-  .saved { font-family: var(--mono); font-size: 12px; color: var(--ok); }
+  /* On its own line under the button, so it never wraps half beside it */
+  .saved { display: block; margin-top: 8px; font-family: var(--mono); font-size: 13px; color: var(--ok-text); }
 
   /* Setup */
   .choices { display: flex; flex-direction: column; gap: 10px; }
@@ -230,13 +253,13 @@
   .howto { margin: 0; padding: 0 0 0 1.4em; display: flex; flex-direction: column; gap: 10px; font-size: 17px; max-width: 60ch; }
   .howto li::marker { color: var(--sun-deep); font-weight: 700; }
   .howto b { font-weight: 700; }
-  .check { color: var(--ok); font-weight: 600; }
+  .check { color: var(--ok-text); font-weight: 600; }
   .addr { font-family: var(--mono); font-size: 14px; background: var(--surface); border: 1px solid var(--line);
     border-radius: 10px; padding: 10px 12px; overflow-wrap: anywhere; user-select: all; }
 
   .top { display: flex; justify-content: space-between; align-items: center; }
   .brand { font-weight: 700; letter-spacing: -.01em; }
-  .brand i { font-style: normal; color: var(--sun-deep); }
+  .brand i { font-style: normal; color: var(--accent-text); }
 
   @media (prefers-reduced-motion: reduce) {
     .breath .orb { transition: none; }
@@ -290,9 +313,10 @@
     <div class="meta"><span><span id="clock">06:42</span> · <span class="stage" id="stage">Pre-dawn</span></span><span id="date">Thu 24 Sep</span></div>
   </div>
 
-  <ol class="steps" id="steps" aria-label="Progress"></ol>
+  <ol class="steps" id="steps" aria-hidden="true"></ol>
 
-  <main class="card" id="card" aria-live="polite"></main>
+  <main class="card" id="card"></main>
+  <p class="sr-only" id="announce" aria-live="polite"></p>
 </div>
 
 <script>
@@ -1053,7 +1077,7 @@
       if (reshuffleBtn) reshuffleBtn.onclick = () => screens.move(new Set(), true);
       const ticked = () => new Set(boxes.filter((b) => b.checked).map((b) => items[boxes.indexOf(b)]));
       $("#checkSave").onclick = () => {
-        const lines = $("#checkEdit").value.split("\n").map((s) => s.trim()).filter(Boolean).slice(0, 6);
+        const lines = $("#checkEdit").value.split("\n").map((s) => s.trim().slice(0, 80)).filter(Boolean).slice(0, 6);
         store.set("myMoves", lines.length ? lines : null);
         screens.move(ticked());
         $("details.doors").open = true;
@@ -1113,20 +1137,20 @@
             <p class="small">These links skip the home feeds and open straight to the useful part. The feed is still one tap away inside, so go in, do the job, come back.</p>
             <p class="gate" id="gate">Opening in 10 s</p>
             <div class="doorgrid">
-              <a class="door" id="dIg" aria-disabled="true" href="https://www.instagram.com/direct/inbox/" target="_blank" rel="noopener">Instagram messages only</a>
+              <a class="door" id="dIg" aria-disabled="true" tabindex="-1" href="https://www.instagram.com/direct/inbox/" target="_blank" rel="noopener">Instagram messages only</a>
               <form class="doorline" id="fYt">
-                <input type="text" id="qYt" aria-label="YouTube search" placeholder="How to fix a dishwasher filter">
+                <input type="text" id="qYt" aria-label="YouTube search" placeholder="e.g. fix a leaky tap">
                 <button type="submit" id="bYt" disabled>YouTube search</button>
               </form>
               <form class="doorline" id="fRd">
-                <input type="text" id="qRd" aria-label="Reddit search" placeholder="Search one subreddit or topic">
+                <input type="text" id="qRd" aria-label="Reddit search" placeholder="e.g. r/cooking">
                 <button type="submit" id="bRd" disabled>Reddit search</button>
               </form>
             </div>
           </div>
         </details>
 
-        <div class="btnrow">
+        <div class="btnrow stack">
           <button class="primary" id="close" type="button">Put the phone down</button>
           <button class="quiet" id="replay" type="button">Replay setup</button>
         </div>`;
@@ -1139,6 +1163,9 @@
         $("#letterSaved").hidden = false;
       };
 
+      $("#dIg").addEventListener("click", (e) => {
+        if (e.currentTarget.getAttribute("aria-disabled") === "true") e.preventDefault();
+      });
       const doors = $("#doors");
       doors.addEventListener("toggle", () => {
         if (!doors.open || gateTimer) return;
@@ -1149,6 +1176,7 @@
           clearInterval(gateTimer);
           $("#gate").textContent = "Open. Go in for the one job.";
           $("#dIg").removeAttribute("aria-disabled");
+          $("#dIg").removeAttribute("tabindex");
           $("#bYt").disabled = false;
           $("#bRd").disabled = false;
         }, 1000);
@@ -1311,6 +1339,7 @@
     placeSun("Setting up");
     card.innerHTML = setupScreens[setupStep]();
     window.scrollTo(0, 0);
+    announceScreen(setupStep < 4 ? `Setup, screen ${setupStep + 1} of 5` : "Setup finished");
     const go = (n) => { setupStep = n; renderSetup(); };
     const finish = () => { saveSetup({ done: true }); go(4); };
     const on = (id, fn) => { const el = $("#" + id); if (el) el.onclick = fn; };
@@ -1345,6 +1374,17 @@
     if (performance.now() < tapGuardUntil) { e.preventDefault(); e.stopPropagation(); }
   }, true);
 
+  // After a screen change, tell screen readers where they are and put keyboard focus at the top of the new screen.
+  // Skipped on the very first screen, so opening the app doesn't jump focus.
+  let screensShown = 0;
+  function announceScreen(label) {
+    if (screensShown++ === 0) return;
+    $("#announce").textContent = label;
+    const target = card.querySelector("h1, h2, .eyebrow");
+    if (target) { target.setAttribute("tabindex", "-1"); target.focus({ preventScroll: true }); }
+  }
+  const STEP_NAMES = ["Wake", "Breathe", "Read", "Move", "Plan", "Done"];
+
   function render() {
     clearTimers();
     guardTaps();
@@ -1352,6 +1392,7 @@
     placeSun();
     screens[STEPS[step]]();
     window.scrollTo(0, 0);
+    announceScreen(`Step ${step + 1} of ${STEPS.length}: ${STEP_NAMES[step]}`);
   }
   function next() { if (step < STEPS.length - 1) { step++; render(); } }
   $("#restart").onclick = () => {
