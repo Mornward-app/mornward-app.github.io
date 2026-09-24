@@ -973,17 +973,20 @@
     if (picked === null) {
       return `<button class="quiet" id="pickDoors" type="button">Need an app for one job sometimes? Pick which ones</button>`;
     }
-    if (!picked.length) return "";
+    const own = customDoors();
+    if (!picked.length && !own.length) return "";
+    const link = (key, label, url) => {
+      const web = /^https?:/.test(url);
+      return `<a class="door" data-door="${key}" aria-disabled="true" tabindex="-1" href="${esc(url)}"${web ? ' target="_blank" rel="noopener"' : ""}>${esc(label)}</a>`;
+    };
     const items = picked.map((k) => {
       const d = DOORS[k];
-      if (d.url) {
-        return `<a class="door" data-door="${k}" aria-disabled="true" tabindex="-1" href="${d.url}" target="_blank" rel="noopener">${esc(d.label)}</a>`;
-      }
+      if (d.url) return link(k, d.label, d.url);
       return `<form class="doorline" data-door="${k}">
           <input type="text" id="q-${k}" aria-label="${esc(d.label)}" placeholder="${esc(d.hint)}">
           <button type="submit" disabled>${esc(d.label)}</button>
         </form>`;
-    }).join("");
+    }).join("") + own.map((d, i) => link("custom-" + i, d.label, d.url)).join("");
     return `<details class="doors" id="doors">
           <summary>I need an app for one specific job</summary>
           <div class="inner">
@@ -1248,15 +1251,55 @@
   // Apps people may still need for one specific job. Links go to messages or search where the app allows it,
   // not the home feed. On a phone most of these open the real app.
   const DOORS = {
-    instagram: { label: "Instagram messages", url: "https://www.instagram.com/direct/inbox/" },
-    snapchat: { label: "Snapchat chat", url: "https://www.snapchat.com/web" },
-    x: { label: "X messages", url: "https://x.com/messages" },
-    messenger: { label: "Messenger", url: "https://www.messenger.com/" },
-    whatsapp: { label: "WhatsApp", url: "https://wa.me/" },
-    discord: { label: "Discord messages", url: "https://discord.com/channels/@me" },
-    youtube: { label: "YouTube search", search: "https://www.youtube.com/results?search_query=", hint: "e.g. fix a leaky tap" },
-    reddit: { label: "Reddit search", search: "https://www.reddit.com/search/?q=", hint: "e.g. r/cooking" },
-    tiktok: { label: "TikTok search", search: "https://www.tiktok.com/search?q=", hint: "e.g. easy breakfast" }
+    // Shown first
+    instagram: { label: "Instagram messages", url: "https://www.instagram.com/direct/inbox/", top: true },
+    snapchat: { label: "Snapchat chat", url: "https://www.snapchat.com/web", top: true },
+    x: { label: "X messages", url: "https://x.com/messages", top: true },
+    messenger: { label: "Messenger", url: "https://www.messenger.com/", top: true },
+    whatsapp: { label: "WhatsApp", url: "https://wa.me/", top: true },
+    discord: { label: "Discord messages", url: "https://discord.com/channels/@me", top: true },
+    youtube: { label: "YouTube search", search: "https://www.youtube.com/results?search_query=", hint: "e.g. fix a leaky tap", top: true },
+    reddit: { label: "Reddit search", search: "https://www.reddit.com/search/?q=", hint: "e.g. r/cooking", top: true },
+    tiktok: { label: "TikTok search", search: "https://www.tiktok.com/search?q=", hint: "e.g. easy breakfast", top: true },
+    // Behind "Show more apps": messages and mail
+    texts: { label: "Messages (texts)", url: "sms:", group: "Messages and mail" },
+    telegram: { label: "Telegram", url: "https://web.telegram.org/", group: "Messages and mail" },
+    groupme: { label: "GroupMe", url: "https://web.groupme.com/chats", group: "Messages and mail" },
+    slack: { label: "Slack", url: "https://app.slack.com/client", group: "Messages and mail" },
+    teams: { label: "Microsoft Teams", url: "https://teams.microsoft.com/", group: "Messages and mail" },
+    linkedin: { label: "LinkedIn messages", url: "https://www.linkedin.com/messaging/", group: "Messages and mail" },
+    gmail: { label: "Gmail", url: "https://mail.google.com/", group: "Messages and mail" },
+    outlook: { label: "Outlook mail", url: "https://outlook.live.com/mail/", group: "Messages and mail" },
+    calendar: { label: "Google Calendar", url: "https://calendar.google.com/", group: "Messages and mail" },
+    // Behind "Show more apps": search, so you land on what you came for instead of a feed
+    google: { label: "Google search", search: "https://www.google.com/search?q=", hint: "e.g. bus times", group: "Search" },
+    maps: { label: "Google Maps", search: "https://www.google.com/maps/search/", hint: "e.g. coffee near me", group: "Search" },
+    xsearch: { label: "X search", search: "https://x.com/search?q=", hint: "e.g. a news topic", group: "Search" },
+    facebook: { label: "Facebook search", search: "https://www.facebook.com/search/top?q=", hint: "e.g. a friend or group", group: "Search" },
+    threads: { label: "Threads search", search: "https://www.threads.net/search?q=", hint: "e.g. a topic", group: "Search" },
+    pinterest: { label: "Pinterest search", search: "https://www.pinterest.com/search/pins/?q=", hint: "e.g. meal prep", group: "Search" },
+    tumblr: { label: "Tumblr search", search: "https://www.tumblr.com/search/", hint: "e.g. a fandom", group: "Search" },
+    twitch: { label: "Twitch search", search: "https://www.twitch.tv/search?term=", hint: "e.g. a streamer", group: "Search" },
+    spotify: { label: "Spotify search", search: "https://open.spotify.com/search/", hint: "e.g. a morning playlist", group: "Search" },
+    ytmusic: { label: "YouTube Music search", search: "https://music.youtube.com/search?q=", hint: "e.g. an artist", group: "Search" },
+    amazon: { label: "Amazon search", search: "https://www.amazon.com/s?k=", hint: "e.g. phone charger", group: "Search" },
+    wikipedia: { label: "Wikipedia search", search: "https://en.wikipedia.org/w/index.php?search=", hint: "e.g. a topic", group: "Search" }
+  };
+  // Your own apps: a name and an address, up to five. Only web addresses are allowed.
+  const MAX_CUSTOM = 5;
+  const cleanUrl = (raw) => {
+    const t = String(raw || "").trim();
+    if (!t || /\s/.test(t)) return null;
+    try {
+      const u = new URL(/^[a-z][a-z0-9+.-]*:/i.test(t) ? t : "https://" + t);
+      const realHost = /^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(u.hostname);
+      return (u.protocol === "https:" || u.protocol === "http:") && realHost ? u.href : null;
+    } catch { return null; }
+  };
+  const customDoors = () => {
+    const c = store.get("setup", {}, isSetup).custom;
+    return Array.isArray(c) ? c.filter((d) => d && typeof d.label === "string" && d.label.trim() && cleanUrl(d.url))
+      .slice(0, MAX_CUSTOM).map((d) => ({ label: d.label.trim().slice(0, 40), url: cleanUrl(d.url) })) : [];
   };
   // The apps this person picked, in the order above; null if they haven't been asked yet
   const chosenDoors = () => {
@@ -1348,17 +1391,40 @@
     },
     () => {
       const picked = chosenDoors() || [];
+      const chip = ([k, d]) => `<button type="button" data-door="${k}" aria-pressed="${picked.includes(k)}">${esc(d.label)}</button>`;
+      const entries = Object.entries(DOORS);
+      const more = entries.filter(([, d]) => !d.top);
+      const groups = [...new Set(more.map(([, d]) => d.group))];
+      const openMore = more.some(([k]) => picked.includes(k));
       return `
       <p class="eyebrow">3 of 4 · the useful parts</p>
       <h2>Which apps do you still need for something useful?</h2>
       <p class="small">Tap any, or none. They'll sit behind a 10-second wait at the end of your morning,
         and open straight to messages or search, not the feed.</p>
-      <div class="chips" role="group" aria-label="Apps you still need">
-        ${Object.entries(DOORS).map(([k, d]) =>
-          `<button type="button" data-door="${k}" aria-pressed="${picked.includes(k)}">${esc(d.label)}</button>`).join("")}
-      </div>
+      <div class="chips" role="group" aria-label="Popular apps">${entries.filter(([, d]) => d.top).map(chip).join("")}</div>
+      <details class="doors" id="moreApps"${openMore ? " open" : ""}>
+        <summary>Show more apps</summary>
+        <div class="inner">
+          ${groups.map((g) => `<p class="eyebrow">${esc(g)}</p>
+          <div class="chips" role="group" aria-label="${esc(g)}">${more.filter(([, d]) => d.group === g).map(chip).join("")}</div>`).join("")}
+        </div>
+      </details>
+      <details class="doors" id="ownApps"${customDoors().length ? " open" : ""}>
+        <summary>Add your own</summary>
+        <div class="inner">
+          <p class="small">Anything with a web address: a school portal, a work tool, a group chat link.</p>
+          <div class="chips" id="customList" role="group" aria-label="Your own apps"></div>
+          <label class="field" for="customName">Name
+            <input type="text" id="customName" maxlength="40" placeholder="e.g. School email"></label>
+          <label class="field" for="customUrl">Web address
+            <input type="text" id="customUrl" inputmode="url" autocapitalize="off" placeholder="e.g. mail.myschool.edu"></label>
+          <div><button type="button" id="customAdd">Add it</button></div>
+          <span class="saved" id="customMsg" hidden></span>
+        </div>
+      </details>
+      <p class="small">On a phone, most of these open the app itself, so the feed is still in there. Go in for the one job.</p>
       <div class="btnrow stack">
-        <button class="primary" id="sNext" type="button">${picked.length ? "Save my picks" : "None for me, next"}</button>
+        <button class="primary" id="sNext" type="button">${picked.length || customDoors().length ? "Save my picks" : "None for me, next"}</button>
       </div>`;
     },
     () => `
@@ -1403,11 +1469,32 @@
     if (setupStep === 3) {
       const chips = [...card.querySelectorAll("[data-door]")];
       const picks = () => chips.filter((c) => c.getAttribute("aria-pressed") === "true").map((c) => c.dataset.door);
+      let custom = customDoors();
+      const label = () => { $("#sNext").textContent = picks().length || custom.length ? "Save my picks" : "None for me, next"; };
       chips.forEach((c) => (c.onclick = () => {
         c.setAttribute("aria-pressed", String(c.getAttribute("aria-pressed") !== "true"));
-        $("#sNext").textContent = picks().length ? "Save my picks" : "None for me, next";
+        label();
       }));
-      on("sNext", () => { saveSetup({ doors: picks() }); go(4); });
+      const msg = (t) => { $("#customMsg").textContent = t; $("#customMsg").hidden = !t; };
+      const drawCustom = () => {
+        $("#customList").innerHTML = custom.map((d, i) =>
+          `<button type="button" data-custom="${i}" aria-pressed="true" aria-label="Remove ${esc(d.label)}">${esc(d.label)} ✕</button>`).join("");
+        $("#customList").querySelectorAll("[data-custom]").forEach((b) => (b.onclick = () => {
+          custom.splice(Number(b.dataset.custom), 1); drawCustom(); label(); msg("");
+        }));
+        $("#customAdd").disabled = custom.length >= MAX_CUSTOM;
+      };
+      drawCustom();
+      $("#customAdd").onclick = () => {
+        const name = $("#customName").value.trim();
+        const url = cleanUrl($("#customUrl").value);
+        if (!name) { msg("Give it a name first."); $("#customName").focus(); return; }
+        if (!url) { msg("That address doesn't look right. Try something like mail.myschool.edu"); $("#customUrl").focus(); return; }
+        custom.push({ label: name.slice(0, 40), url });
+        $("#customName").value = ""; $("#customUrl").value = "";
+        drawCustom(); label(); msg(`Added ${name.slice(0, 40)}.`);
+      };
+      on("sNext", () => { saveSetup({ doors: picks(), custom }); go(4); });
     } else if (setupStep === 4) {
       on("sNext", () => {
         const text = $("#firstNote").value.trim();
