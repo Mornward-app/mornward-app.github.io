@@ -255,6 +255,25 @@
   .rating .row button[aria-pressed="true"] { background: var(--ink); color: var(--ground); border-color: var(--ink); }
   .rating .row button[aria-pressed="true"]:disabled { opacity: 1; }
   .statsline { font-size: 13px; color: var(--ink-soft); }
+  /* First-open agreement */
+  .terms { display: flex; flex-direction: column; gap: 12px; }
+  .terms section { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+  .terms h3 { margin: 0 0 8px; font-size: 16px; display: flex; gap: 8px; align-items: center; }
+  .terms ul { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; font-size: 15px; }
+  .terms .yes h3 span { color: var(--ok-text); }
+  .terms .no h3 span { color: var(--accent-text); }
+  .terms a { color: var(--accent-text); font-weight: 600; }
+  .agree { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border: 1px solid var(--field-line);
+    border-radius: 14px; background: var(--surface); cursor: pointer; font-size: 16px; font-weight: 600; }
+  .agree input { width: 22px; height: 22px; margin-top: 2px; flex: none; accent-color: var(--ok); }
+  .agree:has(input:checked) { border-color: var(--ok); }
+
+  /* "See exactly what's sent" */
+  details.privacy { font-size: 14px; color: var(--ink-soft); }
+  details.privacy summary { cursor: pointer; color: var(--accent-text); font-weight: 600; text-decoration: underline; }
+  details.privacy h3 { font-size: 15px; color: var(--ink); margin: 14px 0 6px; }
+  details.privacy ul { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
+  details.privacy a { color: var(--accent-text); }
   .statsline button { font-size: 13px; padding: 4px 6px; text-decoration: underline; }
 
   /* App picker chips */
@@ -905,7 +924,35 @@
     key: "sb_publishable_XpdHaGbjKX5CC0LRYiWBxQ_O8xO2oCs",
     version: "beta-1"
   };
-  const statsOn = () => store.get("noStats", false) !== true;
+  // Bump TERMS_VERSION when the wording changes in a way people should re-read; everyone is asked again.
+  const TERMS_VERSION = "beta-1";
+  const hasAgreed = () => {
+    const a = store.get("agreed", null, (v) => typeof v === "object");
+    return !!a && a.version === TERMS_VERSION;
+  };
+  const statsOn = () => hasAgreed() && store.get("noStats", false) !== true;
+  // Keep in sync with privacy.html (the shareable version of this)
+  const PRIVACY_DETAILS = `<details class="privacy">
+      <summary>See exactly what's sent</summary>
+      <h3>What First Light sends</h3>
+      <ul>
+        <li>A random device ID made on your phone. It isn't linked to your name, email or any account.</li>
+        <li>The date, and the time the record arrived.</li>
+        <li>What you usually open in bed (social, games, videos, news or other), and which apps you picked from the list.</li>
+        <li>How your morning went: minutes, streak, breathing done or skipped, how many get-up boxes you ticked, and whether you wrote an intention.</li>
+        <li>Your 👎 / 👌 / 👍, if you tap one.</li>
+        <li>Which app you opened from the one-job list, if any.</li>
+      </ul>
+      <h3>What it never sends</h3>
+      <ul>
+        <li>Your name, email, phone number or any account. There's no sign-up.</li>
+        <li>Your notes, your intention, or your own get-up steps. Not a single word.</li>
+        <li>The names or addresses of apps you added yourself, or anything you search for.</li>
+        <li>Your location, contacts, photos or other apps. First Light can't see them.</li>
+        <li>Anything at all once you tap "Turn off".</li>
+      </ul>
+      <p><a href="terms.html" target="_blank" rel="noopener">Full terms and privacy page</a></p>
+    </details>`;
   function deviceId() {
     let id = store.get("deviceId", null, (v) => typeof v === "string" && /^[0-9a-f-]{36}$/.test(v));
     if (!id) {
@@ -1289,7 +1336,8 @@
           <button class="primary" id="close" type="button">Put the phone down</button>
           <button class="quiet" id="replay" type="button">Replay setup</button>
         </div>
-        <p class="statsline" id="statsLine"></p>`;
+        <p class="statsline" id="statsLine"></p>
+        ${PRIVACY_DETAILS}`;
       card.querySelectorAll("[data-rate]").forEach((b) => (b.onclick = () => {
         store.set("rated:" + run.today, b.dataset.rate);
         card.querySelectorAll("[data-rate]").forEach((x) => { x.disabled = true; x.setAttribute("aria-pressed", String(x === b)); });
@@ -1545,8 +1593,7 @@
       return `
       <p class="eyebrow">That's it · you're set</p>
       <h1>${hl(h.finale)}</h1>
-      <p class="small">First Light counts anonymous things, like which steps you finish, so I can tell if it actually helps.
-        Never what you write. You can turn it off at the end of any morning.</p>
+      <p class="small">Reminder: stats are anonymous and never include what you write. Turn them off at the end of any morning.</p>
       <p class="lede">When the alarm goes off, your thumb will reach for the same spot. The sun will be there.
         Five minutes, then you're free, and ${esc(h.thing)} will still be there if you actually need it.</p>
       <div class="btnrow stack">
@@ -1616,6 +1663,76 @@
     }
   }
   function startSetup(at = 0) { setupStep = at; renderSetup(); }
+
+  // ---------- first-open agreement ----------
+  // Shown before anything else the first time someone opens First Light (and once to anyone set up before it existed).
+  function renderAgreement() {
+    clearTimers();
+    guardTaps();
+    stepsEl.hidden = true;
+    $("#restart").hidden = true;
+    placeSun("Welcome");
+    card.innerHTML = `
+      <p class="eyebrow">Before you start · 1 minute</p>
+      <h1>Here's the deal, in <em class="hl">plain</em> words.</h1>
+      <p class="lede">First Light is a free beta. To find out whether it actually helps people, it keeps track of a few
+        anonymous things. Everything personal stays on your phone.</p>
+      <div class="terms">
+        <section class="yes">
+          <h3><span aria-hidden="true">✓</span> What First Light keeps track of</h3>
+          <ul>
+            <li>A random ID made on your phone. It isn't linked to your name, email or any account.</li>
+            <li>The date and time of each morning.</li>
+            <li>Your setup answers: what you usually open in bed, and which apps you picked from the list.</li>
+            <li>How the morning went: minutes, streak, breathing done or skipped, how many get-up boxes you ticked.</li>
+            <li>Your 👎 / 👌 / 👍, and which app you opened from the one-job list, if any.</li>
+          </ul>
+        </section>
+        <section class="no">
+          <h3><span aria-hidden="true">🔒</span> What stays private and personal</h3>
+          <ul>
+            <li>Your name, email and phone number. There's no sign-up.</li>
+            <li>Your notes, your intention and your own get-up steps. Not a single word is sent.</li>
+            <li>Apps you add yourself, and anything you search for.</li>
+            <li>Your location, contacts, photos and other apps. First Light can't see them.</li>
+            <li>Everything, once you tap "Turn off" at the end of any morning.</li>
+          </ul>
+        </section>
+        <section>
+          <h3>The beta terms</h3>
+          <ul>
+            <li>First Light is free and in beta. It's provided as it is, and things may change or break.</li>
+            <li>It's a habit tool, not medical or mental-health advice. If you're struggling, please talk to someone qualified.</li>
+            <li>What you write is saved only in this browser. Clearing your browser data deletes it, and it can't be recovered.</li>
+            <li>You're at least 13 years old.</li>
+            <li>If these terms change, you'll see this screen again.</li>
+          </ul>
+        </section>
+        <p class="small"><a href="terms.html" target="_blank" rel="noopener">Read the full terms and privacy page</a></p>
+      </div>
+      <label class="agree" for="agreeBox">
+        <input type="checkbox" id="agreeBox">
+        <span>I've read this and I agree to First Light's beta terms.</span>
+      </label>
+      <div class="btnrow stack">
+        <button class="primary" id="agreeGo" type="button" disabled>Agree and continue</button>
+      </div>`;
+    window.scrollTo(0, 0);
+    announceScreen("Before you start: the beta terms");
+    const box = $("#agreeBox"), go = $("#agreeGo");
+    box.onchange = () => { go.disabled = !box.checked; };
+    go.onclick = () => {
+      if (!box.checked) return;
+      store.set("agreed", { version: TERMS_VERSION, on: dayKey() });
+      boot();
+    };
+  }
+  // Where the app starts: the agreement first, then setup, then the morning
+  function boot() {
+    if (!hasAgreed()) renderAgreement();
+    else if (store.get("setup", { done: false }, isSetup).done) { run = newRun(); step = 0; render(); }
+    else startSetup(0);
+  }
   function leaveSetup() {
     setupStep = -1;
     stepsEl.hidden = false;
@@ -1668,7 +1785,7 @@
   // Phones often keep the page alive overnight. When it comes back on a new day, start that day's run,
   // unless someone is in the middle of a run that began shortly before midnight.
   function freshRunIfNewDay() {
-    if (setupStep >= 0 || dayKey() === run.today) return;
+    if (setupStep >= 0 || !hasAgreed() || dayKey() === run.today) return;
     const idle = step === 0 || step === STEPS.length - 1;
     const stale = Date.now() - run.startedAt > 3 * 3600e3;
     if (!idle && !stale) return;
@@ -1683,7 +1800,6 @@
   tickClock();
   setInterval(tickClock, 30000);
   flushStats();
-  if (store.get("setup", { done: false }, isSetup).done) render();
-  else startSetup(0);
+  boot();
 })();
 </script>

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>First Light · Terms and privacy</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0d22">
+<meta name="description" content="First Light's beta terms, and exactly what it records and what it never does.">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #eef0f6; --surface: #ffffff; --ink: #1a1f36; --ink-soft: #545b78; --line: #d7dbe8;
+    --accent-text: #b0521a; --ok-text: #2c6e51; --no-text: #9b2c2c; --focus: #4b63d6;
+    --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --ground: #11152a; --surface: #1a1f38; --ink: #eceaf4; --ink-soft: #a3a7c2; --line: #2e3456;
+      --accent-text: #f08c3c; --ok-text: #6cc59b; --no-text: #ff9a9a; --focus: #8fa2ff;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --ground: #11152a; --surface: #1a1f38; --ink: #eceaf4; --ink-soft: #a3a7c2; --line: #2e3456;
+    --accent-text: #f08c3c; --ok-text: #6cc59b; --no-text: #ff9a9a; --focus: #8fa2ff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--display); font-size: 16px; line-height: 1.55; }
+  main { max-width: 640px; margin: 0 auto; padding-inline: 16px; padding-block: 24px 48px; display: flex; flex-direction: column; gap: 20px; }
+  a { color: var(--accent-text); }
+  a:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .back { font-weight: 600; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); margin: 0; }
+  h1 { font-size: clamp(28px, 7vw, 38px); line-height: 1.12; margin: 0; text-wrap: balance; }
+  h2 { font-size: 20px; margin: 0 0 10px; display: flex; align-items: center; gap: 10px; }
+  p { margin: 0; max-width: 62ch; }
+  .lede { font-size: 18px; color: var(--ink-soft); }
+  section { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; }
+  ul { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 8px; }
+  .yes h2 span { color: var(--ok-text); }
+  .no h2 span { color: var(--no-text); }
+  .small { font-size: 14px; color: var(--ink-soft); }
+  code { font-family: var(--mono); font-size: .92em; }
+</style>
+<main>
+  <a class="back" href="./">← Back to First Light</a>
+
+  <p class="eyebrow">Terms and privacy · plain words</p>
+  <h1>What First Light records, and what it never does.</h1>
+  <p class="lede">First Light is in free beta. To learn whether it actually helps, it counts a few anonymous things
+    about each morning. It never collects anything you write, and there's no account to sign up for.</p>
+
+  <section class="yes">
+    <h2><span aria-hidden="true">✓</span> What First Light keeps track of</h2>
+    <ul>
+      <li><strong>A random device ID</strong> made on your phone, like <code>3f2a9c…</code>. It isn't linked to your name, email or any account.</li>
+      <li><strong>The date</strong>, and the time the record arrived.</li>
+      <li><strong>Your setup answers:</strong> what you usually open in bed (social, games, videos, news or other), which apps you picked from the list, and <em>how many</em> of your own you added.</li>
+      <li><strong>How your morning went:</strong> minutes, streak, breathing done or skipped, how many get-up boxes you ticked, how often you asked for different ones, and <em>whether</em> you wrote an intention or had a note waiting.</li>
+      <li><strong>Your rating</strong> (👎 / 👌 / 👍), if you tap one.</li>
+      <li><strong>Which app you opened</strong> from the one-job list, if any. Apps you added yourself are just counted as "own".</li>
+      <li><strong>Whether you opened First Light from your home screen.</strong></li>
+    </ul>
+  </section>
+
+  <section class="no">
+    <h2><span aria-hidden="true">🔒</span> What stays private and personal</h2>
+    <ul>
+      <li>Your name, email, phone number or any account. There's no sign-up.</li>
+      <li>Your notes to tomorrow-you. Not a single word.</li>
+      <li>Your intention. Only <em>whether</em> you wrote one.</li>
+      <li>Your own get-up steps, or which get-up options you saw or ticked. Only <em>how many</em>.</li>
+      <li>The names or web addresses of apps you added yourself.</li>
+      <li>What you search for on YouTube, Reddit, TikTok or anywhere else.</li>
+      <li>Which quote or opening line you saw.</li>
+      <li>Your location, contacts, photos or other apps. First Light has no access to them.</li>
+      <li>Anything at all once you tap <strong>Turn off</strong>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Beta terms</h2>
+    <ul>
+      <li><strong>Free beta.</strong> First Light is free while in beta and is provided as it is. Features may change, and things may break.</li>
+      <li><strong>Not medical advice.</strong> It's a habit tool, not medical or mental-health advice. If you're struggling, please talk to someone qualified.</li>
+      <li><strong>Your writing lives on your phone.</strong> Notes, intentions and your own steps are saved only in your browser. Clearing your browser data deletes them, and they can't be recovered.</li>
+      <li><strong>Age.</strong> You're at least 13 years old.</li>
+      <li><strong>Agreeing.</strong> You agree once, the first time you open First Light. If these terms change, you'll be asked again.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Your controls</h2>
+    <ul>
+      <li><strong>Turn stats off</strong> at the bottom of the last screen of any morning. Nothing is sent from your phone after that, and anything waiting to be sent is deleted.</li>
+      <li><strong>Everything you write stays on your phone,</strong> in this browser's storage. Clearing your browser data deletes it.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Where it goes</h2>
+    <p>The anonymous records are stored in a Supabase database in the United States. The app can only add records;
+      it can't read, change or delete anything, including other people's records. Like most websites, Supabase keeps
+      short-term technical logs of requests, which can include an IP address and browser type. Those aren't used for
+      the beta stats.</p>
+    <p class="small">Last updated September 2026 · beta</p>
+  </section>
+
+  <a class="back" href="./">← Back to First Light</a>
+</main>
