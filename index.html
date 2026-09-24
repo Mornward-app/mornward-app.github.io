@@ -220,6 +220,20 @@
   .small { font-size: 13px; color: var(--ink-soft); }
   .saved { font-family: var(--mono); font-size: 12px; color: var(--ok); }
 
+  /* Setup */
+  .choices { display: flex; flex-direction: column; gap: 10px; }
+  .choices button { justify-content: space-between; text-align: left; gap: 12px; border-radius: 14px; padding: 16px 18px; font-size: 17px; }
+  .choices button strong { white-space: nowrap; }
+  .choices button span { color: var(--ink-soft); font-weight: 400; font-size: 14px; text-align: right; }
+  /* Setup: main button full width, the quiet way out underneath */
+  .btnrow.stack { flex-direction: column; align-items: stretch; }
+  .howto { margin: 0; padding: 0 0 0 1.4em; display: flex; flex-direction: column; gap: 10px; font-size: 17px; max-width: 60ch; }
+  .howto li::marker { color: var(--sun-deep); font-weight: 700; }
+  .howto b { font-weight: 700; }
+  .check { color: var(--ok); font-weight: 600; }
+  .addr { font-family: var(--mono); font-size: 14px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 10px; padding: 10px 12px; overflow-wrap: anywhere; user-select: all; }
+
   .top { display: flex; justify-content: space-between; align-items: center; }
   .brand { font-weight: 700; letter-spacing: -.01em; }
   .brand i { font-style: normal; color: var(--sun-deep); }
@@ -574,14 +588,16 @@
     $("#dawn").setAttribute("opacity", (0.15 + 0.85 * t).toFixed(3));
     $("#stars").setAttribute("opacity", (1 - t).toFixed(3));
   }
-  function placeSun() {
-    const target = STOPS[step];
-    [...$("#stops").children].forEach((c, i) => c.classList.toggle("passed", i <= step));
-    $("#stage").textContent = STAGES[step];
-    $("#tStart").textContent = `${fmtTime(run.startedAt)} start`;
-    $("#tEnd").textContent = step === STEPS.length - 1
-      ? `${fmtTime(Date.now())} done`
-      : `${fmtTime(run.startedAt + 5 * 60000)} goal`;
+  function placeSun(setupLabel = null) {
+    const at = setupLabel ? 0 : step;
+    const target = STOPS[at];
+    [...$("#stops").children].forEach((c, i) => c.classList.toggle("passed", !setupLabel && i <= step));
+    $("#stage").textContent = setupLabel || STAGES[step];
+    $("#tStart").textContent = setupLabel ? "tonight" : `${fmtTime(run.startedAt)} start`;
+    $("#tEnd").textContent = setupLabel ? "tomorrow, 5 min"
+      : step === STEPS.length - 1
+        ? `${fmtTime(Date.now())} done`
+        : `${fmtTime(run.startedAt + 5 * 60000)} goal`;
     cancelAnimationFrame(sunAnim);
     if (reduceMotion) { sunAt = target; drawSun(sunAt); return; }
     const from = sunAt, t0 = performance.now(), dur = 1400;
@@ -761,7 +777,7 @@
         <div class="tally">
           <div><b>${mins}</b><span>${mins === 1 ? "minute" : "minutes"}</span></div>
           <div><b>${streak.count}</b><span>day streak</span></div>
-          <div><b>0</b><span>posts seen</span></div>
+          <div><b>0</b><span>${esc(habit().tally)}</span></div>
         </div>
         <label class="field" for="letter">Leave a note for tomorrow morning
           <textarea id="letter" placeholder="Write it tonight, or now. It will be the first thing you read tomorrow.">${esc(draft)}</textarea></label>
@@ -786,7 +802,11 @@
           </div>
         </details>
 
-        <div class="btnrow"><button class="primary" id="close" type="button">Put the phone down</button></div>`;
+        <div class="btnrow">
+          <button class="primary" id="close" type="button">Put the phone down</button>
+          <button class="quiet" id="replay" type="button">Replay setup</button>
+        </div>`;
+      $("#replay").onclick = () => startSetup(0);
 
       $("#saveLetter").onclick = () => {
         const text = $("#letter").value.trim();
@@ -840,6 +860,159 @@
     return out;
   }
 
+  // ---------- setup: a one-time tour the first time someone opens the app ----------
+  const HABITS = {
+    social: { label: "Social media", hint: "Instagram, TikTok, Reddit", app: "Instagram", thing: "the feed", tally: "posts seen",
+      finale: "Tomorrow, the first thing you see will be *yours*." },
+    games: { label: "A game", hint: "“just one match”… then five", app: "your game", thing: "your game", tally: "matches played",
+      finale: "Tomorrow, the first thing you win is the *morning*." },
+    video: { label: "YouTube or videos", hint: "Shorts, “one more video”", app: "YouTube", thing: "the next video", tally: "videos watched",
+      finale: "Tomorrow, you're the one who picks what's *next*." },
+    news: { label: "News or headlines", hint: "bad news before your eyes are open", app: "your news app", thing: "the headlines", tally: "headlines read",
+      finale: "Tomorrow, the news can wait until you're *up*." },
+    other: { label: "Something else", hint: "", app: "that app", thing: "that app", tally: "feeds scrolled",
+      finale: "See you at first *light*." }
+  };
+  const isSetup = (v) => typeof v === "object" && typeof v.done === "boolean";
+  const habit = () => HABITS[store.get("setup", {}, isSetup).habit] || HABITS.other;
+  const ua = navigator.userAgent;
+  const isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isAndroid = /Android/.test(ua);
+  const onHomeScreen = navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
+
+  let setupStep = -1; // -1 = not in setup
+  const saveSetup = (patch) => store.set("setup", { ...store.get("setup", { done: false }, isSetup), ...patch });
+
+  function homeScreenSteps(h) {
+    const move = `Hold the new sun icon and drag it to where <b>${esc(h.app)}</b> sits now. Then move ${esc(h.app)} somewhere your thumb won't find it on autopilot: another page, a folder, or off your phone entirely. Your call.`;
+    if (onHomeScreen) {
+      return `<p class="check">✓ You opened this from your home screen. That's the hard part done.</p>
+        <ol class="howto"><li>${move}</li></ol>`;
+    }
+    if (isIOS) {
+      return `<ol class="howto">
+          <li>Tap the <b>Share</b> button, the square with an arrow pointing up. In Safari it's in the bottom bar; in Chrome it's in the address bar.</li>
+          <li>Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.</li>
+          <li>${move}</li>
+        </ol>`;
+    }
+    if (isAndroid) {
+      return `<ol class="howto">
+          <li>Tap the <b>⋮</b> menu at the top right of Chrome.</li>
+          <li>Tap <b>Add to Home screen</b> (it may say <b>Install app</b>), then <b>Add</b>.</li>
+          <li>${move}</li>
+        </ol>`;
+    }
+    return `<p class="lede">First Light is made for your phone. Open this address on it, then come back to this step:</p>
+      <p class="addr">${esc(location.href.split("#")[0])}</p>`;
+  }
+
+  function alarmSteps() {
+    const ios = `<ol class="howto">
+        <li>Open the <b>Shortcuts</b> app and tap <b>Automation</b>, then <b>+</b>.</li>
+        <li>Choose <b>Alarm</b>, then <b>Is Stopped</b>, and pick <b>Run Immediately</b>.</li>
+        <li>Add the action <b>Open URLs</b> and paste this page's address.</li>
+      </ol>`;
+    const android = `<ol class="howto">
+        <li>Open <b>Modes and Routines</b> (Samsung) or a routines app like Tasker.</li>
+        <li>Trigger: <b>alarm dismissed</b>. Action: <b>open this page</b>.</li>
+      </ol>`;
+    return isIOS ? ios : isAndroid ? android : ios + android;
+  }
+
+  const hl = (t) => esc(t).replace(/\*(.+?)\*/, '<em class="hl">$1</em>');
+  const setupScreens = [
+    () => `
+      <p class="eyebrow">Before tomorrow morning</p>
+      <h1>Your thumb wakes up before <em class="hl">you</em> do.</h1>
+      <p class="lede">Eyes half open, and it's already found the feed, the game, the one more video.
+        You didn't decide that. It's muscle memory, and willpower at 7am is basically zero.</p>
+      <p class="lede">So don't fight your thumb. Give it somewhere better to land.</p>
+      <div class="btnrow stack">
+        <button class="primary" id="sNext" type="button">Show me how</button>
+        <button class="quiet" id="sSkip" type="button">Skip, just let me try it</button>
+      </div>`,
+    () => `
+      <p class="eyebrow">1 of 3 · be honest</p>
+      <h2>What does your thumb open first?</h2>
+      <p class="small">No judgment. I built this because mine went straight to Clash Royale, three matches deep before I'd even sat up.</p>
+      <div class="choices">
+        ${Object.entries(HABITS).map(([k, h]) =>
+          `<button type="button" data-habit="${k}"><strong>${esc(h.label)}</strong>${h.hint ? `<span>${esc(h.hint)}</span>` : ""}</button>`).join("")}
+      </div>`,
+    () => {
+      const h = habit();
+      return `
+      <p class="eyebrow">2 of 3 · the part that actually matters</p>
+      <h2>Put the sun exactly where ${esc(h.app)} lives.</h2>
+      <p class="small">Tomorrow your thumb goes to the same corner of the screen it always does. Make sure the sun is waiting there instead.</p>
+      ${homeScreenSteps(h)}
+      <details class="doors">
+        <summary>Bonus: make your alarm open it for you</summary>
+        <div class="inner">${alarmSteps()}</div>
+      </details>
+      <div class="btnrow stack">
+        <button class="primary" id="sNext" type="button">${onHomeScreen ? "Next" : "Done, it's there"}</button>
+        <button class="quiet" id="sLater" type="button">I'll do it later</button>
+      </div>`;
+    },
+    () => `
+      <p class="eyebrow">3 of 3 · a note to tomorrow-you</p>
+      <h2>Tomorrow-you will be groggy. What do they need to hear?</h2>
+      <p class="small">One line is plenty. It's the first thing you'll read tomorrow, and nobody else wrote it.</p>
+      <label class="field" for="firstNote">Your note
+        <textarea id="firstNote" placeholder="You said you'd hit the gym before class. Go."></textarea></label>
+      <div class="btnrow stack">
+        <button class="primary" id="sNext" type="button">Leave it for tomorrow</button>
+        <button class="quiet" id="sSkip" type="button">Skip</button>
+      </div>`,
+    () => {
+      const h = habit();
+      return `
+      <p class="eyebrow">That's it · you're set</p>
+      <h1>${hl(h.finale)}</h1>
+      <p class="lede">When the alarm goes off, your thumb will reach for the same spot. The sun will be there.
+        Five minutes, then you're free, and ${esc(h.thing)} will still be there if you actually need it.</p>
+      <div class="btnrow stack">
+        <button class="primary" id="sTry" type="button">Try one now · 5 min</button>
+      </div>`;
+    }
+  ];
+
+  function renderSetup() {
+    clearTimers();
+    guardTaps();
+    stepsEl.hidden = true;
+    $("#restart").hidden = true;
+    placeSun("Setting up");
+    card.innerHTML = setupScreens[setupStep]();
+    window.scrollTo(0, 0);
+    const go = (n) => { setupStep = n; renderSetup(); };
+    const finish = () => { saveSetup({ done: true }); go(4); };
+    const on = (id, fn) => { const el = $("#" + id); if (el) el.onclick = fn; };
+    on("sSkip", setupStep === 0 ? () => { saveSetup({ done: true }); leaveSetup(); } : finish);
+    on("sLater", () => go(3));
+    on("sTry", leaveSetup);
+    card.querySelectorAll("[data-habit]").forEach((b) => (b.onclick = () => { saveSetup({ habit: b.dataset.habit }); go(2); }));
+    if (setupStep === 3) {
+      on("sNext", () => {
+        const text = $("#firstNote").value.trim();
+        if (text) store.set("letter", { text, forDay: addDays(dayKey(), 1), writtenOn: dayKey() });
+        finish();
+      });
+    } else {
+      on("sNext", () => go(setupStep + 1));
+    }
+  }
+  function startSetup(at = 0) { setupStep = at; renderSetup(); }
+  function leaveSetup() {
+    setupStep = -1;
+    stepsEl.hidden = false;
+    run = newRun();
+    step = 0;
+    render();
+  }
+
   // The next screen's main button sits where the last one was, so the second half of a sleepy double-tap
   // would press it. Swallow clicks for a short moment after every screen change.
   let tapGuardUntil = 0;
@@ -867,7 +1040,7 @@
   // Phones often keep the page alive overnight. When it comes back on a new day, start that day's run,
   // unless someone is in the middle of a run that began shortly before midnight.
   function freshRunIfNewDay() {
-    if (dayKey() === run.today) return;
+    if (setupStep >= 0 || dayKey() === run.today) return;
     const idle = step === 0 || step === STEPS.length - 1;
     const stale = Date.now() - run.startedAt > 3 * 3600e3;
     if (!idle && !stale) return;
@@ -881,6 +1054,7 @@
 
   tickClock();
   setInterval(tickClock, 30000);
-  render();
+  if (store.get("setup", { done: false }, isSetup).done) render();
+  else startSetup(0);
 })();
 </script>
