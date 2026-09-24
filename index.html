@@ -285,16 +285,44 @@
 (() => {
   // ---------- storage (per-device, optional) ----------
   const store = {
-    get(k, fallback) {
-      try { const v = localStorage.getItem("fl." + k); return v == null ? fallback : JSON.parse(v); }
-      catch { return fallback; }
+    // `valid` guards against corrupted or hand-edited storage: anything that fails it reads as the fallback
+    get(k, fallback, valid = () => true) {
+      try {
+        const raw = localStorage.getItem("fl." + k);
+        if (raw == null) return fallback;
+        const v = JSON.parse(raw);
+        return v != null && valid(v) ? v : fallback;
+      } catch { return fallback; }
     },
     set(k, v) { try { localStorage.setItem("fl." + k, JSON.stringify(v)); } catch {} }
   };
 
   const dayKey = (d = new Date()) =>
     d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-  const dayOfYear = (d = new Date()) => Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5);
+  // Adds whole calendar days to a "YYYY-MM-DD" key (not 24-hour blocks, so daylight saving can't skip a day)
+  const addDays = (key, n) => {
+    const [y, m, d] = key.split("-").map(Number);
+    return dayKey(new Date(y, m - 1, d + n));
+  };
+  // Days since 1970 for a day key; used to rotate passages without repeating across New Year
+  const dayNumber = (key) => {
+    const [y, m, d] = key.split("-").map(Number);
+    return Math.floor(Date.UTC(y, m - 1, d) / 864e5);
+  };
+  const fmtDay = (key) => {
+    const [y, m, d] = key.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
+  };
+
+  const isStreak = (v) => typeof v === "object" && Number.isInteger(v.count) && v.count >= 0 &&
+    (v.last === null || typeof v.last === "string");
+  const isLetter = (v) => typeof v === "object" && typeof v.text === "string" && typeof v.forDay === "string";
+  const isText = (v) => typeof v === "string";
+  const readChecks = () => {
+    const v = store.get("checks", DEFAULT_CHECKS, Array.isArray);
+    const items = v.filter((t) => typeof t === "string" && t.trim()).slice(0, 6);
+    return items.length ? items : DEFAULT_CHECKS;
+  };
 
   // ---------- content ----------
   // Public-domain translations and texts. One per day, cycling.
@@ -505,10 +533,13 @@
   // ---------- state ----------
   const STEPS = ["wake", "breathe", "read", "move", "plan", "done"];
   let step = 0;
-  const startedAt = Date.now();
-  const today = dayKey();
-  const passage = PASSAGES[dayOfYear() % PASSAGES.length];
-  const wakeLine = pickWakeLine();
+  // Everything a run records belongs to the day it started, even if it finishes after midnight
+  const newRun = () => {
+    const today = dayKey();
+    return { today, startedAt: Date.now(), passage: PASSAGES[dayNumber(today) % PASSAGES.length] };
+  };
+  let run = newRun();
+  let wakeLine = pickWakeLine();
 
   const $ = (s, r = document) => r.querySelector(s);
   const card = $("#card");
@@ -547,10 +578,10 @@
     const target = STOPS[step];
     [...$("#stops").children].forEach((c, i) => c.classList.toggle("passed", i <= step));
     $("#stage").textContent = STAGES[step];
-    $("#tStart").textContent = `${fmtTime(startedAt)} start`;
+    $("#tStart").textContent = `${fmtTime(run.startedAt)} start`;
     $("#tEnd").textContent = step === STEPS.length - 1
       ? `${fmtTime(Date.now())} done`
-      : `${fmtTime(startedAt + 5 * 60000)} goal`;
+      : `${fmtTime(run.startedAt + 5 * 60000)} goal`;
     cancelAnimationFrame(sunAnim);
     if (reduceMotion) { sunAt = target; drawSun(sunAt); return; }
     const from = sunAt, t0 = performance.now(), dur = 1400;
@@ -579,8 +610,14 @@
 
   const screens = {
     wake() {
-      const streak = store.get("streak", { last: null, count: 0 });
-      const already = streak.last === today;
+      const streak = store.get("streak", { last: null, count: 0 }, isStreak);
+      const already = streak.last === run.today;
+      const alive = already || streak.last === addDays(run.today, -1);
+      const streakLine = streak.count > 0 && alive
+        ? `Current streak: ${streak.count} ${streak.count === 1 ? "morning" : "mornings"}.`
+        : streak.count > 0
+          ? `Your last streak was ${streak.count} ${streak.count === 1 ? "morning" : "mornings"}. Today starts a new one.`
+          : "Day one. Nothing to live up to yet.";
       const h = new Date().getHours();
       const hello = h < 5 ? "Still night out there" : h < 12 ? "Good morning" : "Hello again";
       const line = esc(wakeLine).replace(/\*(.+?)\*/, '<em class="hl">$1</em>');
@@ -589,7 +626,7 @@
         <h1>${line}</h1>
         <p class="lede">Your thumb wanted something to hold on to. This gives it a short, finished job:
           breathe, read one passage, get out of bed, pick your one thing. Then it ends.</p>
-        <p class="small">${streak.count > 0 ? `Current streak: ${streak.count} ${streak.count === 1 ? "morning" : "mornings"}.` : "Day one. Nothing to live up to yet."}</p>
+        <p class="small">${streakLine}</p>
         <div class="btnrow"><button class="primary" id="go" type="button">Begin</button></div>`;
       $("#go").onclick = next;
     },
@@ -641,21 +678,21 @@
       card.innerHTML = `
         <p class="eyebrow">Read · one passage, about 1 minute</p>
         <div class="passage">
-          ${passage.text.map((t) => `<p>${esc(t)}</p>`).join("")}
-          <span class="source">${esc(passage.source)}</span>
-          <p class="prompt">${esc(passage.prompt)}</p>
+          ${run.passage.text.map((t) => `<p>${esc(t)}</p>`).join("")}
+          <span class="source">${esc(run.passage.source)}</span>
+          <p class="prompt">${esc(run.passage.prompt)}</p>
         </div>
         <div class="btnrow"><button class="primary" id="go" type="button">Carry it with me</button></div>`;
       $("#go").onclick = next;
     },
 
-    move() {
-      const items = store.get("checks", DEFAULT_CHECKS);
+    move(keepChecked = new Set()) {
+      const items = readChecks();
       card.innerHTML = `
         <p class="eyebrow">Move · get vertical</p>
         <h2>Out of bed. The phone can come with you.</h2>
         <ul class="checks">
-          ${items.map((t, i) => `<li><label><input type="checkbox" id="chk${i}"><span>${esc(t)}</span></label></li>`).join("")}
+          ${items.map((t, i) => `<li><label><input type="checkbox" id="chk${i}"${keepChecked.has(t) ? " checked" : ""}><span>${esc(t)}</span></label></li>`).join("")}
         </ul>
         <details class="doors">
           <summary>Change these steps</summary>
@@ -677,38 +714,46 @@
       sync();
       go.onclick = next;
       $("#checkSave").onclick = () => {
+        const ticked = new Set(boxes.filter((b) => b.checked).map((b) => items[boxes.indexOf(b)]));
         const lines = $("#checkEdit").value.split("\n").map((s) => s.trim()).filter(Boolean).slice(0, 6);
         store.set("checks", lines.length ? lines : DEFAULT_CHECKS);
-        screens.move();
+        screens.move(ticked);
         $("details.doors").open = true;
         $("#checkSaved").hidden = false;
       };
     },
 
     plan() {
-      const letter = store.get("letter", null); // { text, forDay }
-      const hasNote = letter && letter.text && letter.forDay <= today;
-      const intention = store.get("intent:" + today, "");
+      // { text, forDay, writtenOn?, readOn? } — shown on the first morning it's due, then again only that same day
+      const letter = store.get("letter", null, isLetter);
+      const hasNote = !!letter && letter.text.trim() !== "" && letter.forDay <= run.today &&
+        (!letter.readOn || letter.readOn === run.today);
+      if (hasNote && !letter.readOn) store.set("letter", { ...letter, readOn: run.today });
+      const writtenOn = hasNote && typeof letter.writtenOn === "string" ? letter.writtenOn : null;
+      const heading = !hasNote || !writtenOn || writtenOn === addDays(run.today, -1)
+        ? "A note from last night's you."
+        : `A note you wrote on ${esc(fmtDay(writtenOn))}.`;
+      const intention = store.get("intent:" + run.today, "", isText);
       card.innerHTML = `
         <p class="eyebrow">Plan · the only feed with an end</p>
-        <h2>A note from last night's you.</h2>
+        <h2>${heading}</h2>
         <div class="note ${hasNote ? "" : "empty"}">${hasNote ? esc(letter.text) :
           "No note yet. At the end of today's run you can leave one for tomorrow morning. It shows up here, and nothing else does."}</div>
         <label class="field" for="intent">The one thing that would make today count
           <input type="text" id="intent" maxlength="120" placeholder="e.g. Send the draft to Priya before lunch" value="${esc(intention)}"></label>
         <div class="btnrow"><button class="primary" id="go" type="button">That's my one thing</button></div>`;
       $("#go").onclick = () => {
-        store.set("intent:" + today, $("#intent").value.trim());
+        store.set("intent:" + run.today, $("#intent").value.trim());
         next();
       };
     },
 
     done() {
-      const mins = Math.max(1, Math.round((Date.now() - startedAt) / 60000));
+      const mins = Math.max(1, Math.round((Date.now() - run.startedAt) / 60000));
       const streak = recordStreak();
-      const intention = store.get("intent:" + today, "");
-      const letter = store.get("letter", null);
-      const draft = letter && letter.forDay > today ? letter.text : "";
+      const intention = store.get("intent:" + run.today, "", isText);
+      const letter = store.get("letter", null, isLetter);
+      const draft = letter && letter.forDay > run.today ? letter.text : "";
       card.innerHTML = `
         <p class="eyebrow">Done · there is no more</p>
         <h1>That's the whole thing. The sun is up.</h1>
@@ -745,8 +790,8 @@
 
       $("#saveLetter").onclick = () => {
         const text = $("#letter").value.trim();
-        const tomorrow = dayKey(new Date(Date.now() + 864e5));
-        store.set("letter", text ? { text, forDay: tomorrow } : null);
+        store.set("letter", text ? { text, forDay: addDays(run.today, 1), writtenOn: run.today } : null);
+        $("#letterSaved").textContent = text ? "Saved. See you at first light." : "Note cleared.";
         $("#letterSaved").hidden = false;
       };
 
@@ -777,6 +822,8 @@
       $("#fRd").onsubmit = openSearch("https://www.reddit.com/search/?q=", $("#qRd"));
 
       $("#close").onclick = () => {
+        clearTimers();
+        guardTaps();
         card.innerHTML = `
           <p class="eyebrow">See you tomorrow</p>
           <h1>Go live the morning.</h1>
@@ -786,23 +833,51 @@
   };
 
   function recordStreak() {
-    const s = store.get("streak", { last: null, count: 0 });
-    if (s.last === today) return s;
-    const yesterday = dayKey(new Date(Date.now() - 864e5));
-    const out = { last: today, count: s.last === yesterday ? s.count + 1 : 1 };
+    const s = store.get("streak", { last: null, count: 0 }, isStreak);
+    if (s.last === run.today) return s;
+    const out = { last: run.today, count: s.last === addDays(run.today, -1) ? s.count + 1 : 1 };
     store.set("streak", out);
     return out;
   }
 
+  // The next screen's main button sits where the last one was, so the second half of a sleepy double-tap
+  // would press it. Swallow clicks for a short moment after every screen change.
+  let tapGuardUntil = 0;
+  const guardTaps = () => { tapGuardUntil = performance.now() + 500; };
+  document.addEventListener("click", (e) => {
+    if (performance.now() < tapGuardUntil) { e.preventDefault(); e.stopPropagation(); }
+  }, true);
+
   function render() {
     clearTimers();
+    guardTaps();
     renderSteps();
     placeSun();
     screens[STEPS[step]]();
     window.scrollTo(0, 0);
   }
   function next() { if (step < STEPS.length - 1) { step++; render(); } }
-  $("#restart").onclick = () => { step = 0; render(); };
+  $("#restart").onclick = () => {
+    if (dayKey() !== run.today) wakeLine = pickWakeLine();
+    run = newRun();
+    step = 0;
+    render();
+  };
+
+  // Phones often keep the page alive overnight. When it comes back on a new day, start that day's run,
+  // unless someone is in the middle of a run that began shortly before midnight.
+  function freshRunIfNewDay() {
+    if (dayKey() === run.today) return;
+    const idle = step === 0 || step === STEPS.length - 1;
+    const stale = Date.now() - run.startedAt > 3 * 3600e3;
+    if (!idle && !stale) return;
+    run = newRun();
+    wakeLine = pickWakeLine();
+    step = 0;
+    render();
+  }
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) freshRunIfNewDay(); });
+  window.addEventListener("pageshow", freshRunIfNewDay);
 
   tickClock();
   setInterval(tickClock, 30000);
