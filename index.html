@@ -248,6 +248,15 @@
   .choices button { justify-content: space-between; text-align: left; gap: 12px; border-radius: 14px; padding: 16px 18px; font-size: 17px; }
   .choices button strong { white-space: nowrap; }
   .choices button span { color: var(--ink-soft); font-weight: 400; font-size: 14px; text-align: right; }
+  /* One-tap rating on the done screen */
+  .rating { display: flex; flex-direction: column; gap: 8px; }
+  .rating .row { display: flex; gap: 8px; }
+  .rating .row button { flex: 1; font-size: 22px; padding: 10px; }
+  .rating .row button[aria-pressed="true"] { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+  .rating .row button[aria-pressed="true"]:disabled { opacity: 1; }
+  .statsline { font-size: 13px; color: var(--ink-soft); }
+  .statsline button { font-size: 13px; padding: 4px 6px; text-decoration: underline; }
+
   /* App picker chips */
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .chips button { border-radius: 999px; padding: 10px 14px; font-size: 15px; font-weight: 600; }
@@ -887,13 +896,66 @@
     return WAKE_LINES[pick];
   }
 
+  // ---------- anonymous stats (Supabase) ----------
+  // What's sent: a random device id, the day, and counts/choices such as which steps were done.
+  // Never sent: notes, intentions, or the names/addresses of anyone's own apps.
+  // The publishable key is meant to be public; the database only lets it ADD rows to one table.
+  const STATS = {
+    url: "https://cnwwyucolebrcbydbfej.supabase.co/rest/v1/events",
+    key: "sb_publishable_XpdHaGbjKX5CC0LRYiWBxQ_O8xO2oCs",
+    version: "beta-1"
+  };
+  const statsOn = () => store.get("noStats", false) !== true;
+  function deviceId() {
+    let id = store.get("deviceId", null, (v) => typeof v === "string" && /^[0-9a-f-]{36}$/.test(v));
+    if (!id) {
+      id = crypto.randomUUID ? crypto.randomUUID()
+        : "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) =>
+          (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16));
+      store.set("deviceId", id);
+    }
+    return id;
+  }
+  let flushing = false;
+  async function flushStats() {
+    if (flushing || !statsOn() || !navigator.onLine) return;
+    const outbox = store.get("outbox", [], Array.isArray);
+    if (!outbox.length) return;
+    flushing = true;
+    try {
+      const res = await fetch(STATS.url, {
+        method: "POST",
+        keepalive: true,
+        headers: { apikey: STATS.key, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify(outbox)
+      });
+      // Sent, or rejected for good (bad data): either way don't retry these rows forever
+      if (res.ok || (res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429)) {
+        const now = store.get("outbox", [], Array.isArray);
+        store.set("outbox", now.slice(outbox.length));
+      }
+    } catch { /* offline or blocked: keep them for next time */ }
+    flushing = false;
+  }
+  function track(kind, data = {}) {
+    if (!statsOn()) return;
+    const onHome = navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
+    const row = { device_id: deviceId(), day: (typeof run !== "undefined" && run) ? run.today : dayKey(),
+      kind, data: { ...data, home_screen: onHome }, app_version: STATS.version };
+    const outbox = store.get("outbox", [], Array.isArray).concat([row]).slice(-50);
+    store.set("outbox", outbox);
+    flushStats();
+  }
+  window.addEventListener("online", flushStats);
+
   // ---------- state ----------
   const STEPS = ["wake", "breathe", "read", "move", "plan", "done"];
   let step = 0;
   // Everything a run records belongs to the day it started, even if it finishes after midnight
   const newRun = () => {
     const today = dayKey();
-    return { today, startedAt: Date.now(), quote: quoteFor(today), prompt: PROMPTS[dayNumber(today) % PROMPTS.length] };
+    return { today, startedAt: Date.now(), quote: quoteFor(today), prompt: PROMPTS[dayNumber(today) % PROMPTS.length],
+      stats: { breathe: "skipped", ticked: 0, reshuffles: 0, own_moves: false, intention: false, note: false, sent: false } };
   };
   let run = newRun();
   let wakeLine = pickWakeLine();
@@ -1002,7 +1064,8 @@
     const links = [...doors.querySelectorAll("a.door")];
     const buttons = [...doors.querySelectorAll(".doorline button")];
     links.forEach((a) => a.addEventListener("click", (e) => {
-      if (a.getAttribute("aria-disabled") === "true") e.preventDefault();
+      if (a.getAttribute("aria-disabled") === "true") { e.preventDefault(); return; }
+      track("door_open", { app: a.dataset.door.startsWith("custom") ? "own" : a.dataset.door });
     }));
     doors.addEventListener("toggle", () => {
       if (!doors.open || gateTimer) return;
@@ -1023,6 +1086,7 @@
       if (!q) { input.focus(); return; }
       const a = document.createElement("a");
       a.href = DOORS[f.dataset.door].search + encodeURIComponent(q);
+      track("door_open", { app: f.dataset.door });
       a.target = "_blank"; a.rel = "noopener";
       document.body.appendChild(a); a.click(); a.remove();
     }));
@@ -1084,6 +1148,7 @@
               orb.textContent = "Done";
               $("#bstart").textContent = "Continue";
               $("#bstart").disabled = false;
+              run.stats.breathe = "done";
               $("#bstart").onclick = next;
               return;
             }
@@ -1138,9 +1203,13 @@
       };
       boxes.forEach((b) => (b.onchange = sync));
       sync();
-      go.onclick = next;
+      go.onclick = () => {
+        run.stats.ticked = boxes.filter((b) => b.checked).length;
+        run.stats.own_moves = mine;
+        next();
+      };
       const reshuffleBtn = $("#reshuffle");
-      if (reshuffleBtn) reshuffleBtn.onclick = () => screens.move(new Set(), true);
+      if (reshuffleBtn) reshuffleBtn.onclick = () => { run.stats.reshuffles++; screens.move(new Set(), true); };
       const ticked = () => new Set(boxes.filter((b) => b.checked).map((b) => items[boxes.indexOf(b)]));
       $("#checkSave").onclick = () => {
         const lines = $("#checkEdit").value.split("\n").map((s) => s.trim().slice(0, 80)).filter(Boolean).slice(0, 6);
@@ -1159,6 +1228,7 @@
       const hasNote = !!letter && letter.text.trim() !== "" && letter.forDay <= run.today &&
         (!letter.readOn || letter.readOn === run.today);
       if (hasNote && !letter.readOn) store.set("letter", { ...letter, readOn: run.today });
+      run.stats.note = hasNote;
       const writtenOn = hasNote && typeof letter.writtenOn === "string" ? letter.writtenOn : null;
       const heading = !hasNote || !writtenOn || writtenOn === addDays(run.today, -1)
         ? "A note from last night's you."
@@ -1174,6 +1244,7 @@
         <div class="btnrow"><button class="primary" id="go" type="button">That's my one thing</button></div>`;
       $("#go").onclick = () => {
         store.set("intent:" + run.today, $("#intent").value.trim());
+        run.stats.intention = $("#intent").value.trim() !== "";
         next();
       };
     },
@@ -1181,6 +1252,12 @@
     done() {
       const mins = Math.max(1, Math.round((Date.now() - run.startedAt) / 60000));
       const streak = recordStreak();
+      if (!run.stats.sent) {
+        run.stats.sent = true;
+        const { sent, ...st } = run.stats;
+        track("morning_done", { ...st, minutes: mins, streak: streak.count, habit: store.get("setup", {}, isSetup).habit || null });
+      }
+      const rated = store.get("rated:" + run.today, null, isText);
       const intention = store.get("intent:" + run.today, "", isText);
       const letter = store.get("letter", null, isLetter);
       const draft = letter && letter.forDay > run.today ? letter.text : "";
@@ -1197,12 +1274,38 @@
           <textarea id="letter" placeholder="Write it tonight, or now. It will be the first thing you read tomorrow.">${esc(draft)}</textarea></label>
         <div><button type="button" id="saveLetter">Save for tomorrow</button> <span class="saved" id="letterSaved" hidden>Saved. See you at first light.</span></div>
 
+        <div class="rating" role="group" aria-labelledby="rateQ">
+          <p class="small" id="rateQ">How was this morning?</p>
+          <div class="row">
+            ${[["bad", "👎", "Not great"], ["ok", "👌", "Okay"], ["good", "👍", "Good"]].map(([v, icon, name]) =>
+              `<button type="button" data-rate="${v}" aria-label="${name}" aria-pressed="${rated === v}"${rated ? " disabled" : ""}>${icon}</button>`).join("")}
+          </div>
+          <span class="saved" id="rateThanks"${rated ? "" : " hidden"}>Thanks. That helps more than you'd think.</span>
+        </div>
+
         ${doorsSection()}
 
         <div class="btnrow stack">
           <button class="primary" id="close" type="button">Put the phone down</button>
           <button class="quiet" id="replay" type="button">Replay setup</button>
-        </div>`;
+        </div>
+        <p class="statsline" id="statsLine"></p>`;
+      card.querySelectorAll("[data-rate]").forEach((b) => (b.onclick = () => {
+        store.set("rated:" + run.today, b.dataset.rate);
+        card.querySelectorAll("[data-rate]").forEach((x) => { x.disabled = true; x.setAttribute("aria-pressed", String(x === b)); });
+        $("#rateThanks").hidden = false;
+        track("rating", { value: b.dataset.rate });
+      }));
+      const drawStatsLine = () => {
+        $("#statsLine").innerHTML = statsOn()
+          ? `Anonymous stats are on: which steps you finish, never what you write. <button class="quiet" type="button" id="statsToggle">Turn off</button>`
+          : `Anonymous stats are off. <button class="quiet" type="button" id="statsToggle">Turn back on</button>`;
+        $("#statsToggle").onclick = () => {
+          if (statsOn()) { store.set("noStats", true); store.set("outbox", []); } else { store.set("noStats", false); }
+          drawStatsLine();
+        };
+      };
+      drawStatsLine();
       $("#replay").onclick = () => startSetup(0);
 
       $("#saveLetter").onclick = () => {
@@ -1442,6 +1545,8 @@
       return `
       <p class="eyebrow">That's it · you're set</p>
       <h1>${hl(h.finale)}</h1>
+      <p class="small">First Light counts anonymous things, like which steps you finish, so I can tell if it actually helps.
+        Never what you write. You can turn it off at the end of any morning.</p>
       <p class="lede">When the alarm goes off, your thumb will reach for the same spot. The sun will be there.
         Five minutes, then you're free, and ${esc(h.thing)} will still be there if you actually need it.</p>
       <div class="btnrow stack">
@@ -1460,9 +1565,14 @@
     window.scrollTo(0, 0);
     announceScreen(setupStep < 5 ? `Setup, screen ${setupStep + 1} of 6` : "Setup finished");
     const go = (n) => { setupStep = n; renderSetup(); };
-    const finish = () => { saveSetup({ done: true }); go(5); };
+    const finish = () => {
+      saveSetup({ done: true });
+      const st = store.get("setup", {}, isSetup);
+      track("setup_done", { habit: st.habit || null, doors: chosenDoors() || [], own_apps: customDoors().length, skipped: false });
+      go(5);
+    };
     const on = (id, fn) => { const el = $("#" + id); if (el) el.onclick = fn; };
-    on("sSkip", setupStep === 0 ? () => { saveSetup({ done: true }); leaveSetup(); } : finish);
+    on("sSkip", setupStep === 0 ? () => { saveSetup({ done: true }); track("setup_done", { skipped: true }); leaveSetup(); } : finish);
     on("sLater", () => go(3));
     on("sTry", leaveSetup);
     card.querySelectorAll("[data-habit]").forEach((b) => (b.onclick = () => { saveSetup({ habit: b.dataset.habit }); go(2); }));
@@ -1542,7 +1652,12 @@
     window.scrollTo(0, 0);
     announceScreen(`Step ${step + 1} of ${STEPS.length}: ${STEP_NAMES[step]}`);
   }
-  function next() { if (step < STEPS.length - 1) { step++; render(); } }
+  function next() {
+    if (step >= STEPS.length - 1) return;
+    if (step === 0) track("morning_start", { habit: store.get("setup", {}, isSetup).habit || null });
+    step++;
+    render();
+  }
   $("#restart").onclick = () => {
     if (dayKey() !== run.today) wakeLine = pickWakeLine();
     run = newRun();
@@ -1567,6 +1682,7 @@
 
   tickClock();
   setInterval(tickClock, 30000);
+  flushStats();
   if (store.get("setup", { done: false }, isSetup).done) render();
   else startSetup(0);
 })();
