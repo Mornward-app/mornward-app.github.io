@@ -1,0 +1,15 @@
+{
+  "name": "First Light",
+  "short_name": "First Light",
+  "description": "A five-minute morning routine to open instead of the feed. Then it ends.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#10143a",
+  "theme_color": "#0a0d22",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
