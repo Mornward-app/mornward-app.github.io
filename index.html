@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<title>First Light</title>
+<title>Mornward</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a0d22">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="First Light">
+<meta name="apple-mobile-web-app-title" content="Mornward">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -274,6 +274,9 @@
   details.privacy h3 { font-size: 15px; color: var(--ink); margin: 14px 0 6px; }
   details.privacy ul { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
   details.privacy a { color: var(--accent-text); }
+  details.privacy .myid { display: block; margin: 8px 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px;
+    font-family: var(--mono); font-size: 13px; color: var(--ink); overflow-wrap: anywhere; user-select: all; }
+  details.privacy .btnrow { margin-top: 10px; }
   .statsline button { font-size: 13px; padding: 4px 6px; text-decoration: underline; }
 
   /* App picker chips */
@@ -301,7 +304,7 @@
 
 <div class="app">
   <div class="top">
-    <span class="brand">First <i>Light</i></span>
+    <span class="brand">Morn<i>ward</i></span>
     <button class="quiet" id="restart" type="button" hidden>Start over</button>
   </div>
 
@@ -924,17 +927,20 @@
     key: "sb_publishable_XpdHaGbjKX5CC0LRYiWBxQ_O8xO2oCs",
     version: "beta-1"
   };
+  // Where questions and data requests go (shown in the agreement, on the done screen and on terms.html)
+  const CONTACT = "mornward.app@gmail.com";
   // Bump TERMS_VERSION when the wording changes in a way people should re-read; everyone is asked again.
-  const TERMS_VERSION = "beta-1";
+  // beta-2: contact, US storage consent, retention and data rights (Thailand PDPA)
+  const TERMS_VERSION = "beta-2";
   const hasAgreed = () => {
     const a = store.get("agreed", null, (v) => typeof v === "object");
     return !!a && a.version === TERMS_VERSION;
   };
   const statsOn = () => hasAgreed() && store.get("noStats", false) !== true;
-  // Keep in sync with privacy.html (the shareable version of this)
+  // Keep in sync with terms.html (the shareable version of this)
   const PRIVACY_DETAILS = `<details class="privacy">
       <summary>See exactly what's sent</summary>
-      <h3>What First Light sends</h3>
+      <h3>What Mornward sends</h3>
       <ul>
         <li>A random device ID made on your phone. It isn't linked to your name, email or any account.</li>
         <li>The date, and the time the record arrived.</li>
@@ -948,11 +954,45 @@
         <li>Your name, email, phone number or any account. There's no sign-up.</li>
         <li>Your notes, your intention, or your own get-up steps. Not a single word.</li>
         <li>The names or addresses of apps you added yourself, or anything you search for.</li>
-        <li>Your location, contacts, photos or other apps. First Light can't see them.</li>
+        <li>Your location, contacts, photos or other apps. Mornward can't see them.</li>
         <li>Anything at all once you tap "Turn off".</li>
+      </ul>
+      <h3>Where it goes, and for how long</h3>
+      <ul>
+        <li>It's stored on Supabase servers in the United States, only to learn whether the beta helps. It's never sold or used for ads.</li>
+        <li>It's deleted within 90 days after the beta ends, or sooner if you ask.</li>
+        <li>Questions or requests: <a href="mailto:${CONTACT}">${CONTACT}</a></li>
       </ul>
       <p><a href="terms.html" target="_blank" rel="noopener">Full terms and privacy page</a></p>
     </details>`;
+  // "Your data" panel on the done screen: see your ID, ask for your stats to be deleted, or wipe this phone
+  function myDataSection() {
+    const id = store.get("deviceId", null, (v) => typeof v === "string" && /^[0-9a-f-]{36}$/.test(v));
+    const ask = id ? `mailto:${CONTACT}?subject=${encodeURIComponent("Delete my Mornward data")}&body=${
+      encodeURIComponent("Please delete the stats for this ID: " + id)}` : "";
+    return `<details class="privacy" id="myData">
+      <summary>Show my ID / delete my data</summary>
+      ${id ? `<p>Your anonymous ID:</p>
+      <code class="myid" id="myId">${esc(id)}</code>
+      <p>To see or delete the stats sent with this ID, email it to <a href="${ask}">${CONTACT}</a>.
+        It's handled within 30 days, usually much sooner.</p>`
+      : `<p>No stats have been sent from this phone, so there's nothing to delete on our side.</p>`}
+      <div class="btnrow stack">
+        ${id ? `<a class="door" href="${ask}">Email a delete request</a>` : ""}
+        <button class="quiet" type="button" id="wipeLocal">Delete everything on this phone</button>
+      </div>
+    </details>`;
+  }
+  function wipeLocal() {
+    const id = store.get("deviceId", null);
+    const msg = "This deletes your streak, notes, steps and settings on this phone. It can't be undone." +
+      (id ? "\n\nIf you also want your stats deleted, email your ID first." : "");
+    if (!confirm(msg)) return;
+    try {
+      Object.keys(localStorage).filter((k) => k.startsWith("fl.")).forEach((k) => localStorage.removeItem(k));
+    } catch {}
+    location.reload();
+  }
   function deviceId() {
     let id = store.get("deviceId", null, (v) => typeof v === "string" && /^[0-9a-f-]{36}$/.test(v));
     if (!id) {
@@ -1319,7 +1359,7 @@
         </div>
         <label class="field" for="letter">Leave a note for tomorrow morning
           <textarea id="letter" placeholder="Write it tonight, or now. It will be the first thing you read tomorrow.">${esc(draft)}</textarea></label>
-        <div><button type="button" id="saveLetter">Save for tomorrow</button> <span class="saved" id="letterSaved" hidden>Saved. See you at first light.</span></div>
+        <div><button type="button" id="saveLetter">Save for tomorrow</button> <span class="saved" id="letterSaved" hidden>Saved. See you in the morning.</span></div>
 
         <div class="rating" role="group" aria-labelledby="rateQ">
           <p class="small" id="rateQ">How was this morning?</p>
@@ -1337,7 +1377,8 @@
           <button class="quiet" id="replay" type="button">Replay setup</button>
         </div>
         <p class="statsline" id="statsLine"></p>
-        ${PRIVACY_DETAILS}`;
+        ${PRIVACY_DETAILS}
+        ${myDataSection()}`;
       card.querySelectorAll("[data-rate]").forEach((b) => (b.onclick = () => {
         store.set("rated:" + run.today, b.dataset.rate);
         card.querySelectorAll("[data-rate]").forEach((x) => { x.disabled = true; x.setAttribute("aria-pressed", String(x === b)); });
@@ -1355,11 +1396,12 @@
       };
       drawStatsLine();
       $("#replay").onclick = () => startSetup(0);
+      $("#wipeLocal").onclick = wipeLocal;
 
       $("#saveLetter").onclick = () => {
         const text = $("#letter").value.trim();
         store.set("letter", text ? { text, forDay: addDays(run.today, 1), writtenOn: run.today } : null);
-        $("#letterSaved").textContent = text ? "Saved. See you at first light." : "Note cleared.";
+        $("#letterSaved").textContent = text ? "Saved. See you in the morning." : "Note cleared.";
         $("#letterSaved").hidden = false;
       };
 
@@ -1487,7 +1529,7 @@
           <li>${move}</li>
         </ol>`;
     }
-    return `<p class="lede">First Light is made for your phone. Open this address on it, then come back to this step:</p>
+    return `<p class="lede">Mornward is made for your phone. Open this address on it, then come back to this step:</p>
       <p class="addr">${esc(location.href.split("#")[0])}</p>`;
   }
 
@@ -1665,7 +1707,7 @@
   function startSetup(at = 0) { setupStep = at; renderSetup(); }
 
   // ---------- first-open agreement ----------
-  // Shown before anything else the first time someone opens First Light (and once to anyone set up before it existed).
+  // Shown before anything else the first time someone opens Mornward (and once to anyone set up before it existed).
   function renderAgreement() {
     clearTimers();
     guardTaps();
@@ -1675,11 +1717,11 @@
     card.innerHTML = `
       <p class="eyebrow">Before you start · 1 minute</p>
       <h1>Here's the deal, in <em class="hl">plain</em> words.</h1>
-      <p class="lede">First Light is a free beta. To find out whether it actually helps people, it keeps track of a few
+      <p class="lede">Mornward is a free beta. To find out whether it actually helps people, it keeps track of a few
         anonymous things. Everything personal stays on your phone.</p>
       <div class="terms">
         <section class="yes">
-          <h3><span aria-hidden="true">✓</span> What First Light keeps track of</h3>
+          <h3><span aria-hidden="true">✓</span> What Mornward keeps track of</h3>
           <ul>
             <li>A random ID made on your phone. It isn't linked to your name, email or any account.</li>
             <li>The date and time of each morning.</li>
@@ -1694,25 +1736,35 @@
             <li>Your name, email and phone number. There's no sign-up.</li>
             <li>Your notes, your intention and your own get-up steps. Not a single word is sent.</li>
             <li>Apps you add yourself, and anything you search for.</li>
-            <li>Your location, contacts, photos and other apps. First Light can't see them.</li>
+            <li>Your location, contacts, photos and other apps. Mornward can't see them.</li>
             <li>Everything, once you tap "Turn off" at the end of any morning.</li>
           </ul>
         </section>
         <section>
           <h3>The beta terms</h3>
           <ul>
-            <li>First Light is free and in beta. It's provided as it is, and things may change or break.</li>
+            <li>Mornward is free and in beta. It's provided as it is, and things may change or break.</li>
             <li>It's a habit tool, not medical or mental-health advice. If you're struggling, please talk to someone qualified.</li>
             <li>What you write is saved only in this browser. Clearing your browser data deletes it, and it can't be recovered.</li>
             <li>You're at least 13 years old.</li>
             <li>If these terms change, you'll see this screen again.</li>
           </ul>
         </section>
+        <section>
+          <h3>Who, where and how long</h3>
+          <ul>
+            <li>Mornward is made by one independent developer in Thailand. Questions or requests: <a href="mailto:${CONTACT}">${CONTACT}</a></li>
+            <li>The anonymous stats are used only to learn whether the beta helps. They're never sold or used for ads.</li>
+            <li>They're stored on Supabase servers in the United States, which may not protect data to the same standard as Thai law.</li>
+            <li>They're deleted within 90 days after the beta ends.</li>
+            <li>You can turn them off, see your ID or ask for your data to be deleted at the end of any morning.</li>
+          </ul>
+        </section>
         <p class="small"><a href="terms.html" target="_blank" rel="noopener">Read the full terms and privacy page</a></p>
       </div>
       <label class="agree" for="agreeBox">
         <input type="checkbox" id="agreeBox">
-        <span>I've read this and I agree to First Light's beta terms.</span>
+        <span>I've read this and I agree to Mornward's beta terms, including anonymous stats stored in the United States.</span>
       </label>
       <div class="btnrow stack">
         <button class="primary" id="agreeGo" type="button" disabled>Agree and continue</button>

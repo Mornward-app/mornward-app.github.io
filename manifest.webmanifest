@@ -1,6 +1,6 @@
 {
-  "name": "First Light",
-  "short_name": "First Light",
+  "name": "Mornward",
+  "short_name": "Mornward",
   "description": "A five-minute morning routine to open instead of the feed. Then it ends.",
   "start_url": "./",
   "scope": "./",
