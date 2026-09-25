@@ -1,4 +1,4 @@
--- First Light: anonymous beta stats
+-- Mornward: anonymous beta stats
 -- Paste this whole file into Supabase → SQL Editor → New query → Run. Safe to run more than once.
 --
 -- What it does:

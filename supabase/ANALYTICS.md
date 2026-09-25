@@ -1,6 +1,6 @@
-# First Light beta stats
+# Mornward beta stats
 
-First Light sends small anonymous records to Supabase so you can see whether the beta works.
+Mornward sends small anonymous records to Supabase so you can see whether the beta works.
 
 ## What's recorded
 
@@ -35,3 +35,28 @@ Supabase dashboard → **Table Editor**. The views are listed with the tables:
 | `events` | Every raw record |
 
 The app can only **add** records to `events`. It can't read, change or delete anything, and it can't see the views.
+
+## Handling a data request (PDPA)
+
+People email their anonymous ID to the contact address (the app shows it under **Show my ID / delete my data**).
+Reply within 30 days; aim for a few days.
+
+**Delete:** Supabase → SQL Editor → run, with their ID:
+
+```sql
+delete from public.events where device_id = 'THEIR-ID-HERE';
+```
+
+**See their data** (if they ask for a copy): run this, then export the result as CSV and email it:
+
+```sql
+select created_at, day, kind, data from public.events where device_id = 'THEIR-ID-HERE' order by created_at;
+```
+
+Then reply: "Done. Every record with that ID has been deleted." Keep a one-line note of the date and the request.
+
+**When the beta ends:** export anything you need, then delete all rows within 90 days (the terms promise this):
+
+```sql
+delete from public.events;
+```

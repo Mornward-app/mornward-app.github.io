@@ -1,4 +1,4 @@
-# First Light
+# Mornward
 
 A "bridge app" to open the moment you wake up, in place of Instagram, Reddit or YouTube.
 It gives your hands something to do with the phone, but everything in it ends. There is no feed.
@@ -26,7 +26,7 @@ It unlocks after 10 seconds and links straight to the useful parts of each app:
 This is a rough version of the "surgical blocking" gap: you keep the utility and skip the feed at the entry point.
 It can't strip Reels or Shorts once you're inside. That needs OS-level work (see below).
 
-Everything is stored in `localStorage` on the device. Nothing leaves the phone.
+Your routine is stored in `localStorage` on the device. Only anonymous beta stats leave the phone; see `terms.html` and `supabase/ANALYTICS.md`.
 
 ## Wiring it into the morning
 
@@ -36,7 +36,7 @@ The app only helps if it's what your thumb finds first.
 1. Open the page in Safari → Share → *Add to Home Screen*.
 2. Put that icon exactly where Instagram used to be. Move Instagram, Reddit and YouTube into a folder on page 2.
 3. Shortcuts → Automation → *Alarm* → *Is Stopped* → action *Open URLs* (the page URL) → turn off *Ask Before Running*.
-   Now stopping your alarm opens First Light.
+   Now stopping your alarm opens Mornward.
 4. Optional: Screen Time → App Limits → 1 minute for Social before 9:00.
 
 **Android**
