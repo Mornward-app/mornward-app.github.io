@@ -253,7 +253,6 @@
   .rating .row { display: flex; gap: 8px; }
   .rating .row button { flex: 1; font-size: 22px; padding: 10px; }
   .rating .row button[aria-pressed="true"] { background: var(--ink); color: var(--ground); border-color: var(--ink); }
-  .rating .row button[aria-pressed="true"]:disabled { opacity: 1; }
   .statsline { font-size: 13px; color: var(--ink-soft); }
   /* First-open agreement */
   .terms { display: flex; flex-direction: column; gap: 12px; }
@@ -1365,7 +1364,7 @@
           <p class="small" id="rateQ">How was this morning?</p>
           <div class="row">
             ${[["bad", "👎", "Not great"], ["ok", "👌", "Okay"], ["good", "👍", "Good"]].map(([v, icon, name]) =>
-              `<button type="button" data-rate="${v}" aria-label="${name}" aria-pressed="${rated === v}"${rated ? " disabled" : ""}>${icon}</button>`).join("")}
+              `<button type="button" data-rate="${v}" aria-label="${name}" aria-pressed="${rated === v}">${icon}</button>`).join("")}
           </div>
           <span class="saved" id="rateThanks"${rated ? "" : " hidden"}>Thanks. That helps more than you'd think.</span>
         </div>
@@ -1379,11 +1378,14 @@
         <p class="statsline" id="statsLine"></p>
         ${PRIVACY_DETAILS}
         ${myDataSection()}`;
+      // People can change their mind; only their latest rating for the day counts in the stats
       card.querySelectorAll("[data-rate]").forEach((b) => (b.onclick = () => {
+        const before = store.get("rated:" + run.today, null, (v) => typeof v === "string");
+        if (before === b.dataset.rate) return;
         store.set("rated:" + run.today, b.dataset.rate);
-        card.querySelectorAll("[data-rate]").forEach((x) => { x.disabled = true; x.setAttribute("aria-pressed", String(x === b)); });
+        card.querySelectorAll("[data-rate]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
         $("#rateThanks").hidden = false;
-        track("rating", { value: b.dataset.rate });
+        track("rating", before ? { value: b.dataset.rate, changed_from: before } : { value: b.dataset.rate });
       }));
       const drawStatsLine = () => {
         $("#statsLine").innerHTML = statsOn()
