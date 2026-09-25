@@ -1366,7 +1366,7 @@
             ${[["bad", "👎", "Not great"], ["ok", "👌", "Okay"], ["good", "👍", "Good"]].map(([v, icon, name]) =>
               `<button type="button" data-rate="${v}" aria-label="${name}" aria-pressed="${rated === v}">${icon}</button>`).join("")}
           </div>
-          <span class="saved" id="rateThanks"${rated ? "" : " hidden"}>Thanks. That helps more than you'd think. Tap another to change it.</span>
+          <span class="saved" id="rateThanks"${rated ? "" : " hidden"}>Thanks. That helps more than you'd think.</span>
         </div>
 
         ${doorsSection()}
