@@ -33,18 +33,33 @@ create policy "App can add anonymous events" on public.events
 
 -- ---------- Views for you (only visible in your dashboard, not to the app) ----------
 
--- Per day: how many people started and finished a morning, and how they rated it
+-- Per day: how many people started and finished a morning, and how they rated it.
+-- People can change their rating, so only each person's latest rating that day counts.
 create or replace view public.daily_mornings with (security_invoker = on) as
+with latest_rating as (
+  select distinct on (device_id, day) day, data->>'value' as value
+  from public.events
+  where kind = 'rating'
+  order by device_id, day, created_at desc
+), ratings as (
+  select day,
+    count(*) filter (where value = 'good') as rated_good,
+    count(*) filter (where value = 'ok')   as rated_ok,
+    count(*) filter (where value = 'bad')  as rated_bad
+  from latest_rating
+  group by day
+)
 select
-  day,
-  count(distinct device_id) filter (where kind = 'morning_start') as people_started,
-  count(distinct device_id) filter (where kind = 'morning_done')  as people_finished,
-  count(*) filter (where kind = 'rating' and data->>'value' = 'good') as rated_good,
-  count(*) filter (where kind = 'rating' and data->>'value' = 'ok')   as rated_ok,
-  count(*) filter (where kind = 'rating' and data->>'value' = 'bad')  as rated_bad
-from public.events
-group by day
-order by day desc;
+  e.day,
+  count(distinct e.device_id) filter (where e.kind = 'morning_start') as people_started,
+  count(distinct e.device_id) filter (where e.kind = 'morning_done')  as people_finished,
+  coalesce(r.rated_good, 0) as rated_good,
+  coalesce(r.rated_ok, 0)   as rated_ok,
+  coalesce(r.rated_bad, 0)  as rated_bad
+from public.events e
+left join ratings r on r.day = e.day
+group by e.day, r.rated_good, r.rated_ok, r.rated_bad
+order by e.day desc;
 
 -- Per tester (anonymous device): when they started and how many mornings they finished in weeks 1 and 2
 create or replace view public.testers with (security_invoker = on) as
