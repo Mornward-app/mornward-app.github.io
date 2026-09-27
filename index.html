@@ -340,6 +340,13 @@
   @media (max-height: 600px) {
     .welcome .wart { display: none; }
   }
+  .welcome .wsteps { margin: 18px 0 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 12px;
+    color: var(--w-soft); font-size: 17px; line-height: 1.5; }
+  .welcome .wsteps b { color: var(--w-ink); }
+  .welcome .wnote { color: var(--w-quiet); font-size: 15px; line-height: 1.5; margin-top: 16px; text-wrap: pretty; }
+  .welcome .wdone { color: var(--w-amber); font-weight: 700; font-size: 17px; margin-top: 18px; }
+  .welcome button.wlater { background: transparent; border-color: transparent; color: var(--w-soft); width: 100%; }
+  .welcome button.wlater:focus-visible { outline-color: var(--w-ink); }
   .terms .tldr { display: flex; flex-direction: column; gap: 8px; margin: 0; padding-left: 1.2em; font-size: 16px; }
   details.more summary { cursor: pointer; font-weight: 600; color: var(--accent-text); }
   details.more[open] summary { margin-bottom: 12px; }
@@ -1779,6 +1786,74 @@
     <text x="180" y="30" text-anchor="middle" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="11" letter-spacing="2" fill="#9aa0c8">7:02 · ALARM OFF</text>
   </svg>`;
   let welcomed = false;
+  // Android Chrome can install in one tap; keep its install prompt for our own button
+  let installPrompt = null, installed = false;
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    installPrompt = e;
+    if ($("#installScreen")) renderInstall();
+  });
+  window.addEventListener("appinstalled", () => { installed = true; installPrompt = null; if ($("#installScreen")) renderInstall(); });
+  const needsInstallStep = () => (isIOS || isAndroid) && !onHomeScreen;
+
+  // Right after the welcome on a phone: put Mornward on the home screen first, so setup happens once,
+  // inside the icon they'll tap tomorrow. (On iPhone, Safari and the icon keep separate storage.)
+  function renderInstall() {
+    clearTimers();
+    document.body.classList.add("welcoming");
+    const later = () => { welcomed = true; boot(); };
+    let body;
+    if (installed) {
+      body = `<p class="wdone">✓ Added to your home screen.</p>
+        <p class="wnote">Open Mornward from your home screen, or keep going here. Android remembers you either way.</p>`;
+    } else if (isAndroid && installPrompt) {
+      body = `<p class="wnote">One tap. Android remembers your setup either way.</p>`;
+    } else if (isAndroid) {
+      body = `<ol class="wsteps">
+          <li>Tap the <b>⋮</b> menu at the top right of Chrome.</li>
+          <li>Tap <b>Add to Home screen</b> (it may say <b>Install app</b>), then <b>Add</b>.</li>
+          <li>Open <b>Mornward</b> from your home screen.</li>
+        </ol>`;
+    } else {
+      body = `<ol class="wsteps">
+          <li>Tap <b>Share</b>, the square with an arrow pointing up. In Safari it's in the bottom bar; in Chrome it's next to the address.</li>
+          <li>Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.</li>
+          <li>Open <b>Mornward</b> from your home screen. Everything starts there.</li>
+        </ol>
+        <p class="wnote">Set it up from the icon, not here. iPhone keeps the two separate, so a setup done here wouldn't carry over.</p>`;
+    }
+    const main = installed ? `<button class="wgo" id="installGo" type="button">Continue here →</button>`
+      : isAndroid && installPrompt ? `<button class="wgo" id="installGo" type="button">Add to home screen</button>` : "";
+    card.innerHTML = `
+      <div class="welcome card" id="installScreen">
+        <p class="wbrand">${LOGO}<span>MORNWARD</span></p>
+        <div class="wmid">
+          <h1>Put Mornward where your <em>thumb</em> goes.</h1>
+          <p class="wlede">Tomorrow your thumb heads for the same spot on your screen it always does. Make sure the sun is waiting there.</p>
+          ${body}
+        </div>
+        <div class="wbottom">
+          ${main}
+          ${installed ? "" : `<button class="wlater" id="installLater" type="button">Not now, continue here</button>`}
+        </div>
+      </div>`;
+    window.scrollTo(0, 0);
+    announceScreen("Add Mornward to your home screen");
+    if ($("#installLater")) $("#installLater").onclick = later;
+    if (installed) $("#installGo").onclick = later;
+    else if ($("#installGo")) $("#installGo").onclick = async () => {
+      const ask = installPrompt;
+      if (!ask) return;
+      try {
+        ask.prompt();
+        const choice = await ask.userChoice;
+        installPrompt = null;
+        if (choice && choice.outcome === "accepted") installed = true;
+      } catch { installPrompt = null; }
+      renderInstall();
+    };
+  }
+
   function renderWelcome() {
     clearTimers();
     guardTaps();
@@ -1800,7 +1875,10 @@
       </div>`;
     window.scrollTo(0, 0);
     announceScreen("Welcome to Mornward");
-    $("#welcomeGo").onclick = () => { welcomed = true; boot(); };
+    $("#welcomeGo").onclick = () => {
+      if (needsInstallStep()) { guardTaps(); renderInstall(); return; }
+      welcomed = true; boot();
+    };
   }
 
   // ---------- first-open agreement ----------
@@ -1889,7 +1967,10 @@
   // Where the app starts: the welcome, then the agreement, then setup, then the morning
   function boot() {
     document.body.classList.remove("welcoming");
-    if (!hasAgreed()) welcomed ? renderAgreement() : renderWelcome();
+    // The welcome is for people who have never agreed. Anyone opening the home-screen icon has already seen it,
+    // and after a terms update, people who agreed before go straight to the new terms.
+    const everAgreed = store.get("agreed", null, (v) => typeof v === "object") !== null;
+    if (!hasAgreed()) welcomed || everAgreed || onHomeScreen ? renderAgreement() : renderWelcome();
     else if (store.get("setup", { done: false }, isSetup).done) { run = newRun(); step = 0; render(); }
     else startSetup(0);
   }
