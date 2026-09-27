@@ -343,6 +343,16 @@
   .welcome .wsteps { margin: 18px 0 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 12px;
     color: var(--w-soft); font-size: 17px; line-height: 1.5; }
   .welcome .wsteps b { color: var(--w-ink); }
+  .welcome .wrows { list-style: none; margin: 22px 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+  .welcome .wrows li { display: flex; align-items: center; gap: 14px; font-size: 18px; color: var(--w-ink); line-height: 1.3; }
+  .welcome .wrows .ic {
+    flex: none; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center;
+    background: rgba(245, 178, 92, .12); border: 1px solid rgba(245, 178, 92, .35); color: var(--w-amber);
+  }
+  .welcome .wrows .ic svg { width: 22px; height: 22px; }
+  .welcome .wrows .ic.logo { background: none; border: none; }
+  .welcome .wrows .ic.logo svg { width: 44px; height: 44px; border-radius: 12px; }
+  .welcome .wrows small { display: block; font-size: 14px; color: var(--w-quiet); margin-top: 2px; }
   .welcome .wnote { color: var(--w-quiet); font-size: 15px; line-height: 1.5; margin-top: 16px; text-wrap: pretty; }
   .welcome .wdone { color: var(--w-amber); font-weight: 700; font-size: 17px; margin-top: 18px; }
   .welcome button.wlater { background: transparent; border-color: transparent; color: var(--w-soft); width: 100%; }
@@ -1798,6 +1808,10 @@
 
   // Right after the welcome on a phone: put Mornward on the home screen first, so setup happens once,
   // inside the icon they'll tap tomorrow. (On iPhone, Safari and the icon keep separate storage.)
+  const IC_SHARE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg>`;
+  const IC_ADD = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8.5v7M8.5 12h7"/></svg>`;
+  const IC_DOTS = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>`;
+  const row = (icon, text, note = "", cls = "ic") => `<li><span class="${cls}">${icon}</span><span>${text}${note ? `<small>${note}</small>` : ""}</span></li>`;
   function renderInstall() {
     clearTimers();
     document.body.classList.add("welcoming");
@@ -1805,22 +1819,21 @@
     let body;
     if (installed) {
       body = `<p class="wdone">✓ Added to your home screen.</p>
-        <p class="wnote">Open Mornward from your home screen, or keep going here. Android remembers you either way.</p>`;
+        <p class="wnote">Open it from there, or keep going here. Nothing gets lost.</p>`;
     } else if (isAndroid && installPrompt) {
-      body = `<p class="wnote">One tap. Android remembers your setup either way.</p>`;
+      body = `<p class="wnote">One tap. Nothing gets lost.</p>`;
     } else if (isAndroid) {
-      body = `<ol class="wsteps">
-          <li>Tap the <b>⋮</b> menu at the top right of Chrome.</li>
-          <li>Tap <b>Add to Home screen</b> (it may say <b>Install app</b>), then <b>Add</b>.</li>
-          <li>Open <b>Mornward</b> from your home screen.</li>
+      body = `<ol class="wrows">
+          ${row(IC_DOTS, "Tap <b>⋮</b>", "Top right of Chrome")}
+          ${row(IC_ADD, "Tap <b>Add to Home screen</b>", "Or <b>Install app</b>")}
+          ${row(LOGO, "Open <b>Mornward</b> from your home screen", "", "ic logo")}
         </ol>`;
     } else {
-      body = `<ol class="wsteps">
-          <li>Tap <b>Share</b>, the square with an arrow pointing up. In Safari it's in the bottom bar; in Chrome it's next to the address.</li>
-          <li>Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.</li>
-          <li>Open <b>Mornward</b> from your home screen. Everything starts there.</li>
-        </ol>
-        <p class="wnote">Set it up from the icon, not here. iPhone keeps the two separate, so a setup done here wouldn't carry over.</p>`;
+      body = `<ol class="wrows">
+          ${row(IC_SHARE, "Tap <b>Share</b>", "Bottom of Safari")}
+          ${row(IC_ADD, "Tap <b>Add to Home Screen</b>", "Scroll down to find it")}
+          ${row(LOGO, "Open <b>Mornward</b> from your home screen", "Set up there, not here", "ic logo")}
+        </ol>`;
     }
     const main = installed ? `<button class="wgo" id="installGo" type="button">Continue here →</button>`
       : isAndroid && installPrompt ? `<button class="wgo" id="installGo" type="button">Add to home screen</button>` : "";
@@ -1829,7 +1842,7 @@
         <p class="wbrand">${LOGO}<span>MORNWARD</span></p>
         <div class="wmid">
           <h1>Put Mornward where your <em>thumb</em> goes.</h1>
-          <p class="wlede">Tomorrow your thumb heads for the same spot on your screen it always does. Make sure the sun is waiting there.</p>
+          <p class="wlede">Your thumb goes to the same spot every morning. Put the sun there.</p>
           ${body}
         </div>
         <div class="wbottom">
