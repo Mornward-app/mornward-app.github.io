@@ -296,6 +296,72 @@
   .brand { font-weight: 700; letter-spacing: -.01em; }
   .brand i { font-style: normal; color: var(--accent-text); }
 
+  /* Welcome: the first screen a new visitor sees. Always the night-before-morning navy,
+     whatever the phone's theme, so it matches the icon and the sky in the app. */
+  body.welcoming { background: #10143a; }
+  body.welcoming .top, body.welcoming .horizon, body.welcoming .steps { display: none; }
+  .welcome {
+    --w-ink: #f4efe6; --w-soft: #b9bce0; --w-quiet: #9aa0c8; --w-amber: #f5b25c; --w-navy: #10143a;
+    color: var(--w-ink); gap: 0; min-height: calc(100svh - 36px);
+  }
+  .welcome .wbrand { display: flex; align-items: center; gap: 10px; margin: 4px 0 0; }
+  .welcome .wbrand svg { width: 28px; height: 28px; border-radius: 7px; }
+  .welcome .wbrand span { font-family: var(--mono); font-size: 13px; letter-spacing: .22em; color: var(--w-ink); }
+  .welcome .wart { width: 100%; max-width: 360px; margin: 0 auto 6px; display: block; }
+  .welcome h1 {
+    font-family: var(--read); font-weight: 400; font-size: clamp(34px, 9.4vw, 46px);
+    line-height: 1.08; letter-spacing: -.015em; margin: 18px 0 0; text-wrap: balance;
+  }
+  .welcome h1 em { font-style: italic; color: var(--w-amber); }
+  .welcome .wlede { color: var(--w-soft); font-size: 17px; line-height: 1.6; margin-top: 18px; max-width: 34ch; }
+  .welcome .wedge { color: var(--w-ink); font-size: 16px; font-weight: 600; margin-top: 14px; }
+  /* The middle block floats in the free space, so tall phones don't get one big gap above the button */
+  .welcome .wmid { margin-block: auto; padding-block: 12px; }
+  .welcome .wlede, .welcome .wedge { text-wrap: pretty; }
+  .welcome .wbottom { padding-top: 28px; display: flex; flex-direction: column; gap: 14px; }
+  .welcome .wtrust {
+    font-family: var(--mono); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--w-quiet); text-align: center;
+  }
+  .welcome .wtrust span { white-space: nowrap; }
+  .welcome button.wgo {
+    background: var(--w-amber); color: var(--w-navy); border-color: var(--w-amber);
+    font-size: 17px; font-weight: 700; padding: 16px 22px; width: 100%;
+  }
+  .welcome button.wgo:focus-visible { outline-color: var(--w-ink); }
+  /* Shorter phones (iPhone SE and similar): keep the button on screen without scrolling */
+  @media (max-height: 760px) {
+    .welcome .wart { max-width: 250px; margin: 0 auto; }
+    .welcome h1 { font-size: clamp(30px, 8.6vw, 40px); margin-top: 10px; }
+    .welcome .wlede { font-size: 16px; line-height: 1.5; margin-top: 12px; }
+    .welcome .wedge { margin-top: 10px; }
+    .welcome .wbottom { padding-top: 18px; gap: 10px; }
+  }
+  @media (max-height: 600px) {
+    .welcome .wart { display: none; }
+  }
+  .welcome .wsteps { margin: 18px 0 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 12px;
+    color: var(--w-soft); font-size: 17px; line-height: 1.5; }
+  .welcome .wsteps b { color: var(--w-ink); }
+  .welcome .wrows { list-style: none; margin: 22px 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+  .welcome .wrows li { display: flex; align-items: center; gap: 14px; font-size: 18px; color: var(--w-ink); line-height: 1.3; }
+  .welcome .wrows .ic {
+    flex: none; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center;
+    background: rgba(245, 178, 92, .12); border: 1px solid rgba(245, 178, 92, .35); color: var(--w-amber);
+  }
+  .welcome .wrows .ic svg { width: 22px; height: 22px; }
+  .welcome .wrows .ic.logo { background: none; border: none; }
+  .welcome .wrows .ic.logo svg { width: 44px; height: 44px; border-radius: 12px; }
+  .welcome .wrows small { display: block; font-size: 14px; color: var(--w-quiet); margin-top: 2px; }
+  .welcome .wnote { color: var(--w-quiet); font-size: 15px; line-height: 1.5; margin-top: 16px; text-wrap: pretty; }
+  .welcome .wdone { color: var(--w-amber); font-weight: 700; font-size: 17px; margin-top: 18px; }
+  .welcome button.wlater { background: transparent; border-color: transparent; color: var(--w-soft); width: 100%; }
+  .welcome button.wlater:focus-visible { outline-color: var(--w-ink); }
+  .terms .tldr { display: flex; flex-direction: column; gap: 8px; margin: 0; padding-left: 1.2em; font-size: 16px; }
+  details.more summary { cursor: pointer; font-weight: 600; color: var(--accent-text); }
+  details.more[open] summary { margin-bottom: 12px; }
+  details.more .terms { gap: 12px; }
+
   @media (prefers-reduced-motion: reduce) {
     .breath .orb { transition: none; }
   }
@@ -1638,10 +1704,10 @@
       <p class="eyebrow">That's it · you're set</p>
       <h1>${hl(h.finale)}</h1>
       <p class="small">Reminder: stats are anonymous and never include what you write. Turn them off at the end of any morning.</p>
-      <p class="lede">When the alarm goes off, your thumb will reach for the same spot. The sun will be there.
-        Five minutes, then you're free, and ${esc(h.thing)} will still be there if you actually need it.</p>
+      <p class="lede">The real start is tomorrow, right after your alarm. Your thumb will reach for the same spot,
+        and the sun will be there. A few minutes, then you're free, and ${esc(h.thing)} will still be there if you actually need it.</p>
       <div class="btnrow stack">
-        <button class="primary" id="sTry" type="button">Try one now · 5 min</button>
+        <button class="primary" id="sTry" type="button">Take a practice run now</button>
       </div>`;
     }
   ];
@@ -1708,6 +1774,126 @@
   }
   function startSetup(at = 0) { setupStep = at; renderSetup(); }
 
+  // ---------- welcome ----------
+  // What a new visitor sees first: what Mornward is, before any terms. Nothing is stored or sent here.
+  const LOGO = `<svg viewBox="0 0 1024 1024" aria-hidden="true"><rect width="1024" height="1024" fill="#1b1f4a"/>
+    <defs><radialGradient id="wsun" cx=".45" cy=".4"><stop offset="0" stop-color="#fff6e2"/><stop offset=".55" stop-color="#ffc56e"/><stop offset="1" stop-color="#f08c3c"/></radialGradient>
+    <clipPath id="wcut"><rect width="1024" height="560"/></clipPath></defs>
+    <circle cx="512" cy="512" r="300" fill="url(#wsun)" clip-path="url(#wcut)"/>
+    ${[[252, 610, 520, .9], [312, 680, 400, .7], [372, 750, 280, .5], [432, 820, 160, .3]].map(([x, y, w, o]) =>
+      `<rect x="${x}" y="${y}" width="${w}" height="26" rx="13" fill="#f5b25c" opacity="${o}"/>`).join("")}</svg>`;
+  // A sunrise with the alarm just switched off at 7:02
+  const WELCOME_ART = `<svg class="wart" viewBox="0 0 360 150" aria-hidden="true">
+    <defs>
+      <radialGradient id="wglow"><stop offset="0" stop-color="#ffd48a" stop-opacity=".5"/><stop offset="1" stop-color="#f5a04a" stop-opacity="0"/></radialGradient>
+      <radialGradient id="wsun2" cx=".45" cy=".4"><stop offset="0" stop-color="#fff6e2"/><stop offset=".55" stop-color="#ffc56e"/><stop offset="1" stop-color="#f08c3c"/></radialGradient>
+      <clipPath id="wsky"><rect width="360" height="96"/></clipPath>
+    </defs>
+    <g clip-path="url(#wsky)"><circle cx="180" cy="96" r="120" fill="url(#wglow)"/><circle cx="180" cy="96" r="46" fill="url(#wsun2)"/></g>
+    <line x1="0" y1="96.5" x2="360" y2="96.5" stroke="#f5b25c" stroke-opacity=".35"/>
+    <g fill="#f5b25c"><rect x="124" y="108" width="112" height="6" rx="3" opacity=".8"/><rect x="142" y="122" width="76" height="6" rx="3" opacity=".55"/><rect x="160" y="136" width="40" height="6" rx="3" opacity=".3"/></g>
+    <g fill="#dfe3ff"><circle cx="38" cy="22" r="1.6" opacity=".7"/><circle cx="92" cy="48" r="1.2" opacity=".5"/><circle cx="300" cy="18" r="1.4" opacity=".6"/><circle cx="330" cy="58" r="1.1" opacity=".45"/><circle cx="262" cy="40" r="1" opacity=".4"/></g>
+    <text x="180" y="30" text-anchor="middle" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="11" letter-spacing="2" fill="#9aa0c8">7:02 · ALARM OFF</text>
+  </svg>`;
+  let welcomed = false;
+  // Android Chrome can install in one tap; keep its install prompt for our own button
+  let installPrompt = null, installed = false;
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    installPrompt = e;
+    if ($("#installScreen")) renderInstall();
+  });
+  window.addEventListener("appinstalled", () => { installed = true; installPrompt = null; if ($("#installScreen")) renderInstall(); });
+  const needsInstallStep = () => (isIOS || isAndroid) && !onHomeScreen;
+
+  // Right after the welcome on a phone: put Mornward on the home screen first, so setup happens once,
+  // inside the icon they'll tap tomorrow. (On iPhone, Safari and the icon keep separate storage.)
+  const IC_SHARE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg>`;
+  const IC_ADD = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8.5v7M8.5 12h7"/></svg>`;
+  const IC_DOTS = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>`;
+  const row = (icon, text, note = "", cls = "ic") => `<li><span class="${cls}">${icon}</span><span>${text}${note ? `<small>${note}</small>` : ""}</span></li>`;
+  function renderInstall() {
+    clearTimers();
+    document.body.classList.add("welcoming");
+    const later = () => { welcomed = true; boot(); };
+    let body;
+    if (installed) {
+      body = `<p class="wdone">✓ Added to your home screen.</p>
+        <p class="wnote">Open it from there, or keep going here. Nothing gets lost.</p>`;
+    } else if (isAndroid && installPrompt) {
+      body = `<p class="wnote">One tap. Nothing gets lost.</p>`;
+    } else if (isAndroid) {
+      body = `<ol class="wrows">
+          ${row(IC_DOTS, "Tap <b>⋮</b>", "Top right of Chrome")}
+          ${row(IC_ADD, "Tap <b>Add to Home screen</b>", "Or <b>Install app</b>")}
+          ${row(LOGO, "Open <b>Mornward</b> from your home screen", "", "ic logo")}
+        </ol>`;
+    } else {
+      body = `<ol class="wrows">
+          ${row(IC_SHARE, "Tap <b>Share</b>", "Bottom of Safari")}
+          ${row(IC_ADD, "Tap <b>Add to Home Screen</b>", "Scroll down to find it")}
+          ${row(LOGO, "Open <b>Mornward</b> from your home screen", "Set up there, not here", "ic logo")}
+        </ol>`;
+    }
+    const main = installed ? `<button class="wgo" id="installGo" type="button">Continue here →</button>`
+      : isAndroid && installPrompt ? `<button class="wgo" id="installGo" type="button">Add to home screen</button>` : "";
+    card.innerHTML = `
+      <div class="welcome card" id="installScreen">
+        <p class="wbrand">${LOGO}<span>MORNWARD</span></p>
+        <div class="wmid">
+          <h1>Put Mornward where your <em>thumb</em> goes.</h1>
+          <p class="wlede">Your thumb goes to the same spot every morning. Put the sun there.</p>
+          ${body}
+        </div>
+        <div class="wbottom">
+          ${main}
+          ${installed ? "" : `<button class="wlater" id="installLater" type="button">Not now, continue here</button>`}
+        </div>
+      </div>`;
+    window.scrollTo(0, 0);
+    announceScreen("Add Mornward to your home screen");
+    if ($("#installLater")) $("#installLater").onclick = later;
+    if (installed) $("#installGo").onclick = later;
+    else if ($("#installGo")) $("#installGo").onclick = async () => {
+      const ask = installPrompt;
+      if (!ask) return;
+      try {
+        ask.prompt();
+        const choice = await ask.userChoice;
+        installPrompt = null;
+        if (choice && choice.outcome === "accepted") installed = true;
+      } catch { installPrompt = null; }
+      renderInstall();
+    };
+  }
+
+  function renderWelcome() {
+    clearTimers();
+    guardTaps();
+    document.body.classList.add("welcoming");
+    card.innerHTML = `
+      <div class="welcome card">
+        <p class="wbrand">${LOGO}<span>MORNWARD</span></p>
+        <div class="wmid">
+          ${WELCOME_ART}
+          <h1>Your first 5 minutes go to someone.<br><em>Make it you.</em></h1>
+          <p class="wlede">Mornward is a tiny morning routine for the moment your alarm goes off: breathe, read one line,
+            get up, and plan your day. Then&nbsp;it&nbsp;ends.</p>
+          <p class="wedge">No lock. No lecture. Just a better first move.</p>
+        </div>
+        <div class="wbottom">
+          <p class="wtrust"><span>Free ·</span> <span>No account ·</span> <span>Nothing to download</span></p>
+          <button class="wgo" id="welcomeGo" type="button">Try it tomorrow morning →</button>
+        </div>
+      </div>`;
+    window.scrollTo(0, 0);
+    announceScreen("Welcome to Mornward");
+    $("#welcomeGo").onclick = () => {
+      if (needsInstallStep()) { guardTaps(); renderInstall(); return; }
+      welcomed = true; boot();
+    };
+  }
+
   // ---------- first-open agreement ----------
   // Shown before anything else the first time someone opens Mornward (and once to anyone set up before it existed).
   function renderAgreement() {
@@ -1715,13 +1901,21 @@
     guardTaps();
     stepsEl.hidden = true;
     $("#restart").hidden = true;
+    document.body.classList.remove("welcoming");
     placeSun("Welcome");
     card.innerHTML = `
-      <p class="eyebrow">Before you start · 1 minute</p>
+      <p class="eyebrow">Before you start · the short version</p>
       <h1>Here's the deal, in <em class="hl">plain</em> words.</h1>
-      <p class="lede">Mornward is a free beta. To find out whether it actually helps people, it keeps track of a few
-        anonymous things. Everything personal stays on your phone.</p>
       <div class="terms">
+        <ul class="tldr">
+          <li>Mornward counts a few anonymous things, like whether you finished your morning, to see if the beta helps.</li>
+          <li>It never sees what you write, and there's no account.</li>
+          <li>The stats are stored in the United States and deleted within 90 days after the beta. Turn them off any time.</li>
+        </ul>
+        <p class="small">Questions: <a href="mailto:${CONTACT}">${CONTACT}</a></p>
+        <details class="more">
+          <summary>See exactly what's tracked</summary>
+          <div class="terms">
         <section class="yes">
           <h3><span aria-hidden="true">✓</span> What Mornward keeps track of</h3>
           <ul>
@@ -1762,6 +1956,8 @@
             <li>You can turn them off, see your ID or ask for your data to be deleted at the end of any morning.</li>
           </ul>
         </section>
+          </div>
+        </details>
         <p class="small"><a href="terms.html" target="_blank" rel="noopener">Read the full terms and privacy page</a></p>
       </div>
       <label class="agree" for="agreeBox">
@@ -1781,9 +1977,13 @@
       boot();
     };
   }
-  // Where the app starts: the agreement first, then setup, then the morning
+  // Where the app starts: the welcome, then the agreement, then setup, then the morning
   function boot() {
-    if (!hasAgreed()) renderAgreement();
+    document.body.classList.remove("welcoming");
+    // The welcome is for people who have never agreed. Anyone opening the home-screen icon has already seen it,
+    // and after a terms update, people who agreed before go straight to the new terms.
+    const everAgreed = store.get("agreed", null, (v) => typeof v === "object") !== null;
+    if (!hasAgreed()) welcomed || everAgreed || onHomeScreen ? renderAgreement() : renderWelcome();
     else if (store.get("setup", { done: false }, isSetup).done) { run = newRun(); step = 0; render(); }
     else startSetup(0);
   }
