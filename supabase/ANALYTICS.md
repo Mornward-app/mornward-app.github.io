@@ -14,6 +14,13 @@ Mornward sends small anonymous records to Supabase so you can see whether the be
 
 Every record also has a random device id, the day, whether it was opened from the home screen, and the app version.
 
+`setup_done` also carries `from`: the link source (`?from=reddit` → `reddit`), or null. Count sign-ups by source:
+
+```sql
+select coalesce(data->>'from', '(none)') as source, count(distinct device_id)
+from events where kind = 'setup_done' group by 1 order by 2 desc;
+```
+
 **Never recorded:** notes, intentions, custom step text, own-app names or addresses, search text, names or emails.
 People can turn stats off at the bottom of the done screen. Clearing browser data gives a device a new id.
 
