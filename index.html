@@ -2,6 +2,21 @@
 <html lang="en">
 <meta charset="utf-8">
 <title>Mornward</title>
+<meta name="description" content="A 5-minute morning routine for the moment your alarm goes off: breathe, read one line, get up, plan your day. Then it ends. Free, no account.">
+<!-- Link previews (Reddit, iMessage, WhatsApp, Discord, X) -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://mornward-app.github.io/">
+<meta property="og:site_name" content="Mornward">
+<meta property="og:title" content="Mornward: win the first 5 minutes">
+<meta property="og:description" content="A 5-minute morning routine for the moment your alarm goes off: breathe, read one line, get up, plan your day. Then it ends. Free, no account.">
+<meta property="og:image" content="https://mornward-app.github.io/icons/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Mornward: Your first 5 minutes go to someone. Make it you.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Mornward: win the first 5 minutes">
+<meta name="twitter:description" content="A 5-minute morning routine for the moment your alarm goes off. Then it ends. Free, no account.">
+<meta name="twitter:image" content="https://mornward-app.github.io/icons/og-image.png">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a0d22">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1629,7 +1644,7 @@
     () => `
       <p class="eyebrow">1 of 4 · be honest</p>
       <h2>What does your thumb open first?</h2>
-      <p class="small">No judgment. I built this because mine went straight to Clash Royale, three matches deep before I'd even sat up.</p>
+      <p class="small">No judgment. I built this because mine went straight to a game, three matches deep before I'd even sat up.</p>
       <div class="choices">
         ${Object.entries(HABITS).map(([k, h]) =>
           `<button type="button" data-habit="${k}"><strong>${esc(h.label)}</strong>${h.hint ? `<span>${esc(h.hint)}</span>` : ""}</button>`).join("")}
