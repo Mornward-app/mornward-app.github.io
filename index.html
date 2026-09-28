@@ -1034,6 +1034,7 @@
         <li>How your morning went: minutes, streak, breathing done or skipped, how many get-up boxes you ticked, and whether you wrote an intention.</li>
         <li>Your 👎 / 👌 / 👍, if you tap one.</li>
         <li>Which app you opened from the one-job list, if any.</li>
+        <li>Which link you came from (like "reddit"), if the link says so.</li>
       </ul>
       <h3>What it never sends</h3>
       <ul>
@@ -1746,11 +1747,11 @@
     const finish = () => {
       saveSetup({ done: true });
       const st = store.get("setup", {}, isSetup);
-      track("setup_done", { habit: st.habit || null, doors: chosenDoors() || [], own_apps: customDoors().length, skipped: false });
+      track("setup_done", { habit: st.habit || null, doors: chosenDoors() || [], own_apps: customDoors().length, skipped: false, from: store.get("from", null) });
       go(5);
     };
     const on = (id, fn) => { const el = $("#" + id); if (el) el.onclick = fn; };
-    on("sSkip", setupStep === 0 ? () => { saveSetup({ done: true }); track("setup_done", { skipped: true }); leaveSetup(); } : finish);
+    on("sSkip", setupStep === 0 ? () => { saveSetup({ done: true }); track("setup_done", { skipped: true, from: store.get("from", null) }); leaveSetup(); } : finish);
     on("sLater", () => go(3));
     on("sTry", leaveSetup);
     card.querySelectorAll("[data-habit]").forEach((b) => (b.onclick = () => { saveSetup({ habit: b.dataset.habit }); go(2); }));
@@ -1825,6 +1826,23 @@
     if ($("#installScreen")) renderInstall();
   });
   window.addEventListener("appinstalled", () => { installed = true; installPrompt = null; if ($("#installScreen")) renderInstall(); });
+  // Which link someone came from (?from=reddit). Kept on the phone and sent once with setup, only if stats are on.
+  // iPhone home-screen apps don't share Safari's storage, so the icon's start address carries it across too.
+  const linkFrom = (() => {
+    const v = (new URLSearchParams(location.search).get("from") || "").toLowerCase();
+    return /^[a-z0-9-]{1,20}$/.test(v) ? v : null;
+  })();
+  if (linkFrom && store.get("from", null) === null) store.set("from", linkFrom);
+  if (linkFrom && isIOS && !onHomeScreen) {
+    const abs = (u) => new URL(u, location.href).href;
+    const m = { name: "Mornward", short_name: "Mornward", start_url: abs("./?from=" + linkFrom), scope: abs("./"),
+      display: "standalone", background_color: "#10143a", theme_color: "#0a0d22",
+      icons: [{ src: abs("icons/icon-192.png"), sizes: "192x192", type: "image/png" },
+              { src: abs("icons/icon-512.png"), sizes: "512x512", type: "image/png" }] };
+    const link = document.querySelector('link[rel="manifest"]');
+    if (link) link.href = "data:application/manifest+json," + encodeURIComponent(JSON.stringify(m));
+  }
+
   const needsInstallStep = () => (isIOS || isAndroid) && !onHomeScreen;
 
   // Right after the welcome on a phone: put Mornward on the home screen first, so setup happens once,
@@ -1971,6 +1989,7 @@
             <li>Your setup answers: what you usually open in bed, and which apps you picked from the list.</li>
             <li>How the morning went: minutes, streak, breathing done or skipped, how many get-up boxes you ticked.</li>
             <li>Your 👎 / 👌 / 👍, and which app you opened from the one-job list, if any.</li>
+            <li>Which link you came from (like "reddit"), if the link says so.</li>
           </ul>
         </section>
         <section class="no">
