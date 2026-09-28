@@ -339,6 +339,12 @@
     color: var(--w-quiet); text-align: center;
   }
   .welcome .wtrust span { white-space: nowrap; }
+  .welcome .wlede b { color: var(--w-ink); font-weight: 600; }
+  .welcome .whint { color: var(--w-soft); font-size: 15px; text-align: center; margin-top: -4px; }
+  .welcome .qrbox { margin: 24px auto 0; width: 200px; padding: 12px; border-radius: 18px; background: #f4efe6; }
+  .welcome .qrbox svg { display: block; width: 100%; height: auto; }
+  .welcome .qrcap { text-align: center; color: var(--w-soft); font-size: 15px; margin-top: 12px; }
+  .welcome .qrcap b { color: var(--w-ink); font-family: var(--mono); font-weight: 400; }
   .welcome button.wgo {
     background: var(--w-amber); color: var(--w-navy); border-color: var(--w-amber);
     font-size: 17px; font-weight: 700; padding: 16px 22px; width: 100%;
@@ -1882,6 +1888,30 @@
     };
   }
 
+  // On a computer: Mornward is for the phone in your hand at 7am, so point people there first
+  const QR_SVG = `<svg class="qr" viewBox="0 0 31 31" shape-rendering="crispEdges" aria-hidden="true"><rect width="31" height="31" fill="#f4efe6"/><path fill="#10143a" d="M1 1h7v1h-7zM10 1h2v1h-2zM14 1h3v1h-3zM19 1h1v1h-1zM23 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h1v1h-1zM11 2h1v1h-1zM13 2h1v1h-1zM16 2h1v1h-1zM19 2h1v1h-1zM21 2h1v1h-1zM23 2h1v1h-1zM29 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM9 3h3v1h-3zM15 3h1v1h-1zM17 3h1v1h-1zM20 3h2v1h-2zM23 3h1v1h-1zM25 3h3v1h-3zM29 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM9 4h1v1h-1zM13 4h1v1h-1zM15 4h2v1h-2zM18 4h1v1h-1zM21 4h1v1h-1zM23 4h1v1h-1zM25 4h3v1h-3zM29 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM11 5h1v1h-1zM13 5h4v1h-4zM20 5h2v1h-2zM23 5h1v1h-1zM25 5h3v1h-3zM29 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM10 6h2v1h-2zM13 6h3v1h-3zM17 6h1v1h-1zM23 6h1v1h-1zM29 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h1v1h-1zM21 7h1v1h-1zM23 7h7v1h-7zM9 8h2v1h-2zM12 8h3v1h-3zM19 8h3v1h-3zM1 9h1v1h-1zM7 9h1v1h-1zM9 9h5v1h-5zM15 9h2v1h-2zM18 9h1v1h-1zM20 9h1v1h-1zM22 9h2v1h-2zM26 9h3v1h-3zM1 10h1v1h-1zM3 10h4v1h-4zM9 10h1v1h-1zM11 10h3v1h-3zM15 10h1v1h-1zM18 10h5v1h-5zM24 10h2v1h-2zM27 10h2v1h-2zM2 11h3v1h-3zM7 11h1v1h-1zM10 11h2v1h-2zM13 11h1v1h-1zM19 11h1v1h-1zM3 12h1v1h-1zM5 12h1v1h-1zM8 12h1v1h-1zM10 12h1v1h-1zM15 12h3v1h-3zM19 12h1v1h-1zM22 12h3v1h-3zM26 12h1v1h-1zM1 13h1v1h-1zM7 13h9v1h-9zM20 13h1v1h-1zM23 13h2v1h-2zM29 13h1v1h-1zM3 14h2v1h-2zM6 14h1v1h-1zM8 14h1v1h-1zM11 14h5v1h-5zM20 14h2v1h-2zM23 14h3v1h-3zM28 14h2v1h-2zM3 15h1v1h-1zM6 15h4v1h-4zM13 15h5v1h-5zM22 15h1v1h-1zM26 15h2v1h-2zM1 16h1v1h-1zM4 16h1v1h-1zM8 16h4v1h-4zM13 16h3v1h-3zM17 16h1v1h-1zM21 16h3v1h-3zM25 16h1v1h-1zM27 16h1v1h-1zM29 16h1v1h-1zM3 17h1v1h-1zM5 17h3v1h-3zM15 17h2v1h-2zM18 17h1v1h-1zM21 17h1v1h-1zM24 17h1v1h-1zM26 17h2v1h-2zM1 18h3v1h-3zM8 18h2v1h-2zM11 18h2v1h-2zM17 18h1v1h-1zM19 18h7v1h-7zM27 18h3v1h-3zM1 19h2v1h-2zM4 19h2v1h-2zM7 19h1v1h-1zM12 19h1v1h-1zM14 19h2v1h-2zM17 19h1v1h-1zM19 19h2v1h-2zM22 19h2v1h-2zM26 19h1v1h-1zM29 19h1v1h-1zM1 20h1v1h-1zM3 20h3v1h-3zM10 20h4v1h-4zM15 20h3v1h-3zM19 20h1v1h-1zM23 20h2v1h-2zM1 21h1v1h-1zM3 21h2v1h-2zM7 21h5v1h-5zM18 21h2v1h-2zM21 21h5v1h-5zM27 21h3v1h-3zM9 22h1v1h-1zM14 22h1v1h-1zM17 22h3v1h-3zM21 22h1v1h-1zM25 22h2v1h-2zM1 23h7v1h-7zM11 23h8v1h-8zM20 23h2v1h-2zM23 23h1v1h-1zM25 23h3v1h-3zM1 24h1v1h-1zM7 24h1v1h-1zM11 24h2v1h-2zM14 24h1v1h-1zM16 24h2v1h-2zM19 24h3v1h-3zM25 24h1v1h-1zM28 24h2v1h-2zM1 25h1v1h-1zM3 25h3v1h-3zM7 25h1v1h-1zM10 25h5v1h-5zM17 25h1v1h-1zM20 25h7v1h-7zM1 26h1v1h-1zM3 26h3v1h-3zM7 26h1v1h-1zM10 26h2v1h-2zM13 26h1v1h-1zM16 26h1v1h-1zM18 26h3v1h-3zM22 26h1v1h-1zM26 26h3v1h-3zM1 27h1v1h-1zM3 27h3v1h-3zM7 27h1v1h-1zM10 27h1v1h-1zM12 27h1v1h-1zM14 27h4v1h-4zM19 27h10v1h-10zM1 28h1v1h-1zM7 28h1v1h-1zM12 28h1v1h-1zM14 28h3v1h-3zM22 28h6v1h-6zM29 28h1v1h-1zM1 29h7v1h-7zM9 29h3v1h-3zM14 29h2v1h-2zM18 29h1v1h-1zM22 29h1v1h-1zM24 29h1v1h-1zM27 29h1v1h-1z"/></svg>`;
+  const onComputer = () => !isIOS && !isAndroid && !onHomeScreen;
+  function renderPhoneFirst() {
+    clearTimers();
+    document.body.classList.add("welcoming");
+    card.innerHTML = `
+      <div class="welcome card" id="phoneScreen">
+        <p class="wbrand">${LOGO}<span>MORNWARD</span></p>
+        <div class="wmid">
+          <h1>Mornward lives on your <em>phone</em>.</h1>
+          <p class="wlede">It's for the moment your alarm goes off, so it belongs on your home screen. Scan this with your phone's camera.</p>
+          <div class="qrbox">${QR_SVG}</div>
+          <p class="qrcap">or open <b>mornward-app.github.io</b> on your phone</p>
+        </div>
+        <div class="wbottom">
+          <button class="wlater" id="phoneLater" type="button">Continue on this computer anyway</button>
+        </div>
+      </div>`;
+    window.scrollTo(0, 0);
+    announceScreen("Open Mornward on your phone");
+    $("#phoneLater").onclick = () => { welcomed = true; boot(); };
+  }
+
   function renderWelcome() {
     clearTimers();
     guardTaps();
@@ -1892,19 +1922,21 @@
         <div class="wmid">
           ${WELCOME_ART}
           <h1>Your first 5 minutes go to someone.<br><em>Make it you.</em></h1>
-          <p class="wlede">Mornward is a tiny morning routine for the moment your alarm goes off: breathe, read one line,
+          <p class="wlede"><b>Keep your alarm.</b> Mornward is what you open right after it: breathe, read one short quote,
             get up, and plan your day. Then&nbsp;it&nbsp;ends.</p>
           <p class="wedge">No lock. No lecture. Just a better first move.</p>
         </div>
         <div class="wbottom">
-          <p class="wtrust"><span>Free ·</span> <span>No account ·</span> <span>Nothing to download</span></p>
-          <button class="wgo" id="welcomeGo" type="button">Try it tomorrow morning →</button>
+          <p class="wtrust"><span>Free ·</span> <span>No account ·</span> <span>Lives on your home screen</span></p>
+          <p class="whint">2-minute setup now · real start tomorrow morning</p>
+          <button class="wgo" id="welcomeGo" type="button">Get started →</button>
         </div>
       </div>`;
     window.scrollTo(0, 0);
     announceScreen("Welcome to Mornward");
     $("#welcomeGo").onclick = () => {
       if (needsInstallStep()) { guardTaps(); renderInstall(); return; }
+      if (onComputer()) { guardTaps(); renderPhoneFirst(); return; }
       welcomed = true; boot();
     };
   }
