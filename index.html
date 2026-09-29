@@ -2061,10 +2061,13 @@
     step = 0;
     render();
   }
+  // Set while the "See you tomorrow" screen is up, so reopening the app later lands on the morning.
+  let seeYouAt = 0;
   function renderSeeYou() {
     clearTimers();
     guardTaps();
     setupStep = -1;
+    seeYouAt = Date.now();
     const at = alarmLabel(store.get("alarmAt", "", isAlarmTime));
     placeSun("See you tomorrow");
     card.innerHTML = `
@@ -2097,6 +2100,7 @@
   function render() {
     clearTimers();
     guardTaps();
+    stepsEl.hidden = false;
     renderSteps();
     placeSun();
     screens[STEPS[step]]();
@@ -2121,6 +2125,16 @@
   // Phones often keep the page alive overnight. When it comes back on a new day, start that day's run,
   // unless someone is in the middle of a run that began shortly before midnight.
   function freshRunIfNewDay() {
+    // Left on "See you tomorrow" and opened again at least an hour later (setting up after midnight
+    // means the morning is still the same date): start the morning.
+    if (seeYouAt && setupStep < 0 && Date.now() - seeYouAt > 3600e3) {
+      seeYouAt = 0;
+      run = newRun();
+      wakeLine = pickWakeLine();
+      step = 0;
+      render();
+      return;
+    }
     if (setupStep >= 0 || !hasAgreed() || dayKey() === run.today) return;
     const idle = step === 0 || step === STEPS.length - 1;
     const stale = Date.now() - run.startedAt > 3 * 3600e3;
