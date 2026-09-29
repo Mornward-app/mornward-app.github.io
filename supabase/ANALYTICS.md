@@ -8,11 +8,13 @@ Mornward sends small anonymous records to Supabase so you can see whether the be
 | --- | --- | --- |
 | `setup_done` | Setup finished or skipped | habit type, which apps were picked, how many own apps (not their names) |
 | `morning_start` | Someone taps Begin | habit type |
-| `morning_done` | Done screen reached | minutes, streak, breathing done or skipped, boxes ticked, reshuffles, own steps or not, intention set (yes/no), note shown (yes/no) |
+| `morning_done` | Done screen reached | minutes, streak, breathing done or skipped, boxes ticked, reshuffles, own steps or not, intention set (yes/no), note shown (yes/no), `practice: true` for a practice run right after setup |
 | `rating` | 👎 / 👌 / 👍 tapped (again if they change it) | `bad`, `ok` or `good`, plus `changed_from` when it replaces an earlier rating. Only the latest rating per person per day is counted in `daily_mornings`. |
 | `door_open` | A utility app is opened | which app (`own` for self-added ones) |
 
 Every record also has a random device id, the day, whether it was opened from the home screen, and the app version.
+
+Practice runs (the optional run right after setup) carry `practice: true` on `morning_start`, `morning_done`, `rating` and `door_open`. The views leave them out, so only real mornings count.
 
 `setup_done` also carries `from`: the link source (`?from=reddit` → `reddit`), or null. Count sign-ups by source:
 

@@ -39,7 +39,7 @@ create or replace view public.daily_mornings with (security_invoker = on) as
 with latest_rating as (
   select distinct on (device_id, day) day, data->>'value' as value
   from public.events
-  where kind = 'rating'
+  where kind = 'rating' and coalesce(data->>'practice', '') <> 'true'
   order by device_id, day, created_at desc
 ), ratings as (
   select day,
@@ -58,6 +58,7 @@ select
   coalesce(r.rated_bad, 0)  as rated_bad
 from public.events e
 left join ratings r on r.day = e.day
+where coalesce(e.data->>'practice', '') <> 'true'
 group by e.day, r.rated_good, r.rated_ok, r.rated_bad
 order by e.day desc;
 
@@ -67,7 +68,7 @@ with firsts as (
   select device_id, min(day) as first_day from public.events group by device_id
 ),
 done as (
-  select distinct device_id, day from public.events where kind = 'morning_done'
+  select distinct device_id, day from public.events where kind = 'morning_done' and coalesce(data->>'practice', '') <> 'true'
 )
 select
   f.device_id,
@@ -105,6 +106,6 @@ select
   round(100.0 * count(*) filter (where (data->>'note')::boolean) / nullif(count(*), 0)) as pct_had_a_note,
   round(100.0 * count(*) filter (where (data->>'home_screen')::boolean) / nullif(count(*), 0)) as pct_opened_from_home_screen
 from public.events
-where kind = 'morning_done';
+where kind = 'morning_done' and coalesce(data->>'practice', '') <> 'true';
 
 revoke all on public.daily_mornings, public.testers, public.pass_rules, public.step_stats from anon, authenticated;

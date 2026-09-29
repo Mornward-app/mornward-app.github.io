@@ -1031,7 +1031,7 @@
         <li>A random device ID made on your phone. It isn't linked to your name, email or any account.</li>
         <li>The date, and the time the record arrived.</li>
         <li>What you usually open in bed (social, games, videos, news or other), and which apps you picked from the list.</li>
-        <li>How your morning went: minutes, streak, breathing done or skipped, how many get-up boxes you ticked, and whether you wrote an intention.</li>
+        <li>How your morning went: minutes, streak, breathing done or skipped, how many get-up boxes you ticked, whether you wrote an intention, and whether it was a practice run.</li>
         <li>Your 👎 / 👌 / 👍, if you tap one.</li>
         <li>Which app you opened from the one-job list, if any.</li>
         <li>Which link you came from (like "reddit"), if the link says so.</li>
@@ -1115,7 +1115,8 @@
     if (!statsOn()) return;
     const onHome = navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
     const row = { device_id: deviceId(), day: (typeof run !== "undefined" && run) ? run.today : dayKey(),
-      kind, data: { ...data, home_screen: onHome }, app_version: STATS.version };
+      kind, data: { ...data, home_screen: onHome, ...(typeof run !== "undefined" && run && run.practice && kind !== "setup_done" ? { practice: true } : {}) },
+      app_version: STATS.version };
     const outbox = store.get("outbox", [], Array.isArray).concat([row]).slice(-50);
     store.set("outbox", outbox);
     flushStats();
@@ -1425,7 +1426,7 @@
 
     done() {
       const mins = Math.max(1, Math.round((Date.now() - run.startedAt) / 60000));
-      const streak = recordStreak();
+      const streak = run.practice ? store.get("streak", { last: null, count: 0 }, isStreak) : recordStreak();
       if (!run.stats.sent) {
         run.stats.sent = true;
         const { sent, ...st } = run.stats;
@@ -1436,7 +1437,7 @@
       const letter = store.get("letter", null, isLetter);
       const draft = letter && letter.forDay > run.today ? letter.text : "";
       card.innerHTML = `
-        <p class="eyebrow">Done · there is no more</p>
+        <p class="eyebrow">${run.practice ? "Practice run · the real one is tomorrow" : "Done · there is no more"}</p>
         <h1>That's the whole thing. The sun is up.</h1>
         ${intention ? `<p class="lede">Today: <strong>${esc(intention)}</strong></p>` : ""}
         <div class="tally">
@@ -1632,6 +1633,17 @@
       </ol>`;
   }
 
+  // The alarm time is kept on this phone only, to turn "tomorrow" into a specific plan. It's never sent.
+  const isAlarmTime = (v) => typeof v === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
+  const alarmLabel = (v) => {
+    if (!isAlarmTime(v)) return "";
+    const [h, m] = v.split(":").map(Number);
+    return new Date(2000, 0, 1, h, m).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  };
+  const planLine = (v) => isAlarmTime(v)
+    ? `<b>Tomorrow at ${esc(alarmLabel(v))}:</b> alarm off, then tap the sun.`
+    : `<b>Tomorrow, right after your alarm:</b> tap the sun.`;
+
   const hl = (t) => esc(t).replace(/\*(.+?)\*/, '<em class="hl">$1</em>');
   const setupScreens = [
     () => `
@@ -1703,13 +1715,15 @@
     () => {
       const h = habit();
       return `
-      <p class="eyebrow">That's it · you're set</p>
+      <p class="eyebrow">That's it · the plan for tomorrow</p>
       <h1>${hl(h.finale)}</h1>
+      <label class="field" for="alarmAt">When does your alarm go off?
+        <input type="time" id="alarmAt" value="${esc(store.get("alarmAt", "", isAlarmTime))}"></label>
+      <p class="lede"><span id="planLine">${planLine(store.get("alarmAt", "", isAlarmTime))}</span> A few minutes, then you're free.</p>
       <p class="small">Reminder: stats are anonymous and never include what you write. Turn them off at the end of any morning.</p>
-      <p class="lede">The real start is tomorrow, right after your alarm. Your thumb will reach for the same spot,
-        and the sun will be there. A few minutes, then you're free, and ${esc(h.thing)} will still be there if you actually need it.</p>
       <div class="btnrow stack">
-        <button class="primary" id="sTry" type="button">Take a practice run now</button>
+        <button class="primary" id="sReady" type="button">I'm ready for tomorrow</button>
+        <button class="quiet" id="sTry" type="button">Or take a practice run</button>
       </div>`;
     }
   ];
@@ -1733,7 +1747,18 @@
     const on = (id, fn) => { const el = $("#" + id); if (el) el.onclick = fn; };
     on("sSkip", setupStep === 0 ? () => { saveSetup({ done: true }); track("setup_done", { skipped: true, from: store.get("from", null) }); leaveSetup(); } : finish);
     on("sLater", () => go(2));
-    on("sTry", leaveSetup);
+    on("sTry", () => leaveSetup(true));
+    if (setupStep === 3) {
+      const input = $("#alarmAt");
+      input.onchange = input.oninput = () => {
+        if (isAlarmTime(input.value)) store.set("alarmAt", input.value);
+        $("#planLine").innerHTML = planLine(input.value);
+      };
+      on("sReady", () => {
+        if (isAlarmTime(input.value)) store.set("alarmAt", input.value);
+        renderSeeYou();
+      });
+    }
     card.querySelectorAll("[data-habit]").forEach((b) => (b.onclick = () => { saveSetup({ habit: b.dataset.habit }); go(1); }));
     if (setupStep === 2) {
       const chips = [...card.querySelectorAll("[data-door]")];
@@ -1961,7 +1986,7 @@
             <li>A random ID made on your phone. It isn't linked to your name, email or any account.</li>
             <li>The date and time of each morning.</li>
             <li>Your setup answers: what you usually open in bed, and which apps you picked from the list.</li>
-            <li>How the morning went: minutes, streak, breathing done or skipped, how many get-up boxes you ticked.</li>
+            <li>How the morning went: minutes, streak, breathing done or skipped, how many get-up boxes you ticked, and whether it was a practice run.</li>
             <li>Your 👎 / 👌 / 👍, and which app you opened from the one-job list, if any.</li>
             <li>Which link you came from (like "reddit"), if the link says so.</li>
           </ul>
@@ -2027,12 +2052,27 @@
     else if (store.get("setup", { done: false }, isSetup).done) { run = newRun(); step = 0; render(); }
     else startSetup(0);
   }
-  function leaveSetup() {
+  // A practice run right after setup is marked as practice: it doesn't start the streak, and its stats say so.
+  function leaveSetup(practice = false) {
     setupStep = -1;
     stepsEl.hidden = false;
     run = newRun();
+    if (practice) run.practice = true;
     step = 0;
     render();
+  }
+  function renderSeeYou() {
+    clearTimers();
+    guardTaps();
+    setupStep = -1;
+    const at = alarmLabel(store.get("alarmAt", "", isAlarmTime));
+    placeSun("See you tomorrow");
+    card.innerHTML = `
+      <p class="eyebrow">You're set</p>
+      <h1>See you ${at ? `at <em class="hl">${esc(at)}</em>` : `<em class="hl">tomorrow</em>`}.</h1>
+      <p class="lede">Close this now. Tomorrow: alarm off, then tap the sun.</p>`;
+    window.scrollTo(0, 0);
+    announceScreen("Setup finished. See you tomorrow.");
   }
 
   // The next screen's main button sits where the last one was, so the second half of a sleepy double-tap
@@ -2071,7 +2111,9 @@
   }
   $("#restart").onclick = () => {
     if (dayKey() !== run.today) wakeLine = pickWakeLine();
+    const practice = run.practice && dayKey() === run.today;
     run = newRun();
+    if (practice) run.practice = true;
     step = 0;
     render();
   };
