@@ -1,54 +1,41 @@
 # Mornward
 
-A "bridge app" to open the moment you wake up, in place of Instagram, Reddit or YouTube.
-It gives your hands something to do with the phone, but everything in it ends. There is no feed.
+**Your first 5 minutes go to someone. Make it you.**
 
-Open `index.html` in a phone browser, or the live version on GitHub Pages. It is one self-contained file with no build step.
+Mornward is a free 5-minute morning routine you open right after your alarm, before the feed gets there first.
+Breathe, read one short quote, get out of bed, and plan your day. Then it ends.
 
-## The sequence (about 5 minutes)
+No lock. No lecture. Just a better first move.
 
-| Step | What happens | Why |
-| --- | --- | --- |
-| Wake | Greeting, streak count | Rewards opening this instead of the feed |
-| Breathe | 5 guided breaths (4 s in, 6 s out). Skippable | Adds friction, like One Sec's pause, but does something useful with it |
-| Read | One public-domain passage (Marcus Aurelius, Seneca, Thoreau) plus a question. Changes daily | Replaces the scroll with reading that ends |
-| Move | Check off 3 physical steps (feet on floor, water, curtains). You can edit them | Gets you out of bed, where the scrolling happens |
-| Plan | Shows the note you left last night, then asks for one intention for today | Your own words, in place of an algorithm |
-| Done | Time spent, streak, "0 posts seen", and a box for tomorrow's note | Clear stopping point |
+**Try it: [mornward.app](https://mornward.app)**. Free, no account, lives on your home screen. Currently in beta.
 
-**Utility doors.** The last screen has a collapsed section, "I need an app for one specific job".
-It unlocks after 10 seconds and links straight to the useful parts of each app:
+## How it works
 
-- Instagram → `instagram.com/direct/inbox/` (messages, not Reels)
-- YouTube → a search results page for what you typed (not the home feed or Shorts tab)
-- Reddit → search results for what you typed (not the front page)
+**Once (about 2 minutes):** add Mornward to your home screen, answer 3 quick questions, and tell it when your alarm goes off.
 
-This is a rough version of the "surgical blocking" gap: you keep the utility and skip the feed at the entry point.
-It can't strip Reels or Shorts once you're inside. That needs OS-level work (see below).
+**Every morning (about 5 minutes):**
 
-Your routine is stored in `localStorage` on the device. Only anonymous beta stats leave the phone; see `terms.html` and `supabase/ANALYTICS.md`.
+| Step | What happens |
+| --- | --- |
+| Wake | A short greeting, your streak, and the note you left yourself last night |
+| Breathe | Five slow breaths, about 50 seconds (skippable) |
+| Read | One short quote from someone who's been there |
+| Move | Pick 2 of 3 small moves that get you out of bed |
+| Plan | One thing that would make today count |
+| Done | "The sun is up." Your streak, 0 posts seen, and a note for tomorrow |
 
-## Wiring it into the morning
+It doesn't block any apps. If you need one for something useful, like messages, maps or email,
+the last screen opens it straight to that part, after a short wait.
 
-The app only helps if it's what your thumb finds first.
+## Privacy
 
-**iPhone**
-1. Open the page in Safari → Share → *Add to Home Screen*.
-2. Put that icon exactly where Instagram used to be. Move Instagram, Reddit and YouTube into a folder on page 2.
-3. Shortcuts → Automation → *Alarm* → *Is Stopped* → action *Open URLs* (the page URL) → turn off *Ask Before Running*.
-   Now stopping your alarm opens Mornward.
-4. Optional: Screen Time → App Limits → 1 minute for Social before 9:00.
+- No account, no sign-up.
+- Everything you write stays on your phone.
+- During the beta it sends a few anonymous counts (like whether you finished your morning) so we can tell whether it's working. You can turn this off at the end of any morning.
 
-**Android**
-1. Chrome → ⋮ → *Add to Home screen*, and put it in the old Instagram slot.
-2. Modes and Routines (Samsung), Google Clock's *Routines*, or Tasker: when the alarm is dismissed → open the URL.
-3. Digital Wellbeing → Bedtime mode keeps the screen grayscale until your wake time, which makes feeds less appealing.
+Details: [terms and privacy](https://mornward.app/terms.html). Questions: mornward@proton.me
 
-## Where this could go as a real product
+## For developers
 
-- **Native app with OS-level control.** iOS Screen Time API (`FamilyControls` / `ManagedSettings`) can shield
-  Instagram/Reddit/YouTube until the morning run is done, then unlock automatically. Android can do the same with
-  an AccessibilityService, which is also the only way to hide Reels/Shorts inside the apps (as some Android tools already do).
-- **Finite RSS.** A reader that pulls a fixed list of feeds overnight and shows "You're caught up" after N items.
-  Needs a small server or a native app because browsers block cross-site RSS fetches.
-- **Pricing.** Following Opal and One Sec: free core loop, paid tier for OS-level locking and RSS, no ads.
+One self-contained `index.html`, with no framework and no build step, hosted on GitHub Pages.
+Your routine is stored in `localStorage`. The optional anonymous stats go to Supabase; see `supabase/ANALYTICS.md`.
