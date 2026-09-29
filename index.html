@@ -1623,17 +1623,13 @@
       <p class="addr">${esc(location.href.split("#")[0])}</p>`;
   }
 
+  // Android only. Not on iPhone: a Shortcuts "Open URLs" automation opens Safari, whose storage is separate from the
+  // home-screen app, so the morning would start over at the welcome screen.
   function alarmSteps() {
-    const ios = `<ol class="howto">
-        <li>Open the <b>Shortcuts</b> app and tap <b>Automation</b>, then <b>+</b>.</li>
-        <li>Choose <b>Alarm</b>, then <b>Is Stopped</b>, and pick <b>Run Immediately</b>.</li>
-        <li>Add the action <b>Open URLs</b> and paste this page's address.</li>
-      </ol>`;
-    const android = `<ol class="howto">
+    return `<ol class="howto">
         <li>Open <b>Modes and Routines</b> (Samsung) or a routines app like Tasker.</li>
-        <li>Trigger: <b>alarm dismissed</b>. Action: <b>open this page</b>.</li>
+        <li>Trigger: <b>alarm dismissed</b>. Action: <b>open mornward.app</b>.</li>
       </ol>`;
-    return isIOS ? ios : isAndroid ? android : ios + android;
   }
 
   const hl = (t) => esc(t).replace(/\*(.+?)\*/, '<em class="hl">$1</em>');
@@ -1663,10 +1659,10 @@
       <h2>Put the sun exactly where ${esc(h.app)} lives.</h2>
       <p class="small">Tomorrow your thumb goes to the same corner of the screen it always does. Make sure the sun is waiting there instead.</p>
       ${homeScreenSteps(h)}
-      <details class="doors">
+      ${!isAndroid ? "" : `<details class="doors">
         <summary>Bonus: make your alarm open it for you</summary>
         <div class="inner">${alarmSteps()}</div>
-      </details>
+      </details>`}
       <div class="btnrow stack">
         <button class="primary" id="sNext" type="button">${onHomeScreen ? "Next" : "Done, it's there"}</button>
         <button class="quiet" id="sLater" type="button">I'll do it later</button>
