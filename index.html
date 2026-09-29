@@ -1497,7 +1497,7 @@
 
       wireDoors();
       const pick = $("#pickDoors");
-      if (pick) pick.onclick = () => startSetup(3);
+      if (pick) pick.onclick = () => startSetup(2);
 
       $("#close").onclick = () => {
         clearTimers();
@@ -1635,27 +1635,21 @@
   const hl = (t) => esc(t).replace(/\*(.+?)\*/, '<em class="hl">$1</em>');
   const setupScreens = [
     () => `
-      <p class="eyebrow">Before tomorrow morning</p>
-      <h1>Your thumb wakes up before <em class="hl">you</em> do.</h1>
-      <p class="lede">Eyes half open, and it's already found the feed, the game, the one more video.
-        You didn't decide that. It's muscle memory, and willpower at 7am is basically zero.</p>
-      <p class="lede">So don't fight your thumb. Give it somewhere better to land.</p>
-      <div class="btnrow stack">
-        <button class="primary" id="sNext" type="button">Show me how</button>
-        <button class="quiet" id="sSkip" type="button">Skip, just let me try it</button>
-      </div>`,
-    () => `
-      <p class="eyebrow">1 of 4 · be honest</p>
-      <h2>What does your thumb open first?</h2>
+      <p class="eyebrow">1 of 3 · be honest</p>
+      <p class="lede">Your thumb wakes up before <em class="hl">you</em> do.</p>
+      <h2>What does it open first?</h2>
       <p class="small">No judgment. I built this because mine went straight to a game, three matches deep before I'd even sat up.</p>
       <div class="choices">
         ${Object.entries(HABITS).map(([k, h]) =>
           `<button type="button" data-habit="${k}"><strong>${esc(h.label)}</strong>${h.hint ? `<span>${esc(h.hint)}</span>` : ""}</button>`).join("")}
+      </div>
+      <div class="btnrow stack">
+        <button class="quiet" id="sSkip" type="button">Skip, just let me try it</button>
       </div>`,
     () => {
       const h = habit();
       return `
-      <p class="eyebrow">2 of 4 · the part that actually matters</p>
+      <p class="eyebrow">2 of 3 · the part that actually matters</p>
       <h2>Put the sun exactly where ${esc(h.app)} lives.</h2>
       <p class="small">Tomorrow your thumb goes to the same corner of the screen it always does. Make sure the sun is waiting there instead.</p>
       ${homeScreenSteps(h)}
@@ -1676,7 +1670,7 @@
       const groups = [...new Set(more.map(([, d]) => d.group))];
       const openMore = more.some(([k]) => picked.includes(k));
       return `
-      <p class="eyebrow">3 of 4 · the useful parts</p>
+      <p class="eyebrow">3 of 3 · the useful parts</p>
       <h2>Which apps do you still need for something useful?</h2>
       <p class="small">Tap any, or none. They'll sit behind a 10-second wait at the end of your morning,
         and open straight to messages or search, not the feed.</p>
@@ -1706,16 +1700,6 @@
         <button class="primary" id="sNext" type="button">${picked.length || customDoors().length ? "Save my picks" : "None for me, next"}</button>
       </div>`;
     },
-    () => `
-      <p class="eyebrow">4 of 4 · a note to tomorrow-you</p>
-      <h2>Tomorrow-you will be groggy. What do they need to hear?</h2>
-      <p class="small">One line is plenty. It's the first thing you'll read tomorrow, and nobody else wrote it.</p>
-      <label class="field" for="firstNote">Your note
-        <textarea id="firstNote" placeholder="You said you'd hit the gym before class. Go."></textarea></label>
-      <div class="btnrow stack">
-        <button class="primary" id="sNext" type="button">Leave it for tomorrow</button>
-        <button class="quiet" id="sSkip" type="button">Skip</button>
-      </div>`,
     () => {
       const h = habit();
       return `
@@ -1738,20 +1722,20 @@
     placeSun("Setting up");
     card.innerHTML = setupScreens[setupStep]();
     window.scrollTo(0, 0);
-    announceScreen(setupStep < 5 ? `Setup, screen ${setupStep + 1} of 6` : "Setup finished");
+    announceScreen(setupStep < 3 ? `Setup, screen ${setupStep + 1} of 3` : "Setup finished");
     const go = (n) => { setupStep = n; renderSetup(); };
     const finish = () => {
       saveSetup({ done: true });
       const st = store.get("setup", {}, isSetup);
       track("setup_done", { habit: st.habit || null, doors: chosenDoors() || [], own_apps: customDoors().length, skipped: false, from: store.get("from", null) });
-      go(5);
+      go(3);
     };
     const on = (id, fn) => { const el = $("#" + id); if (el) el.onclick = fn; };
     on("sSkip", setupStep === 0 ? () => { saveSetup({ done: true }); track("setup_done", { skipped: true, from: store.get("from", null) }); leaveSetup(); } : finish);
-    on("sLater", () => go(3));
+    on("sLater", () => go(2));
     on("sTry", leaveSetup);
-    card.querySelectorAll("[data-habit]").forEach((b) => (b.onclick = () => { saveSetup({ habit: b.dataset.habit }); go(2); }));
-    if (setupStep === 3) {
+    card.querySelectorAll("[data-habit]").forEach((b) => (b.onclick = () => { saveSetup({ habit: b.dataset.habit }); go(1); }));
+    if (setupStep === 2) {
       const chips = [...card.querySelectorAll("[data-door]")];
       const picks = () => chips.filter((c) => c.getAttribute("aria-pressed") === "true").map((c) => c.dataset.door);
       let custom = customDoors();
@@ -1779,13 +1763,7 @@
         $("#customName").value = ""; $("#customUrl").value = "";
         drawCustom(); label(); msg(`Added ${name.slice(0, 40)}.`);
       };
-      on("sNext", () => { saveSetup({ doors: picks(), custom }); go(4); });
-    } else if (setupStep === 4) {
-      on("sNext", () => {
-        const text = $("#firstNote").value.trim();
-        if (text) store.set("letter", { text, forDay: addDays(dayKey(), 1), writtenOn: dayKey() });
-        finish();
-      });
+      on("sNext", () => { saveSetup({ doors: picks(), custom }); finish(); });
     } else {
       on("sNext", () => go(setupStep + 1));
     }
