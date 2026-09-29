@@ -1284,10 +1284,14 @@
         <p class="eyebrow">${hello} · ${already ? "already done today" : "five minutes, then you're free"}</p>
         <h1>${line}</h1>
         <p class="lede">Your thumb wanted something to hold on to. This gives it a short, finished job:
-          breathe, read one passage, get out of bed, pick your one thing. Then it ends.</p>
+          breathe, read one short quote, get out of bed, plan your day. Then it ends.</p>
         <p class="small">${streakLine}</p>
-        <div class="btnrow"><button class="primary" id="go" type="button">Begin</button></div>`;
+        <div class="btnrow stack">
+          ${already ? `<button class="primary" id="noteOnly" type="button">Leave a note for tomorrow</button>` : ""}
+          <button class="${already ? "quiet" : "primary"}" id="go" type="button">${already ? "Do it again anyway" : "Begin"}</button>
+        </div>`;
       $("#go").onclick = next;
+      if (already) $("#noteOnly").onclick = renderNoteOnly;
     },
 
     breathe() {
@@ -1408,7 +1412,7 @@
       const heading = !hasNote || !writtenOn || writtenOn === addDays(run.today, -1)
         ? "A note from last night's you."
         : `A note you wrote on ${esc(fmtDay(writtenOn))}.`;
-      const intention = store.get("intent:" + run.today, "", isText);
+      const intention = store.get(dayItem("intent"), "", isText);
       card.innerHTML = `
         <p class="eyebrow">Plan · the only feed with an end</p>
         <h2>${heading}</h2>
@@ -1418,7 +1422,7 @@
           <input type="text" id="intent" maxlength="120" placeholder="e.g. Send the draft to Priya before lunch" value="${esc(intention)}"></label>
         <div class="btnrow"><button class="primary" id="go" type="button">That's my one thing</button></div>`;
       $("#go").onclick = () => {
-        store.set("intent:" + run.today, $("#intent").value.trim());
+        store.set(dayItem("intent"), $("#intent").value.trim());
         run.stats.intention = $("#intent").value.trim() !== "";
         next();
       };
@@ -1432,8 +1436,8 @@
         const { sent, ...st } = run.stats;
         track("morning_done", { ...st, minutes: mins, streak: streak.count, habit: store.get("setup", {}, isSetup).habit || null });
       }
-      const rated = store.get("rated:" + run.today, null, isText);
-      const intention = store.get("intent:" + run.today, "", isText);
+      const rated = store.get(dayItem("rated"), null, isText);
+      const intention = store.get(dayItem("intent"), "", isText);
       const letter = store.get("letter", null, isLetter);
       const draft = letter && letter.forDay > run.today ? letter.text : "";
       card.innerHTML = `
@@ -1469,9 +1473,9 @@
         ${myDataSection()}`;
       // People can change their mind; only their latest rating for the day counts in the stats
       card.querySelectorAll("[data-rate]").forEach((b) => (b.onclick = () => {
-        const before = store.get("rated:" + run.today, null, (v) => typeof v === "string");
+        const before = store.get(dayItem("rated"), null, (v) => typeof v === "string");
         if (before === b.dataset.rate) return;
-        store.set("rated:" + run.today, b.dataset.rate);
+        store.set(dayItem("rated"), b.dataset.rate);
         card.querySelectorAll("[data-rate]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
         $("#rateThanks").hidden = false;
         track("rating", before ? { value: b.dataset.rate, changed_from: before } : { value: b.dataset.rate });
@@ -1503,6 +1507,7 @@
       $("#close").onclick = () => {
         clearTimers();
         guardTaps();
+        closedAt = Date.now();
         card.innerHTML = `
           <p class="eyebrow">See you tomorrow</p>
           <h1>Go live the morning.</h1>
@@ -1510,6 +1515,9 @@
       };
     }
   };
+
+  // Per-day keys for things a practice run shouldn't leave behind for the real morning
+  const dayItem = (k) => (run.practice ? "practice-" : "") + k + ":" + run.today;
 
   function recordStreak() {
     const s = store.get("streak", { last: null, count: 0 }, isStreak);
@@ -1640,9 +1648,11 @@
     const [h, m] = v.split(":").map(Number);
     return new Date(2000, 0, 1, h, m).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   };
+  // Setting up after midnight, the next morning is today, not tomorrow
+  const nextMorning = () => (new Date().getHours() < 5 ? "This morning" : "Tomorrow");
   const planLine = (v) => isAlarmTime(v)
-    ? `<b>Tomorrow at ${esc(alarmLabel(v))}:</b> alarm off, then tap the sun.`
-    : `<b>Tomorrow, right after your alarm:</b> tap the sun.`;
+    ? `<b>${nextMorning()} at ${esc(alarmLabel(v))}:</b> alarm off, then tap the sun.`
+    : `<b>${nextMorning()}, right after your alarm:</b> tap the sun.`;
 
   const hl = (t) => esc(t).replace(/\*(.+?)\*/, '<em class="hl">$1</em>');
   const setupScreens = [
@@ -1715,8 +1725,8 @@
     () => {
       const h = habit();
       return `
-      <p class="eyebrow">That's it · the plan for tomorrow</p>
-      <h1>${hl(h.finale)}</h1>
+      <p class="eyebrow">That's it · the plan for ${nextMorning() === "Tomorrow" ? "tomorrow" : "this morning"}</p>
+      <h1>${hl(h.finale.replace(/^Tomorrow/, nextMorning()))}</h1>
       <label class="field" for="alarmAt">When does your alarm go off?
         <input type="time" id="alarmAt" value="${esc(store.get("alarmAt", "", isAlarmTime))}"></label>
       <p class="lede"><span id="planLine">${planLine(store.get("alarmAt", "", isAlarmTime))}</span> A few minutes, then you're free.</p>
@@ -2061,18 +2071,52 @@
     step = 0;
     render();
   }
+  // Set while the "See you tomorrow" screen is up, so reopening the app later lands on the morning.
+  let seeYouAt = 0;
+  // Set by "Put the phone down" on the done screen
+  let closedAt = 0;
   function renderSeeYou() {
     clearTimers();
     guardTaps();
     setupStep = -1;
+    seeYouAt = Date.now();
     const at = alarmLabel(store.get("alarmAt", "", isAlarmTime));
     placeSun("See you tomorrow");
     card.innerHTML = `
       <p class="eyebrow">You're set</p>
-      <h1>See you ${at ? `at <em class="hl">${esc(at)}</em>` : `<em class="hl">tomorrow</em>`}.</h1>
-      <p class="lede">Close this now. Tomorrow: alarm off, then tap the sun.</p>`;
+      <h1>See you ${at ? `at <em class="hl">${esc(at)}</em>` : `<em class="hl">${nextMorning().toLowerCase()}</em>`}.</h1>
+      <p class="lede">Close this now. ${nextMorning()}: alarm off, then tap the sun.</p>
+      <div class="btnrow stack">
+        <button class="quiet" id="startNow" type="button">Already morning? Start now</button>
+      </div>`;
     window.scrollTo(0, 0);
     announceScreen("Setup finished. See you tomorrow.");
+    $("#startNow").onclick = () => { seeYouAt = 0; leaveSetup(); };
+  }
+
+  // Evening, morning already done: just the note for tomorrow, without running the morning again
+  function renderNoteOnly() {
+    clearTimers();
+    guardTaps();
+    const letter = store.get("letter", null, isLetter);
+    const draft = letter && letter.forDay > run.today ? letter.text : "";
+    card.innerHTML = `
+      <p class="eyebrow">For tomorrow morning</p>
+      <h2>Tomorrow-you will be groggy. What do they need to hear?</h2>
+      <label class="field" for="letter">Your note
+        <textarea id="letter" placeholder="One line is plenty. It's the first thing you'll read tomorrow.">${esc(draft)}</textarea></label>
+      <div class="btnrow stack">
+        <button class="primary" id="saveLetter" type="button">Save for tomorrow</button>
+        <span class="saved" id="letterSaved" hidden>Saved. See you in the morning.</span>
+      </div>`;
+    window.scrollTo(0, 0);
+    announceScreen("Leave a note for tomorrow");
+    $("#saveLetter").onclick = () => {
+      const text = $("#letter").value.trim();
+      store.set("letter", text ? { text, forDay: addDays(dayKey(), 1), writtenOn: dayKey() } : null);
+      $("#letterSaved").textContent = text ? "Saved. See you in the morning." : "Note cleared.";
+      $("#letterSaved").hidden = false;
+    };
   }
 
   // The next screen's main button sits where the last one was, so the second half of a sleepy double-tap
@@ -2097,6 +2141,7 @@
   function render() {
     clearTimers();
     guardTaps();
+    stepsEl.hidden = false;
     renderSteps();
     placeSun();
     screens[STEPS[step]]();
@@ -2121,7 +2166,25 @@
   // Phones often keep the page alive overnight. When it comes back on a new day, start that day's run,
   // unless someone is in the middle of a run that began shortly before midnight.
   function freshRunIfNewDay() {
+    // Left on "See you tomorrow" and opened again at least an hour later (setting up after midnight
+    // means the morning is still the same date): start the morning.
+    if (seeYouAt && setupStep < 0 && Date.now() - seeYouAt > 3600e3) {
+      seeYouAt = 0;
+      run = newRun();
+      wakeLine = pickWakeLine();
+      step = 0;
+      render();
+      return;
+    }
+    // Put the phone down, opened again later the same day: back to the wake screen (it offers tomorrow's note)
+    if (closedAt && setupStep < 0 && dayKey() === run.today && Date.now() - closedAt > 3600e3) {
+      closedAt = 0;
+      step = 0;
+      render();
+      return;
+    }
     if (setupStep >= 0 || !hasAgreed() || dayKey() === run.today) return;
+    closedAt = 0;
     const idle = step === 0 || step === STEPS.length - 1;
     const stale = Date.now() - run.startedAt > 3 * 3600e3;
     if (!idle && !stale) return;
