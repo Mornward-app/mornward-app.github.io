@@ -1176,7 +1176,7 @@
     const target = STOPS[at];
     [...$("#stops").children].forEach((c, i) => c.classList.toggle("passed", !setupLabel && i <= step));
     $("#stage").textContent = setupLabel || STAGES[step];
-    $("#tStart").textContent = setupLabel ? "tonight" : `${fmtTime(run.startedAt)} start`;
+    $("#tStart").textContent = setupLabel ? "now" : `${fmtTime(run.startedAt)} start`;
     $("#tEnd").textContent = setupLabel ? "tomorrow, 5 min"
       : step === STEPS.length - 1
         ? `${fmtTime(Date.now())} done`
@@ -1200,6 +1200,41 @@
   }
 
   // ---------- screens ----------
+  // Slow breaths, 4 seconds in and 6 out, on the #orb in the current card. When they're done, the start
+  // button turns into "Continue".
+  const breathBox = (cycles) => `<div class="breath"><div class="orb" id="orb">Ready</div><div class="count" id="bcount">0 of ${cycles}</div></div>`;
+  function runBreaths(cycles, onDone, onContinue) {
+    const IN = 4, OUT = 6;
+    const orb = $("#orb");
+    $("#bstart").disabled = true;
+    let cycle = 0, phase = "in", left = IN;
+    const setPhase = () => {
+      orb.style.transitionDuration = (phase === "in" ? IN : OUT) + "s";
+      orb.style.transform = phase === "in" ? "scale(1)" : "scale(.55)";
+      orb.textContent = phase === "in" ? "In" : "Out";
+    };
+    setPhase();
+    breathTimer = setInterval(() => {
+      left--;
+      if (left > 0) return;
+      if (phase === "in") { phase = "out"; left = OUT; }
+      else {
+        cycle++;
+        $("#bcount").textContent = `${cycle} of ${cycles}`;
+        if (cycle >= cycles) {
+          clearInterval(breathTimer); breathTimer = null;
+          orb.textContent = "Done";
+          $("#bstart").textContent = "Continue";
+          $("#bstart").disabled = false;
+          onDone();
+          $("#bstart").onclick = onContinue;
+          return;
+        }
+        phase = "in"; left = IN;
+      }
+      setPhase();
+    }, 1000);
+  }
   let breathTimer = null;
   let gateTimer = null;
   function clearTimers() {
@@ -1270,6 +1305,11 @@
     }));
   }
 
+  // A note written for this morning (or earlier) that hasn't been read yet
+  const pendingNote = () => {
+    const l = store.get("letter", null, isLetter);
+    return !!l && l.text.trim() !== "" && l.forDay <= run.today && !l.readOn;
+  };
   const screens = {
     wake() {
       const streak = store.get("streak", { last: null, count: 0 }, isStreak);
@@ -1289,6 +1329,7 @@
         <p class="lede">Your thumb wanted something to hold on to. This gives it a short, finished job:
           breathe, read one short quote, get out of bed, plan your day. Then it ends.</p>
         <p class="small">${streakLine}</p>
+        ${pendingNote() ? `<p class="small notewait">You left yourself a note. It's waiting near the end.</p>` : ""}
         <div class="btnrow stack">
           ${already ? `<button class="primary" id="noteOnly" type="button">Leave a note for tomorrow</button>` : ""}
           <button class="${already ? "quiet" : "primary"}" id="go" type="button">${already ? "Do it again anyway" : "Begin"}</button>
@@ -1298,47 +1339,16 @@
     },
 
     breathe() {
-      const CYCLES = 5, IN = 4, OUT = 6;
       card.innerHTML = `
         <p class="eyebrow">Breathe · about 50 seconds</p>
         <h2>Five slow breaths before anything else.</h2>
-        <div class="breath"><div class="orb" id="orb">Ready</div><div class="count" id="bcount">0 of ${CYCLES}</div></div>
+        ${breathBox(5)}
         <div class="btnrow">
           <button class="primary" id="bstart" type="button">Start breathing</button>
           <button class="quiet" id="bskip" type="button">Skip</button>
         </div>`;
-      const orb = $("#orb");
       $("#bskip").onclick = next;
-      $("#bstart").onclick = () => {
-        $("#bstart").disabled = true;
-        let cycle = 0, phase = "in", left = IN;
-        const setPhase = () => {
-          orb.style.transitionDuration = (phase === "in" ? IN : OUT) + "s";
-          orb.style.transform = phase === "in" ? "scale(1)" : "scale(.55)";
-          orb.textContent = phase === "in" ? "In" : "Out";
-        };
-        setPhase();
-        breathTimer = setInterval(() => {
-          left--;
-          if (left > 0) return;
-          if (phase === "in") { phase = "out"; left = OUT; }
-          else {
-            cycle++;
-            $("#bcount").textContent = `${cycle} of ${CYCLES}`;
-            if (cycle >= CYCLES) {
-              clearInterval(breathTimer); breathTimer = null;
-              orb.textContent = "Done";
-              $("#bstart").textContent = "Continue";
-              $("#bstart").disabled = false;
-              run.stats.breathe = "done";
-              $("#bstart").onclick = next;
-              return;
-            }
-            phase = "in"; left = IN;
-          }
-          setPhase();
-        }, 1000);
-      };
+      $("#bstart").onclick = () => runBreaths(5, () => { run.stats.breathe = "done"; }, next);
     },
 
     read() {
@@ -1452,7 +1462,7 @@
           <div><b>${streak.count}</b><span>day streak</span></div>
           <div><b>0</b><span>${esc(habit().tally)}</span></div>
         </div>
-        ${run.practice ? reminderBox() : ""}
+        ${run.practice ? tomorrowKit() : ""}
         <label class="field" for="letter">Leave a note for tomorrow morning
           <textarea id="letter" placeholder="Write it tonight, or now. It will be the first thing you read tomorrow.">${esc(draft)}</textarea></label>
         <div><button type="button" id="saveLetter">Save for tomorrow</button> <span class="saved" id="letterSaved" hidden>Saved. See you in the morning.</span></div>
@@ -1504,7 +1514,7 @@
         $("#letterSaved").hidden = false;
       };
 
-      wireReminder();
+      wireKit();
       wireDoors();
       const pick = $("#pickDoors");
       if (pick) pick.onclick = () => startSetup(2);
@@ -1659,11 +1669,11 @@
     ? `<b>${nextMorning()} at ${esc(alarmLabel(v))}:</b> alarm off, then tap the sun.`
     : `<b>${nextMorning()}, right after your alarm:</b> tap the sun.`;
 
-  // ---------- reminder for the next mornings ----------
+  // ---------- tomorrow kit: a note for tomorrow-you, plus a calendar reminder ----------
   // Most people never add Mornward to their home screen, so nothing reminds them it exists. A calendar event at
-  // their alarm time does. It's made on the phone and handed to their own calendar; Mornward never sees it.
+  // their alarm time does, and it carries their note. It's made on the phone and handed to their own calendar.
   const REMIND_DAYS = 7;
-  const isMorningNow = () => { const h = new Date().getHours(); return h >= 4 && h < 12; };
+  const partOfDay = () => { const h = new Date().getHours(); return h >= 4 && h < 12 ? "morning" : h >= 12 && h < 18 ? "afternoon" : "evening"; };
   const pad2 = (n) => String(n).padStart(2, "0");
   // The next time the alarm goes off: later today if it hasn't yet, otherwise tomorrow
   function nextAlarm(v) {
@@ -1675,63 +1685,106 @@
   }
   const icsLocal = (d) => `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}T${pad2(d.getHours())}${pad2(d.getMinutes())}00`;
   const REMIND_TITLE = "Mornward: alarm off, tap the sun";
-  const REMIND_NOTE = "Open https://mornward.app before anything else. A few minutes, then you're free.";
-  function calendarFile(v) {
+  // The link in the reminder carries this phone's setup in the part after "#", which never leaves the phone.
+  // It matters because a page opened inside Reddit or Instagram keeps its own storage: without it, the
+  // morning would open in the real browser and start over from the welcome screen.
+  function carryLink(note, forDay) {
+    const st = store.get("setup", {}, isSetup);
+    const r = { v: 1, i: deviceId(), h: st.habit || null, d: chosenDoors() || [], a: store.get("alarmAt", null, isAlarmTime),
+      f: store.get("from", null), t: TERMS_VERSION, s: store.get("noStats", false) === true ? 1 : 0 };
+    if (note) { r.n = note; r.nd = forDay; r.nw = dayKey(); }
+    return "https://mornward.app/?via=calendar#r=" + encodeURIComponent(JSON.stringify(r));
+  }
+  const reminderText = (note, link) => (note ? `Your note: "${note}"\n\n` : "") + `Open this before anything else: ${link}\nA few minutes, then you're free.`;
+  const icsEsc = (t) => t.replace(/\\/g, "\\\\").replace(/;/g, "\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+  // Calendar files want lines of at most 75 bytes; longer ones continue on the next line after a space
+  const icsFold = (line) => {
+    const out = []; let cur = "", bytes = 0;
+    for (const ch of line) {
+      const b = new TextEncoder().encode(ch).length;
+      if (bytes + b > (out.length ? 74 : 75)) { out.push(cur); cur = ""; bytes = 0; }
+      cur += ch; bytes += b;
+    }
+    out.push(cur);
+    return out.join("\r\n ");
+  };
+  function calendarFile(v, note, link) {
     const start = nextAlarm(v);
     const now = new Date();
     const stamp = `${now.getUTCFullYear()}${pad2(now.getUTCMonth() + 1)}${pad2(now.getUTCDate())}T${pad2(now.getUTCHours())}${pad2(now.getUTCMinutes())}00Z`;
     return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Mornward//EN", "CALSCALE:GREGORIAN", "BEGIN:VEVENT",
       `UID:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}@mornward.app`,
       `DTSTAMP:${stamp}`, `DTSTART:${icsLocal(start)}`, "DURATION:PT5M", `RRULE:FREQ=DAILY;COUNT=${REMIND_DAYS}`,
-      `SUMMARY:${REMIND_TITLE}`, `DESCRIPTION:${REMIND_NOTE.replace(/,/g, "\\,")}`, "URL:https://mornward.app/",
-      "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:Alarm off? Tap the sun.", "TRIGGER:PT0M", "END:VALARM",
-      "END:VEVENT", "END:VCALENDAR", ""].join("\r\n");
+      `SUMMARY:${icsEsc(REMIND_TITLE)}`, `DESCRIPTION:${icsEsc(reminderText(note, link))}`, `URL:${link}`,
+      "BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${icsEsc(note ? note : "Alarm off? Tap the sun.")}`, "TRIGGER:PT0M", "END:VALARM",
+      "END:VEVENT", "END:VCALENDAR"].map(icsFold).join("\r\n") + "\r\n";
   }
-  // Android phones mostly use Google Calendar, which can't open a calendar file, so it gets Google's own link
-  function googleCalendarLink(v) {
+  function googleCalendarLink(v, note, link) {
     const start = nextAlarm(v);
     const end = new Date(start.getTime() + 5 * 60000);
-    const q = new URLSearchParams({ action: "TEMPLATE", text: REMIND_TITLE, details: REMIND_NOTE,
+    const q = new URLSearchParams({ action: "TEMPLATE", text: REMIND_TITLE, details: reminderText(note, link),
       dates: `${icsLocal(start)}/${icsLocal(end)}`, recur: `RRULE:FREQ=DAILY;COUNT=${REMIND_DAYS}` });
     try { q.set("ctz", Intl.DateTimeFormat().resolvedOptions().timeZone); } catch {}
     return "https://calendar.google.com/calendar/render?" + q.toString();
   }
-  function reminderBox() {
-    const at = store.get("alarmAt", "", isAlarmTime);
+  function tomorrowKit() {
+    const at = store.get("alarmAt", "", isAlarmTime) || "07:00";
+    const letter = store.get("letter", null, isLetter);
+    const draft = letter && letter.forDay > dayKey() ? letter.text : "";
+    // Android phones mostly use Google Calendar, which can't open a calendar file; iPhones use Apple's Calendar
+    const alt = isAndroid ? "Use a calendar file instead" : "Use Google Calendar instead";
     return `
-      <div class="remind" id="remind">
-        <p class="eyebrow">The step most people skip</p>
-        <h2>Let your calendar remind you.</h2>
-        <p class="small">A reminder at your alarm time for the next ${REMIND_DAYS} mornings, with the link. It goes in your own calendar; Mornward never sees it. Delete it any time.</p>
-        <label class="field" for="remindAt">Alarm time
-          <input type="time" id="remindAt" value="${esc(at || "07:00")}"></label>
+      <div class="remind" id="kit">
+        <p class="eyebrow">Before you go · 30 seconds</p>
+        <h2>Leave tomorrow-you a reason to open it.</h2>
+        <label class="field" for="kitNote">One line for tomorrow morning
+          <textarea id="kitNote" maxlength="200" placeholder="e.g. Don't open Instagram first. You promised.">${esc(draft)}</textarea></label>
+        <label class="field" for="kitAt">Alarm time
+          <input type="time" id="kitAt" value="${esc(at)}"></label>
+        <p class="small">Your note waits inside tomorrow's morning, and in a reminder at your alarm time for the next ${REMIND_DAYS} mornings.
+          The reminder goes in your own calendar. Mornward never sees it, and you can delete it any time.</p>
         <div class="btnrow stack">
-          <button class="primary" id="remindGo" type="button">Add to my calendar</button>
+          <button class="primary" id="kitGo" type="button">Save and add to my calendar</button>
+          <button class="quiet" id="kitAlt" type="button">${alt}</button>
+          <button class="quiet" id="kitNoteOnly" type="button">Just save the note</button>
         </div>
-        <p class="saved" id="remindMsg" hidden></p>
+        <p class="saved" id="kitMsg" hidden></p>
       </div>`;
   }
-  function wireReminder() {
-    const input = $("#remindAt"), go = $("#remindGo"), msg = $("#remindMsg");
-    if (!input || !go) return;
-    go.onclick = () => {
-      const v = input.value;
-      if (!isAlarmTime(v)) { msg.textContent = "Pick your alarm time first."; msg.hidden = false; input.focus(); return; }
-      store.set("alarmAt", v);
-      if (isAndroid) {
-        window.open(googleCalendarLink(v), "_blank", "noopener");
+  function wireKit() {
+    const kit = $("#kit");
+    if (!kit) return;
+    const msg = (t) => { $("#kitMsg").textContent = t; $("#kitMsg").hidden = !t; };
+    // Saves the note for the morning the alarm goes off next, and returns what the reminder needs
+    const save = () => {
+      const v = $("#kitAt").value;
+      const note = $("#kitNote").value.trim().slice(0, 200);
+      const forDay = isAlarmTime(v) ? dayKey(nextAlarm(v)) : (new Date().getHours() < 4 ? dayKey() : addDays(dayKey(), 1));
+      if (note) store.set("letter", { text: note, forDay, writtenOn: dayKey() });
+      if (isAlarmTime(v)) store.set("alarmAt", v);
+      return { v, note, forDay };
+    };
+    const remind = (google) => {
+      const { v, note, forDay } = save();
+      if (!isAlarmTime(v)) { msg("Pick your alarm time first."); $("#kitAt").focus(); return; }
+      const link = carryLink(note, forDay);
+      if (google) {
+        window.open(googleCalendarLink(v, note, link), "_blank", "noopener");
       } else {
         const a = document.createElement("a");
-        a.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(calendarFile(v));
+        a.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(calendarFile(v, note, link));
         a.download = "mornward.ics";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
+        document.body.appendChild(a); a.click(); a.remove();
       }
-      store.set("reminded", dayKey());
-      msg.textContent = isIOS ? "Tap Add to Calendar on the next screen. If a file downloaded instead, open it from Downloads."
-        : "Save the event in your calendar. See you at " + alarmLabel(v) + ".";
-      msg.hidden = false;
+      msg(google ? `Save the event in Google Calendar. See you at ${alarmLabel(v)}.`
+        : isIOS ? "Tap Add to Calendar on the next screen. If a file downloaded instead, open it from Downloads."
+        : "Open the file to add it to your calendar.");
+    };
+    $("#kitGo").onclick = () => remind(isAndroid);
+    $("#kitAlt").onclick = () => remind(!isAndroid);
+    $("#kitNoteOnly").onclick = () => {
+      const { note } = save();
+      msg(note ? "Saved. It'll be waiting tomorrow morning." : "Write a line first.");
     };
   }
 
@@ -1814,7 +1867,6 @@
       <p class="small">Reminder: stats are anonymous and never include what you write. Turn them off at the end of any morning.</p>
       <div class="btnrow stack">
         <button class="primary" id="sReady" type="button">I'm ready for tomorrow</button>
-        <button class="quiet" id="sTry" type="button">Or take a practice run</button>
       </div>`;
     }
   ];
@@ -1917,6 +1969,27 @@
     if ($("#installScreen")) renderInstall();
   });
   window.addEventListener("appinstalled", () => { installed = true; installPrompt = null; if ($("#installScreen")) renderInstall(); });
+  // Opened from the calendar reminder. If this browser has never seen Mornward (the setup happened inside
+  // another app's browser), take the setup the link carries, so the morning starts instead of the welcome.
+  const viaCalendar = new URLSearchParams(location.search).get("via") === "calendar";
+  (() => {
+    const m = location.hash.match(/^#r=(.+)$/);
+    if (!m) return;
+    try { history.replaceState(null, "", location.pathname + location.search); } catch {}
+    if (store.get("setup", { done: false }, isSetup).done) return;
+    let r;
+    try { r = JSON.parse(decodeURIComponent(m[1])); } catch { return; }
+    if (!r || r.v !== 1 || typeof r !== "object") return;
+    if (typeof r.i === "string" && /^[0-9a-f-]{36}$/.test(r.i)) store.set("deviceId", r.i);
+    if (r.t === TERMS_VERSION) store.set("agreed", { version: TERMS_VERSION, on: dayKey() });
+    if (r.s === 1) store.set("noStats", true);
+    const doors = Array.isArray(r.d) ? r.d.filter((k) => typeof k === "string" && DOORS[k]) : [];
+    store.set("setup", { done: true, habit: typeof r.h === "string" && HABITS[r.h] ? r.h : undefined, doors });
+    if (isAlarmTime(r.a)) store.set("alarmAt", r.a);
+    if (typeof r.f === "string" && /^[a-z0-9-]{1,20}$/.test(r.f)) store.set("from", r.f);
+    if (typeof r.n === "string" && r.n.trim() && /^\d{4}-\d{2}-\d{2}$/.test(r.nd || "") && !store.get("letter", null, isLetter))
+      store.set("letter", { text: r.n.slice(0, 200), forDay: r.nd, writtenOn: /^\d{4}-\d{2}-\d{2}$/.test(r.nw || "") ? r.nw : r.nd });
+  })();
   // Which link someone came from (?from=reddit). Kept on the phone and sent once with setup, only if stats are on.
   // iPhone home-screen apps don't share Safari's storage, so the icon's start address carries it across too.
   const linkFrom = (() => {
@@ -2164,18 +2237,23 @@
     setupStep = -1;
     seeYouAt = Date.now();
     const at = alarmLabel(store.get("alarmAt", "", isAlarmTime));
+    const part = partOfDay();
     placeSun("See you tomorrow");
+    // Something to do right now, whatever time it is: the real morning, a 1-minute taste, or a note for tomorrow
     card.innerHTML = `
       <p class="eyebrow">You're set</p>
       <h1>See you ${at ? `at <em class="hl">${esc(at)}</em>` : `<em class="hl">${nextMorning().toLowerCase()}</em>`}.</h1>
       <p class="lede">${nextMorning()}: alarm off, then open Mornward. A few minutes, then you're free.</p>
-      ${reminderBox()}
+      ${part === "morning" ? `<div class="btnrow stack"><button class="primary" id="startNow" type="button">It's morning. Start now</button></div>` : ""}
+      ${part === "afternoon" ? `<div class="btnrow stack"><button class="primary" id="resetGo" type="button">Try the 1-minute version now</button></div>` : ""}
+      ${tomorrowKit()}
       ${isAndroid && !onHomeScreen && installPrompt ? `<div class="btnrow stack"><button type="button" id="seeInstall">Also add it to my home screen</button></div>` : ""}
-      ${isMorningNow() ? `<div class="btnrow stack"><button class="quiet" id="startNow" type="button">Already morning? Start now</button></div>` : ""}`;
+      ${part === "evening" ? `<div class="btnrow stack"><button class="quiet" id="resetGo" type="button">Or try the 1-minute version now</button></div>` : ""}`;
     window.scrollTo(0, 0);
     announceScreen("Setup finished. See you tomorrow.");
-    wireReminder();
+    wireKit();
     if ($("#startNow")) $("#startNow").onclick = () => { seeYouAt = 0; leaveSetup(); };
+    if ($("#resetGo")) $("#resetGo").onclick = () => { seeYouAt = 0; startReset(); };
     if ($("#seeInstall")) $("#seeInstall").onclick = async () => {
       const ask = installPrompt;
       if (!ask) return;
@@ -2183,6 +2261,82 @@
       installPrompt = null;
       $("#seeInstall").remove();
     };
+  }
+
+  // ---------- the 1-minute version ----------
+  // For people who find Mornward in the afternoon or evening: a short taste now (three breaths, the quote,
+  // one thing for the rest of today), counted as a practice run, then the note and reminder for tomorrow.
+  function startReset() {
+    run = newRun();
+    run.practice = true;
+    run.mode = "reset";
+    renderReset("breathe");
+  }
+  function renderReset(stage) {
+    clearTimers();
+    guardTaps();
+    stepsEl.hidden = true;
+    $("#restart").hidden = true;
+    placeSun("1-minute version");
+    if (stage === "breathe") {
+      card.innerHTML = `
+        <p class="eyebrow">1 of 3 · about 30 seconds</p>
+        <h2>Three slow breaths. That's all.</h2>
+        ${breathBox(3)}
+        <div class="btnrow">
+          <button class="primary" id="bstart" type="button">Start breathing</button>
+          <button class="quiet" id="bskip" type="button">Skip</button>
+        </div>`;
+      $("#bskip").onclick = () => renderReset("read");
+      $("#bstart").onclick = () => runBreaths(3, () => { run.stats.breathe = "done"; }, () => renderReset("read"));
+    } else if (stage === "read") {
+      card.innerHTML = `
+        <p class="eyebrow">2 of 3 · one line</p>
+        <div class="passage">
+          <p>“${esc(run.quote.text)}”</p>
+          <span class="source">${esc(run.quote.who)}${run.quote.source ? `, ${esc(run.quote.source)}` : ""}</span>
+        </div>
+        <div class="btnrow"><button class="primary" id="go" type="button">Carry it with me</button></div>`;
+      $("#go").onclick = () => renderReset("one");
+    } else if (stage === "one") {
+      card.innerHTML = `
+        <p class="eyebrow">3 of 3 · the rest of today</p>
+        <h2>One thing that would make the rest of today count?</h2>
+        <label class="field" for="resetOne">Just one
+          <input type="text" id="resetOne" maxlength="120" placeholder="e.g. Finish the reading before dinner"></label>
+        <div class="btnrow"><button class="primary" id="go" type="button">That's my one thing</button></div>`;
+      $("#go").onclick = () => {
+        const one = $("#resetOne").value.trim();
+        run.stats.intention = one !== "";
+        renderReset(one ? "done:" + one : "done");
+      };
+    } else {
+      const one = stage.startsWith("done:") ? stage.slice(5) : "";
+      if (!run.stats.sent) {
+        run.stats.sent = true;
+        track("morning_done", { mode: "reset", breathe: run.stats.breathe, intention: run.stats.intention,
+          minutes: Math.max(1, Math.round((Date.now() - run.startedAt) / 60000)) });
+      }
+      card.innerHTML = `
+        <p class="eyebrow">That's the 1-minute version</p>
+        <h1>Tomorrow, this is the <em class="hl">first</em> thing you do.</h1>
+        ${one ? `<p class="lede">For the rest of today: <strong>${esc(one)}</strong></p>` : ""}
+        <p class="lede">The full morning is about 5 minutes: breathe, read, get out of bed, plan your day. Then it ends.</p>
+        ${tomorrowKit()}
+        <div class="btnrow stack"><button class="quiet" id="resetClose" type="button">Done for today</button></div>`;
+      wireKit();
+      $("#resetClose").onclick = () => {
+        clearTimers();
+        guardTaps();
+        seeYouAt = Date.now();
+        card.innerHTML = `
+          <p class="eyebrow">See you tomorrow</p>
+          <h1>Go live the rest of today.</h1>
+          <p class="lede">Tomorrow: alarm off, then open Mornward.</p>`;
+      };
+    }
+    window.scrollTo(0, 0);
+    announceScreen(stage.startsWith("done") ? "That's the 1-minute version" : `1-minute version, step ${["breathe", "read", "one"].indexOf(stage) + 1} of 3`);
   }
 
   // Evening, morning already done: just the note for tomorrow, without running the morning again
@@ -2241,7 +2395,7 @@
   }
   function next() {
     if (step >= STEPS.length - 1) return;
-    if (step === 0) track("morning_start", { habit: store.get("setup", {}, isSetup).habit || null });
+    if (step === 0) track("morning_start", { habit: store.get("setup", {}, isSetup).habit || null, ...(viaCalendar ? { via: "calendar" } : {}) });
     step++;
     render();
   }
