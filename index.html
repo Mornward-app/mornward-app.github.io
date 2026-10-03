@@ -304,6 +304,9 @@
   .howto li::marker { color: var(--sun-deep); font-weight: 700; }
   .howto b { font-weight: 700; }
   .check { color: var(--ok-text); font-weight: 600; }
+  .remind { display: flex; flex-direction: column; gap: 12px; margin: 8px 0; padding: 18px; border-radius: 16px;
+    border: 1px solid color-mix(in srgb, var(--sun-deep) 45%, transparent); background: color-mix(in srgb, var(--sun-deep) 8%, transparent); }
+  .remind h2 { margin: 0; }
   .addr { font-family: var(--mono); font-size: 14px; background: var(--surface); border: 1px solid var(--line);
     border-radius: 10px; padding: 10px 12px; overflow-wrap: anywhere; user-select: all; }
 
@@ -1011,7 +1014,7 @@
   const STATS = {
     url: "https://cnwwyucolebrcbydbfej.supabase.co/rest/v1/events",
     key: "sb_publishable_XpdHaGbjKX5CC0LRYiWBxQ_O8xO2oCs",
-    version: "beta-1"
+    version: "beta-2"
   };
   // Where questions and data requests go (shown in the agreement, on the done screen and on terms.html)
   const CONTACT = "mornward@proton.me";
@@ -1449,6 +1452,7 @@
           <div><b>${streak.count}</b><span>day streak</span></div>
           <div><b>0</b><span>${esc(habit().tally)}</span></div>
         </div>
+        ${run.practice ? reminderBox() : ""}
         <label class="field" for="letter">Leave a note for tomorrow morning
           <textarea id="letter" placeholder="Write it tonight, or now. It will be the first thing you read tomorrow.">${esc(draft)}</textarea></label>
         <div><button type="button" id="saveLetter">Save for tomorrow</button> <span class="saved" id="letterSaved" hidden>Saved. See you in the morning.</span></div>
@@ -1500,6 +1504,7 @@
         $("#letterSaved").hidden = false;
       };
 
+      wireReminder();
       wireDoors();
       const pick = $("#pickDoors");
       if (pick) pick.onclick = () => startSetup(2);
@@ -1654,6 +1659,82 @@
     ? `<b>${nextMorning()} at ${esc(alarmLabel(v))}:</b> alarm off, then tap the sun.`
     : `<b>${nextMorning()}, right after your alarm:</b> tap the sun.`;
 
+  // ---------- reminder for the next mornings ----------
+  // Most people never add Mornward to their home screen, so nothing reminds them it exists. A calendar event at
+  // their alarm time does. It's made on the phone and handed to their own calendar; Mornward never sees it.
+  const REMIND_DAYS = 7;
+  const isMorningNow = () => { const h = new Date().getHours(); return h >= 4 && h < 12; };
+  const pad2 = (n) => String(n).padStart(2, "0");
+  // The next time the alarm goes off: later today if it hasn't yet, otherwise tomorrow
+  function nextAlarm(v) {
+    const [h, m] = v.split(":").map(Number);
+    const d = new Date();
+    d.setHours(h, m, 0, 0);
+    if (d <= new Date()) d.setDate(d.getDate() + 1);
+    return d;
+  }
+  const icsLocal = (d) => `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}T${pad2(d.getHours())}${pad2(d.getMinutes())}00`;
+  const REMIND_TITLE = "Mornward: alarm off, tap the sun";
+  const REMIND_NOTE = "Open https://mornward.app before anything else. A few minutes, then you're free.";
+  function calendarFile(v) {
+    const start = nextAlarm(v);
+    const now = new Date();
+    const stamp = `${now.getUTCFullYear()}${pad2(now.getUTCMonth() + 1)}${pad2(now.getUTCDate())}T${pad2(now.getUTCHours())}${pad2(now.getUTCMinutes())}00Z`;
+    return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Mornward//EN", "CALSCALE:GREGORIAN", "BEGIN:VEVENT",
+      `UID:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}@mornward.app`,
+      `DTSTAMP:${stamp}`, `DTSTART:${icsLocal(start)}`, "DURATION:PT5M", `RRULE:FREQ=DAILY;COUNT=${REMIND_DAYS}`,
+      `SUMMARY:${REMIND_TITLE}`, `DESCRIPTION:${REMIND_NOTE.replace(/,/g, "\\,")}`, "URL:https://mornward.app/",
+      "BEGIN:VALARM", "ACTION:DISPLAY", "DESCRIPTION:Alarm off? Tap the sun.", "TRIGGER:PT0M", "END:VALARM",
+      "END:VEVENT", "END:VCALENDAR", ""].join("\r\n");
+  }
+  // Android phones mostly use Google Calendar, which can't open a calendar file, so it gets Google's own link
+  function googleCalendarLink(v) {
+    const start = nextAlarm(v);
+    const end = new Date(start.getTime() + 5 * 60000);
+    const q = new URLSearchParams({ action: "TEMPLATE", text: REMIND_TITLE, details: REMIND_NOTE,
+      dates: `${icsLocal(start)}/${icsLocal(end)}`, recur: `RRULE:FREQ=DAILY;COUNT=${REMIND_DAYS}` });
+    try { q.set("ctz", Intl.DateTimeFormat().resolvedOptions().timeZone); } catch {}
+    return "https://calendar.google.com/calendar/render?" + q.toString();
+  }
+  function reminderBox() {
+    const at = store.get("alarmAt", "", isAlarmTime);
+    return `
+      <div class="remind" id="remind">
+        <p class="eyebrow">The step most people skip</p>
+        <h2>Let your calendar remind you.</h2>
+        <p class="small">A reminder at your alarm time for the next ${REMIND_DAYS} mornings, with the link. It goes in your own calendar; Mornward never sees it. Delete it any time.</p>
+        <label class="field" for="remindAt">Alarm time
+          <input type="time" id="remindAt" value="${esc(at || "07:00")}"></label>
+        <div class="btnrow stack">
+          <button class="primary" id="remindGo" type="button">Add to my calendar</button>
+        </div>
+        <p class="saved" id="remindMsg" hidden></p>
+      </div>`;
+  }
+  function wireReminder() {
+    const input = $("#remindAt"), go = $("#remindGo"), msg = $("#remindMsg");
+    if (!input || !go) return;
+    go.onclick = () => {
+      const v = input.value;
+      if (!isAlarmTime(v)) { msg.textContent = "Pick your alarm time first."; msg.hidden = false; input.focus(); return; }
+      store.set("alarmAt", v);
+      if (isAndroid) {
+        window.open(googleCalendarLink(v), "_blank", "noopener");
+      } else {
+        const a = document.createElement("a");
+        a.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(calendarFile(v));
+        a.download = "mornward.ics";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+      store.set("reminded", dayKey());
+      msg.textContent = isIOS ? "Tap Add to Calendar on the next screen. If a file downloaded instead, open it from Downloads."
+        : "Save the event in your calendar. See you at " + alarmLabel(v) + ".";
+      msg.hidden = false;
+    };
+  }
+
   const hl = (t) => esc(t).replace(/\*(.+?)\*/, '<em class="hl">$1</em>');
   const setupScreens = [
     () => `
@@ -1666,7 +1747,7 @@
           `<button type="button" data-habit="${k}"><strong>${esc(h.label)}</strong>${h.hint ? `<span>${esc(h.hint)}</span>` : ""}</button>`).join("")}
       </div>
       <div class="btnrow stack">
-        <button class="quiet" id="sSkip" type="button">Skip, just let me try it</button>
+        <button class="quiet" id="sSkip" type="button">Skip the questions</button>
       </div>`,
     () => {
       const h = habit();
@@ -1755,7 +1836,8 @@
       go(3);
     };
     const on = (id, fn) => { const el = $("#" + id); if (el) el.onclick = fn; };
-    on("sSkip", setupStep === 0 ? () => { saveSetup({ done: true }); track("setup_done", { skipped: true, from: store.get("from", null) }); leaveSetup(); } : finish);
+    // Skipping the questions still ends on the plan for tomorrow, so nobody lands in a "good morning" at night
+    on("sSkip", setupStep === 0 ? () => { saveSetup({ done: true }); track("setup_done", { skipped: true, from: store.get("from", null) }); go(3); } : finish);
     on("sLater", () => go(2));
     on("sTry", () => leaveSetup(true));
     if (setupStep === 3) {
@@ -1892,6 +1974,7 @@
           <h1>Put Mornward where your <em>thumb</em> goes.</h1>
           <p class="wlede">Your thumb goes to the same spot every morning. Put the sun there.</p>
           ${body}
+          ${installed || (isAndroid && installPrompt) ? "" : `<p class="wnote">Opened this from Reddit, Instagram or another app? Tap <b>⋯</b> and choose <b>Open in browser</b> first.</p>`}
         </div>
         <div class="wbottom">
           ${main}
@@ -2085,13 +2168,21 @@
     card.innerHTML = `
       <p class="eyebrow">You're set</p>
       <h1>See you ${at ? `at <em class="hl">${esc(at)}</em>` : `<em class="hl">${nextMorning().toLowerCase()}</em>`}.</h1>
-      <p class="lede">Close this now. ${nextMorning()}: alarm off, then tap the sun.</p>
-      <div class="btnrow stack">
-        <button class="quiet" id="startNow" type="button">Already morning? Start now</button>
-      </div>`;
+      <p class="lede">${nextMorning()}: alarm off, then open Mornward. A few minutes, then you're free.</p>
+      ${reminderBox()}
+      ${isAndroid && !onHomeScreen && installPrompt ? `<div class="btnrow stack"><button type="button" id="seeInstall">Also add it to my home screen</button></div>` : ""}
+      ${isMorningNow() ? `<div class="btnrow stack"><button class="quiet" id="startNow" type="button">Already morning? Start now</button></div>` : ""}`;
     window.scrollTo(0, 0);
     announceScreen("Setup finished. See you tomorrow.");
-    $("#startNow").onclick = () => { seeYouAt = 0; leaveSetup(); };
+    wireReminder();
+    if ($("#startNow")) $("#startNow").onclick = () => { seeYouAt = 0; leaveSetup(); };
+    if ($("#seeInstall")) $("#seeInstall").onclick = async () => {
+      const ask = installPrompt;
+      if (!ask) return;
+      try { ask.prompt(); await ask.userChoice; } catch {}
+      installPrompt = null;
+      $("#seeInstall").remove();
+    };
   }
 
   // Evening, morning already done: just the note for tomorrow, without running the morning again
