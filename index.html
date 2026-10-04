@@ -22,6 +22,7 @@
 <meta name="theme-color" content="#EDF5FC">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0F1B2A">
 <meta name="color-scheme" content="light dark">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Mornward">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -198,6 +199,38 @@
   .ask { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 12px; background: var(--field); color: var(--text); }
   .sl { display: flex; align-items: center; gap: 10px; }
   .sl .i { color: var(--text-2); }
+  /* Home-screen box: its own card at the bottom of Begin and Today */
+  #installSlot:empty { display: none; }
+  .installbox { margin-top: 24px; padding: 18px; border-radius: 20px; background: var(--field); border: 1.5px solid var(--chip-line);
+    display: flex; flex-direction: column; gap: 14px; }
+  .ihead { display: flex; gap: 14px; align-items: center; }
+  .ihead img { width: 48px; height: 48px; border-radius: 12px; flex: none; }
+  .ihead h2 { margin: 0; font-size: 1.0625rem; line-height: 1.375rem; }
+  .ihead p { font-size: 0.875rem; line-height: 1.25rem; color: var(--text-2); }
+  .installbox .ok { display: flex; gap: 8px; align-items: center; font-weight: 600; }
+  .installbox .link { align-self: center; }
+  .inote { font-size: 0.875rem; color: var(--text-2); }
+  .vsteps { list-style: none; margin: 0; padding: 0; display: flex; gap: 8px; counter-reset: st; }
+  .vsteps li { flex: 1 1 0; min-width: 0; counter-increment: st; display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 12px 6px 10px; border-radius: 14px; background: var(--bg); font-size: 0.8125rem; line-height: 1.125rem; text-align: center; color: var(--text); }
+  .vsteps .g { position: relative; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; background: var(--field); color: var(--text); }
+  .vsteps .g .i { width: 22px; height: 22px; }
+  .vsteps .g::before { content: counter(st); position: absolute; top: -6px; left: -6px; width: 18px; height: 18px; border-radius: 50%;
+    background: var(--sun); color: #18222F; font-size: 0.6875rem; font-weight: 700; display: grid; place-items: center; line-height: 1; }
+  .cantfind { font-size: 0.875rem; color: var(--text-2); }
+  .cantfind summary { cursor: pointer; font-weight: 600; color: var(--text); min-height: 44px; display: flex; align-items: center; }
+  .cantfind[open] { display: flex; flex-direction: column; gap: 8px; }
+  /* Week strip: done days are suns, tomorrow is an outline */
+  .week { display: flex; flex-direction: column; gap: 8px; }
+  .week ol { list-style: none; margin: 0; padding: 0; display: flex; justify-content: space-between; gap: 4px; }
+  .week li { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .week .dot { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--track); display: grid; place-items: center; }
+  .week .done .dot { background: var(--sun); border-color: var(--sun); color: #18222F; }
+  .week .done .dot .i { width: 20px; height: 20px; }
+  .week .now .dot { border-color: var(--sun); border-width: 3px; }
+  .week .next .dot { border-style: dashed; border-color: var(--text-2); }
+  .week .wd { font-size: 0.75rem; line-height: 1rem; color: var(--text-2); }
+  .week .now .wd, .week .next .wd { font-weight: 700; color: var(--text); }
   .preview { margin-top: 28px; padding: 12px 14px; border-radius: 12px; border: 1.5px dashed var(--chip-line); font-size: 0.875rem; line-height: 1.25rem;
     color: var(--text-2); display: flex; flex-direction: column; gap: 10px; }
   .preview button { min-height: 44px; padding: 8px 12px; font-size: 0.875rem; }
@@ -310,6 +343,7 @@
 
 <div class="app">
   <main id="card" class="screen"></main>
+  <div id="installSlot"></div>
   <p class="sr-only" id="announce" aria-live="polite"></p>
 </div>
 <noscript><p style="padding:24px">Mornward needs JavaScript to run.</p></noscript>
@@ -385,6 +419,22 @@
   }
   const cleanIntention = (raw) => raw.replace(/\s+/g, " ").trim().slice(0, MAX_INTENTION);
 
+  // Days you did the routine, kept on the phone for the week strip. Filled in once from earlier versions' data.
+  const isDayList = (v) => Array.isArray(v) && v.every(isDay);
+  const doneDays = () => new Set(store.get("days", [], isDayList));
+  function markDone(day) {
+    const d = store.get("days", [], isDayList);
+    if (!d.includes(day)) store.set("days", [...d, day].sort().slice(-120));
+  }
+  (() => {
+    if (store.get("days", null, isDayList) !== null) return;
+    const days = new Set();
+    for (const k of store.keys()) { const m = k.match(/^(?:practice-)?intent:(\d{4}-\d{2}-\d{2})$/); if (m && store.get(k, "", isText).trim()) days.add(m[1]); }
+    const st = store.get("streak", null, (v) => typeof v === "object" && isDay(v.last) && Number.isInteger(v.count));
+    if (st) for (let i = 0; i < Math.min(st.count, 60); i++) days.add(addDays(st.last, -i));
+    if (days.size) store.set("days", [...days].sort().slice(-120));
+  })();
+
   // ---------- anonymous stats (Supabase) ----------
   // What's sent: a random device id, the day, which steps of the routine happened, and the app version.
   // Never sent: the intention, or anything else anyone writes.
@@ -410,7 +460,7 @@
   const COUNTED = `<ul>
       <li>A random ID made on this phone, not linked to your name, email or any account.</li>
       <li>The date, and which steps happened: started, breathing finished or skipped, intention saved or skipped, finished.</li>
-      <li>Whether you opened it from the home screen, and which link you came from (like "reddit"), if the link says so.</li>
+      <li>Whether you opened it from the home screen, whether you added it there, and which link you came from (like "reddit"), if the link says so.</li>
     </ul>`;
   const NOT_SENT = `<ul>
       <li>Your intention, or anything else you write. Not a single word.</li>
@@ -466,17 +516,25 @@
   })();
   // Each step is counted once per routine, however often the screen redraws, the page reloads or a send retries.
   // The key is the routine's day and run number, so a second routine on the same day is its own run.
-  function emit(kind, data = {}) {
-    if (!statsOn() || !routine) return;
-    const key = `${routine.day}#${routine.run}#${kind}`;
+  function queueRow(key, kind, day, run, data) {
     const sent = store.get("sent", [], Array.isArray);
     if (sent.includes(key)) return;
     store.set("sent", sent.concat([key]).slice(-60));
-    const row = { device_id: deviceId(), day: routine.day, kind,
-      data: { run: routine.run, home_screen: onHomeScreen, ...(store.get("test", false) === true ? { test: true } : {}), ...data },
+    const row = { device_id: deviceId(), day, kind,
+      data: { run, home_screen: onHomeScreen, ...(store.get("test", false) === true ? { test: true } : {}), ...data },
       app_version: STATS.version };
     store.set("outbox", store.get("outbox", [], Array.isArray).concat([row]).slice(-50));
     flushStats();
+  }
+  function emit(kind, data = {}) {
+    if (!statsOn() || !routine) return;
+    queueRow(`${routine.day}#${routine.run}#${kind}`, kind, routine.day, routine.run, data);
+  }
+  // Not tied to a routine (adding to the home screen): once per day per kind, run 0
+  function emitDay(kind, data = {}) {
+    if (!statsOn()) return;
+    const day = dayKey();
+    queueRow(`${day}#0#${kind}`, kind, day, 0, data);
   }
   window.addEventListener("online", flushStats);
 
@@ -502,6 +560,7 @@
     stopBreathing();
     guardTaps();
     card.innerHTML = html;
+    $("#installSlot").innerHTML = ""; // only Begin and Today show the home-screen box
     window.scrollTo(0, 0);
     if (screensShown++ === 0) return;
     $("#announce").textContent = label;
@@ -554,6 +613,7 @@
       <p class="wordmark">mornward</p>
       ${SUN(false)}
       <h1>Before the scroll,<br>one clear intention.</h1>
+      ${doneDays().size ? weekStrip(false) : ""}
       <ol class="flow" aria-label="Three breaths, one intention, then you're ready">
         <li>${icon("breath")}<span>3 breaths</span></li>
         <li>${icon("pen")}<span>1 intention</span></li>
@@ -572,6 +632,7 @@
         ${earlier ? `<div class="more">${earlier}</div>` : ""}
       </div>`, "Mornward. Before the scroll, one clear intention.");
     $("#begin").onclick = begin;
+    renderInstall();
   }
   function begin() {
     if (!hasAgreed()) store.set("agreed", { version: TERMS_VERSION, on: dayKey(), how: "begin" });
@@ -801,6 +862,7 @@
       <div class="push">
         <button class="primary" id="finish" type="button">Finish</button>
       </div>`, "You're ready.");
+    markDone(routine.day);
     emit("routine_finished", { breathing: routine.breathing || "skipped", intention: text ? "saved" : "skipped",
       seconds: Math.round((nowMs() - routine.startedAt) / 1000) });
     ($("#iedit") || $("#iadd")).onclick = () => renderChoose(true, renderFinish);
@@ -820,17 +882,17 @@
       <h1>${text ? "Today's intention" : "Done for today"}</h1>
       ${text ? intentionBlock(text, "Today") : `<p class="body">No intention today.</p>${addButton}`}
       <p class="msg ok" role="status">${esc(note)}</p>
+      ${weekStrip(true)}
       <button class="chip" id="again" type="button">${icon("again")}<span>Do the routine again</span></button>
       <div class="more">
         ${earlierSection(routine.day)}
-        ${homeSection()}
         ${reminderSection()}
         ${themeSection()}
         ${privacySection()}
       </div>`, text ? "Today's intention" : "Done for today");
     ($("#iedit") || $("#iadd")).onclick = () => renderChoose(true, renderToday);
     $("#again").onclick = begin;
-    wireHome();
+    renderInstall();
     wireReminder();
     wireTheme();
     wirePrivacy();
@@ -900,7 +962,7 @@
   // Browsers that support it (Chrome on Android, mostly) fire beforeinstallprompt, sometimes seconds after load.
   // The saved event can be shown once, only from a tap. "Accepted" means the person said yes to the prompt;
   // only appinstalled (or opening from the icon) confirms it's actually on the home screen.
-  let installPrompt = null, installBusy = false, installAccepted = false, installNote = "", installed = false, installOpen = false;
+  let installPrompt = null, installBusy = false, installAccepted = false, installNote = "", installed = false;
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     if (installed) return;
@@ -909,6 +971,7 @@
   });
   window.addEventListener("appinstalled", () => {
     installed = true; installPrompt = null; installAccepted = false; installNote = "";
+    emitDay("app_installed");
     refreshHome();
   });
   // Browser detection is best effort: Instagram, Facebook, TikTok and others name themselves; Reddit often doesn't
@@ -926,52 +989,83 @@
     return "computer";
   }
   const IC_SHARE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg>`;
-  const share = `<span class="ic" role="img" aria-label="Share">${IC_SHARE}</span>`;
+  // Picture steps for adding to the home screen by hand. Apple doesn't let a site add itself, so iPhones always
+  // need these; on Android they're the fallback when Chrome hasn't offered its one-tap install.
+  const GLYPH = {
+    share: IC_SHARE.replace('aria-hidden="true"', 'aria-hidden="true" class="i"'),
+    more: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></svg>',
+    menu: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="19" r="1.6" fill="currentColor"/></svg>',
+    add: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8v8M8 12h8"/></svg>',
+    ok: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
+    out: '<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>'
+  };
+  // In the preview, a computer can show either phone's steps
+  const stepKind = () => {
+    const pick = PREVIEW ? store.get("previewPlatform", null, (v) => v === "ios" || v === "android") : null;
+    if (pick) return pick === "ios" ? (iosVersion >= 26 || !isIOS ? "ios-safari" : browserKind()) : "android-chrome";
+    return browserKind();
+  };
   function installStepsList() {
+    const k = stepKind();
     const main = isIOS ? "Safari" : "Chrome";
+    const S = (g, t) => ({ g, t });
     const steps = {
-      "inapp": [`Tap <b>⋯</b> or <b>⋮</b> in this app's corner`, `Choose <b>Open in browser</b> (or <b>Open in ${main}</b>)`, `Add it to your home screen from there`],
+      "inapp": [S("menu", `Tap <b>⋯</b> or <b>⋮</b> in this app`), S("out", `<b>Open in browser</b> (${main})`), S("add", `Then add it from there`)],
       "ios-safari": iosVersion >= 26
-        ? [`Tap <b>⋯</b> next to the address bar`, `Tap ${share} <b>Share</b>`, `Tap <b>Add to Home Screen</b>, then <b>Add</b>`]
-        : [`Tap ${share} <b>Share</b>`, `Scroll and tap <b>Add to Home Screen</b>`, `Tap <b>Add</b>`],
-      "ios-chrome": [`Tap ${share} <b>Share</b> in the address bar`, `Tap <b>Add to Home Screen</b>`, `Tap <b>Add</b>`],
-      "ios-other": [`Open this page in <b>Safari</b>`, `Tap ${share} <b>Share</b> → <b>Add to Home Screen</b>`],
-      "android-chrome": [`Tap <b>⋮</b> at the top right`, `Tap <b>Add to home screen</b>`, `Tap <b>Install</b> (or <b>Add</b>)`],
-      "samsung": [`Tap <b>☰</b> at the bottom`, `Tap <b>Add page to</b>`, `Tap <b>Home screen</b>`],
-      "android-firefox": [`Tap <b>⋮</b>`, `Look for <b>Add to Home screen</b> or <b>Install</b>`],
-      "android-other": [`Open your browser's menu`, `Look for <b>Add to Home screen</b> or <b>Install</b>`],
-      "computer": [`Open <b>mornward.app</b> on your phone`, `Add it to the home screen there`],
-    }[browserKind()];
-    return `<ol class="isteps">${steps.map((t) => `<li>${t}</li>`).join("")}</ol>`;
+        ? [S("more", `Tap <b>⋯</b> by the address bar`), S("share", `Tap <b>Share</b>`), S("add", `<b>Add to Home Screen</b>`)]
+        : [S("share", `Tap <b>Share</b>`), S("add", `<b>Add to Home Screen</b>`), S("ok", `Tap <b>Add</b>`)],
+      "ios-chrome": [S("share", `Tap <b>Share</b> in the address bar`), S("add", `<b>Add to Home Screen</b>`), S("ok", `Tap <b>Add</b>`)],
+      "ios-other": [S("out", `Open in <b>Safari</b>`), S("share", `Tap <b>Share</b>`), S("add", `<b>Add to Home Screen</b>`)],
+      "android-chrome": [S("menu", `Tap <b>⋮</b> at the top`), S("add", `<b>Add to home screen</b>`), S("ok", `Tap <b>Install</b>`)],
+      "samsung": [S("menu", `Tap <b>☰</b> at the bottom`), S("add", `<b>Add page to</b>`), S("ok", `<b>Home screen</b>`)],
+      "android-firefox": [S("menu", `Tap <b>⋮</b>`), S("add", `<b>Add to Home screen</b>`), S("ok", `Tap <b>Add</b>`)],
+      "android-other": [S("menu", `Open the browser menu`), S("add", `<b>Add to Home screen</b>`), S("ok", `Confirm`)],
+      "computer": [S("out", `Open <b>mornward.app</b> on your phone`), S("add", `Add it to the home screen`)],
+    }[k];
+    return `<ol class="vsteps">${steps.map((x) => `<li><span class="g">${GLYPH[x.g]}</span><span>${x.t}</span></li>`).join("")}</ol>`;
   }
+  const onComputer = () => !isIOS && !isAndroid && !onHomeScreen;
   const installState = () => (onHomeScreen ? "home" : installed ? "installed" : installAccepted ? "accepted"
     : installPrompt ? "prompt" : "manual");
-  function homeBody() {
+  // The box at the bottom of Begin and Today. Gone once Mornward is on the home screen; "Not now" hides it until tomorrow.
+  function installBoxHtml() {
     const st = installState();
-    if (st === "home" || st === "installed") return `<p role="status">Mornward is on your home screen.</p>`;
-    if (st === "accepted") return `<p role="status">Adding it now. Look for the Mornward sun on your home screen.</p>`;
-    const note = installNote ? `<p role="status">${installNote}</p>` : "";
-    const intro = `<p>Open it from an icon tomorrow instead of looking for this page.</p>${note}`;
-    if (st === "prompt") return `${intro}<button class="secondary" data-install-go type="button">Add to home screen</button>`;
-    return `${intro}
-      <button class="secondary" data-install-how aria-expanded="${installOpen}" aria-controls="isteps" type="button">Show me how</button>
-      <div id="isteps"${installOpen ? "" : " hidden"}>
-        ${installStepsList()}
-        <p style="margin-top:10px">Can't find it? You may be inside another app's browser. Open this page in Safari (iPhone) or Chrome (Android).</p>
+    if (st === "home") return "";
+    if (!PREVIEW && onComputer()) return "";
+    if (store.get("installSnooze", "", isDay) === dayKey() && st !== "installed" && st !== "accepted") return "";
+    const note = installNote ? `<p class="inote" role="status">${installNote}</p>` : "";
+    let body;
+    if (st === "installed") body = `<p class="ok" role="status">${GLYPH.ok} Added. Tomorrow, open Mornward from your home screen.</p>`;
+    else if (st === "accepted") body = `<p role="status">Adding it now. Look for the sun on your home screen.</p>`;
+    else if (st === "prompt") body = `${note}<button class="primary" data-install-go type="button">Add to home screen</button>`;
+    else body = `${note}${installStepsList()}
+      <details class="cantfind"><summary>Can't find it?</summary>
+        <p>You may be inside another app's browser (Reddit, Instagram). Open this page in ${isIOS ? "Safari" : "Chrome"}, then try again.</p>
         <button class="link start" type="button" data-copy-link>Copy link</button>
         <input type="text" readonly aria-label="Link to Mornward" data-link-field hidden>
         <p role="status" data-copy-msg></p>
-      </div>`;
+      </details>`;
+    return `<section class="installbox" id="installBox" aria-labelledby="instTitle">
+        <div class="ihead"><img src="icons/icon-192.png" alt="" width="48" height="48">
+          <div><h2 id="instTitle">${st === "installed" ? "On your home screen" : "Add to home screen"}</h2>
+          <p>Open it like an app, first thing tomorrow.</p></div></div>
+        ${body}
+        ${st === "installed" || st === "accepted" ? "" : `<button class="link" data-install-later type="button">Not now</button>`}
+      </section>`;
   }
-  const homeSection = () => `<details class="section" id="homeSec"><summary><span class="sl">${icon("home")}Add to home screen</span></summary><div class="inner" id="homeBox">${homeBody()}</div></details>`;
-  function refreshHome() {
-    const box = $("#homeBox");
-    if (!box) return;
-    box.innerHTML = homeBody();
+  // Called by Begin and Today
+  function renderInstall() {
+    const slot = $("#installSlot");
+    slot.innerHTML = installBoxHtml();
+    if (!slot.firstElementChild) return;
+    // iPhone: the icon gets its own storage, so point its start address at this phone's anonymous ID first
+    if (installState() === "manual" && (isIOS || stepKind().startsWith("ios"))) prepareIconStart(true);
     wireHome();
   }
+  // Chrome's offer can arrive seconds after the page opens; redraw the box if it's on screen
+  function refreshHome() { if (card.querySelector("#begin, #again")) renderInstall(); }
   function wireHome() {
-    const box = $("#homeBox");
+    const box = $("#installBox");
     if (!box) return;
     const go = box.querySelector("[data-install-go]");
     if (go) go.onclick = async () => {
@@ -979,26 +1073,22 @@
       installBusy = true;
       go.disabled = true;
       const ask = installPrompt;
-      installPrompt = null; // a prompt can only be shown once
+      installPrompt = null; // Chrome allows each prompt to be shown once, and only from a tap
       try {
         await ask.prompt();
         const choice = await ask.userChoice;
-        if (choice && choice.outcome === "accepted") { installAccepted = true; installNote = ""; }
-        else { installNote = "No problem. You can add it later from your browser's menu:"; installOpen = true; }
+        const outcome = choice && choice.outcome === "accepted" ? "accepted" : "dismissed";
+        emitDay("install_prompt", { outcome });
+        if (outcome === "accepted") { installAccepted = true; installNote = ""; }
+        else installNote = "No problem. You can also add it from the browser menu:";
       } catch {
-        installNote = "That didn't open. You can add it from your browser's menu instead:"; installOpen = true;
+        installNote = "That didn't open. You can add it from the browser menu instead:";
       }
       installBusy = false;
-      refreshHome();
+      renderInstall();
     };
-    const how = box.querySelector("[data-install-how]");
-    if (how) how.onclick = () => {
-      installOpen = !installOpen;
-      if (installOpen) prepareIconStart(true);
-      refreshHome();
-      const again = $("#homeBox [data-install-how]");
-      if (again) again.focus();
-    };
+    const later = box.querySelector("[data-install-later]");
+    if (later) later.onclick = () => { store.set("installSnooze", dayKey()); renderInstall(); };
     const copy = box.querySelector("[data-copy-link]");
     if (copy) copy.onclick = async () => {
       const url = shareUrl();
@@ -1012,6 +1102,27 @@
         msg.textContent = "Copy this link, then paste it into Safari or Chrome.";
       }
     };
+  }
+
+  // ---------- the week strip: the last few mornings, and tomorrow ----------
+  // Shows that this is something you come back to, without a streak to lose: done days fill with a sun,
+  // tomorrow waits as an outline.
+  function weekStrip(doneToday) {
+    const today = dayKey(), done = doneDays();
+    const offs = doneToday ? [-5, -4, -3, -2, -1, 0, 1] : [-6, -5, -4, -3, -2, -1, 0];
+    const slots = offs.map((o) => {
+      const d = addDays(today, o);
+      const [y, m, dd] = d.split("-").map(Number);
+      const wd = new Date(y, m - 1, dd).toLocaleDateString([], { weekday: "narrow" });
+      const cls = done.has(d) ? "done" : o === 1 ? "next" : o === 0 ? "now" : "";
+      return `<li class="${cls}"><span class="dot">${done.has(d) ? icon("sun") : ""}</span><span class="wd">${o === 0 ? "Today" : o === 1 ? "Next" : esc(wd)}</span></li>`;
+    }).join("");
+    const n = offs.filter((o) => o <= 0 && done.has(addDays(today, o))).length;
+    const line = doneToday ? `${n} ${n === 1 ? "morning" : "mornings"} this week · see you tomorrow`
+      : n ? `${n} ${n === 1 ? "morning" : "mornings"} this week · today's is next` : "";
+    return `<div class="week" role="img" aria-label="${esc(line || "Your mornings this week")}">
+        <ol>${slots}</ol>${line ? `<p class="support">${esc(line)}</p>` : ""}
+      </div>`;
   }
 
   // ---------- an optional calendar reminder ----------
@@ -1166,6 +1277,9 @@
     if (!m) return;
     try { history.replaceState(null, "", location.pathname + location.search); } catch {}
     if (store.get("deviceId", null) !== null) return;
+    // Only the home-screen icon or the calendar reminder may carry an ID in. A copied browser address can carry
+    // one too, and a friend opening it must not become the same anonymous person.
+    if (!onHomeScreen && !viaCalendar) return;
     let r;
     try { r = JSON.parse(decodeURIComponent(m[1])); } catch { return; }
     if (!r || typeof r !== "object" || r.v !== 1) return;
@@ -1251,7 +1365,7 @@
     bar.className = "preview";
     bar.setAttribute("role", "region");
     bar.setAttribute("aria-label", "Preview tools");
-    document.querySelector(".app").appendChild(bar);
+    document.querySelector(".app").insertBefore(bar, $("#installSlot"));
     const draw = () => {
       const shifted = shiftMs() !== 0;
       bar.innerHTML = `<p><b>Preview</b> · nothing is sent${shifted ? ` · pretending it's ${esc(fmtDay(dayKey()))}` : ""}</p>
@@ -1259,6 +1373,7 @@
           <button type="button" class="secondary" id="pvNext">Next day</button>
           ${shifted ? `<button type="button" class="secondary" id="pvToday">Back to today</button>` : ""}
           <button type="button" class="secondary" id="pvTheme">Theme: ${esc(store.get("theme", "auto", (v) => THEMES.includes(v)))}</button>
+          <button type="button" class="secondary" id="pvPhone">Steps: ${esc({ ios: "iPhone", android: "Android" }[store.get("previewPlatform", "")] || "this phone")}</button>
           <button type="button" class="secondary" id="pvReset">Start fresh</button>
         </div>`;
       // Tomorrow at 7:00, so the morning always looks like a morning
@@ -1271,6 +1386,12 @@
         const t = store.get("theme", "auto", (v) => THEMES.includes(v));
         store.set("theme", THEMES[(THEMES.indexOf(t) + 1) % THEMES.length]); applyTheme(); draw();
         card.querySelectorAll("[data-theme-pick]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.themePick === store.get("theme", "auto"))));
+      };
+      $("#pvPhone").onclick = () => {
+        const order = [null, "ios", "android"], cur = store.get("previewPlatform", null);
+        const next = order[(order.indexOf(cur) + 1) % order.length];
+        if (next) store.set("previewPlatform", next); else store.del("previewPlatform");
+        draw(); refreshHome();
       };
       $("#pvReset").onclick = () => { store.keys().forEach((k) => store.del(k)); location.reload(); };
     };

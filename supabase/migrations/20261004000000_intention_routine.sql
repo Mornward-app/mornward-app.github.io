@@ -19,7 +19,7 @@ alter table public.events add constraint events_kind_check check (kind in (
   'morning_start', 'morning_done', 'setup_done', 'rating', 'door_open', 'screen_view',
   -- beta-4: the one-minute routine
   'routine_started', 'breathing_completed', 'breathing_skipped', 'intention_saved', 'intention_skipped',
-  'routine_finished', 'core_routine_completed'));
+  'routine_finished', 'core_routine_completed', 'install_prompt', 'app_installed'));
 
 -- 2. Devices to leave out (you, family, test phones) --------------------------------------------------------
 -- Add yours from the dashboard:  insert into public.excluded_devices (device_id, note) values ('<id>', 'my phone');
@@ -96,7 +96,11 @@ select
   exists (select 1 from days n where n.device_id = d.device_id and n.day = d.first_day + 1 and n.started) as returned_next_day,
   (d.first_day + 9 <= current_date) as week_window_complete,
   exists (select 1 from days n where n.device_id = d.device_id and n.day between d.first_day + 1 and d.first_day + 7 and n.core) as repeat_core_within_7d,
-  exists (select 1 from days n where n.device_id = d.device_id and n.day = d.first_day + 7 and n.started) as returned_day7
+  exists (select 1 from days n where n.device_id = d.device_id and n.day = d.first_day + 7 and n.started) as returned_day7,
+  -- Home screen: opened from the icon at least once, or Chrome confirmed the install (Android only; iPhones can't tell us)
+  exists (select 1 from public.events h where h.device_id = d.device_id and h.data->>'home_screen' = 'true') as used_home_screen,
+  exists (select 1 from public.events h where h.device_id = d.device_id
+          and (h.kind = 'app_installed' or (h.kind = 'install_prompt' and h.data->>'outcome' = 'accepted'))) as install_confirmed
 from dev d
 join first_run f on f.device_id = d.device_id
 join public.routine_runs r on r.device_id = d.device_id and r.day = d.first_day and r.run = f.run
@@ -127,7 +131,10 @@ select
   count(*) filter (where week_window_complete and returned_day7)                         as returned_day7,
   round(100.0 * count(*) filter (where week_window_complete and returned_day7)
         / nullif(count(*) filter (where week_window_complete), 0), 1)                    as pct_returned_day7,
-  count(*) filter (where not week_window_complete)                                       as week_window_incomplete
+  count(*) filter (where not week_window_complete)                                       as week_window_incomplete,
+  count(*) filter (where used_home_screen)                                               as used_home_screen,
+  round(100.0 * count(*) filter (where used_home_screen) / nullif(count(*), 0), 1)       as pct_used_home_screen,
+  count(*) filter (where install_confirmed)                                              as install_confirmed
 from c;
 
 -- Per day: routines started, finished and core-completed (first run of each device that day, test devices left out)

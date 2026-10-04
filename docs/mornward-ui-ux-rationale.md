@@ -29,9 +29,8 @@ Two supporting decisions:
   before that tap. This removes a whole terms screen from the first minute, but it bundles agreement into the
   main action, which is weaker consent than a separate checkbox. **This is a product choice, not legal advice;**
   confirm it meets Thailand's PDPA before relying on it. The counts can be turned off after the first routine.
-- **Install moved off the core flow.** "Add to home screen" is a closed section on the completed screen. Our
-  beta data suggests home-screen users were the only ones who returned, but that is correlation in a handful of
-  devices, so it stays offered, never pushed.
+- **Install off the routine itself.** Adding to the home screen never interrupts Breathe, Choose or Finish. (Pass 3
+  makes it a visible box on Begin and Today; see below.)
 
 ## Visual pass 2: fewer words, more taps, more to see
 
@@ -44,6 +43,19 @@ Two supporting decisions:
 | **The sun rises on Finish** (1.4 s, none with reduced motion) | One small moment of completion instead of words or a score. | It could feel childish to some. | None. | User test reactions. |
 | **Dark mode**: follows the phone (Auto), or Light/Dark under Appearance; in dark, the sun colour becomes the button | A bright screen at 6 am in a dark room is unpleasant; the one action stays the brightest thing on screen. | Dark colours were chosen by contrast ratio, not tested with people. | None known. | Contrast: text 15.0:1, secondary text 8.7:1, button text 11.3:1, field edge 4.6:1, chip edge 3.2:1. |
 | **The idea chips sit below Save** and never hide | An earlier version hid them while typing; that moved Save as the keyboard closed, so a tap meant for Save could land on an idea and replace the words. Caught by the tests before release. | None. | Avoided. | Covered in `qa/redesign/v2.js`. |
+
+## Pass 3: installs and coming back on day 2
+
+The founder set the goal for this pass: more people adding Mornward to the home screen, and coming back on day 2 and
+after. Two earlier decisions change because of it, and the reasons are recorded here.
+
+| Decision | Mechanism | Uncertainty | Risk to the person | Validation |
+| --- | --- | --- | --- | --- |
+| **A visible "Add to home screen" box** at the bottom of Begin and Today (it replaces the closed section). Android Chrome: Chrome's own one-tap dialog when Chrome offers it, menu steps otherwise. iPhone: Apple's steps as numbered pictures (iOS 26: ⋯ → Share → Add to Home Screen; older: Share → Add to Home Screen → Add). Inside Reddit or Instagram: open in the browser first. | An icon on the home screen is the reminder that's there every morning. Beta data: the only people who came back had the icon (3 devices, correlation only). | Whether the box raises installs, and whether installing causes returns, is unknown. | Low. It's never shown during Breathe, Choose or Finish, never asks for permissions, says "Added" only when Chrome confirms it, and "Not now" hides it until tomorrow. | `routine_metrics.used_home_screen`, `install_confirmed`; compare next-day return for devices with and without the icon (still correlation). |
+| **Install rules followed, and checked with Chrome itself.** HTTPS, a manifest with name, icons 192/512 plus a separate maskable icon, standalone display, start address and scope, a service worker, and screenshots for Chrome's richer install sheet. iPhone: a 180 px apple-touch-icon and the web-app tags. | Chrome only offers its install dialog to sites that meet its criteria. | Chrome decides when to offer it (engagement heuristics), so the box falls back to the menu steps. | None. | Chrome's own check (`Page.getInstallabilityErrors`) returns no errors. Real-device check still needed. |
+| **A week strip instead of a streak** (this reverses "no streaks"): the last six days and tomorrow. Done days are suns, tomorrow is a dashed outline, and the line reads "2 mornings this week · see you tomorrow". | Shows that this is a daily thing and that tomorrow is the next step, which a clean ending alone didn't say. | It may still feel like a streak to some people. | Kept gentle on purpose: it counts mornings, never "in a row", and missing a day shows only an empty circle. No "streak lost", no numbers on Finish. | Next-day and day-7 return in `routine_metrics`. Ask in the user test whether it felt motivating or like pressure. |
+| **The new icon** matches the app: a sun rising over a horizon in the app's colours. | It's the thing people see each morning, so it should look like what they used. | None. | None. | Look at it on a real home screen next to other apps. |
+| **Carried IDs only via the icon or the calendar link.** The iPhone box writes the anonymous ID into the address so the icon isn't counted as a new person; a copied address opened by someone else is now ignored. | Keeps one person, one ID. | None. | Removes a mix-up between people sharing a link. | Covered by `qa/redesign/extras.js`. |
 
 ## What was removed from the core flow, and what was kept
 

@@ -12,18 +12,49 @@
     {
       "src": "icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "categories": [
+    "lifestyle",
+    "health"
+  ],
+  "prefer_related_applications": false,
+  "orientation": "portrait",
+  "screenshots": [
+    {
+      "src": "icons/screenshot-1-begin.png",
+      "sizes": "540x1098",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Begin: before the scroll, one clear intention"
+    },
+    {
+      "src": "icons/screenshot-2-breathe.png",
+      "sizes": "540x1098",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Three slow breaths"
+    },
+    {
+      "src": "icons/screenshot-4-finish.png",
+      "sizes": "540x1098",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "You're ready"
     }
   ]
 }

@@ -20,14 +20,19 @@ app drops rejected rows rather than retrying them, so those routines are lost fr
 | `intention_skipped` | Skip for today is tapped and nothing was saved for that day | — |
 | `routine_finished` | The Finish screen is reached, whatever was skipped | `breathing`: completed / skipped, `intention`: saved / skipped, `seconds` |
 | `core_routine_completed` | An intention is saved in a routine whose breathing was completed | — |
+| `install_prompt` | Someone answers Chrome's own "Add to home screen" dialog (Android) | `outcome`: accepted / dismissed; `run: 0` |
+| `app_installed` | Chrome confirms Mornward was added to the home screen (Android) | `run: 0` |
+
+Install events aren't tied to a routine (`run: 0`, today's date) and are sent at most once per day each. iPhones give
+a website no install signal, so iPhone installs show up only as later routines with `home_screen: true`.
 
 Every row also has `run` (1 = the day's first routine, 2 = "Do the routine again", …), `home_screen`, and
 `test: true` on devices opened once with `?test=1`. `day` is the phone's local date **when the routine started**,
 so one started at 23:59 and finished after midnight belongs to the first date.
 
 **Not sent:** the intention text, drafts, edits, earlier intentions, alarm time, anything typed. Editing an
-intention after saving sends nothing. Taps on Finish, Edit, the home-screen panel, the calendar reminder and the
-privacy controls send nothing.
+intention after saving sends nothing. Taps on Finish, Edit, the calendar reminder and the privacy controls send nothing; the home-screen box sends only
+the two install events in the table above.
 
 **`reminder_opt_in` is not implemented, on purpose.** The only reminder is a calendar event handed to Google
 Calendar or a calendar file; the app can't tell whether the person saved it, so it would count intent, not a
@@ -59,7 +64,7 @@ from an earlier version (they're returning people, not new ones). Both groups ar
 
 | View | Answers |
 | --- | --- |
-| `routine_metrics` | One row: every metric above as a **count and a percentage**, how many devices are still inside an incomplete window, and how many test / earlier-version devices were left out |
+| `routine_metrics` | One row: every metric above as a **count and a percentage**, how many devices are still inside an incomplete window, how many test / earlier-version devices were left out, and home-screen use (`used_home_screen`: opened from the icon at least once; `install_confirmed`: Chrome confirmed an install) |
 | `routine_cohort` | One row per device: first day, flags for each metric, whether its windows are complete |
 | `routine_runs` | One row per routine (device, day, run) with which steps happened |
 | `routine_daily` | Per day: devices that started, finished breathing / skipped, saved / skipped, finished, core-completed (first run each day, tests left out) |

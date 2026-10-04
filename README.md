@@ -17,9 +17,10 @@ Three breaths, then choose one small thing that matters this morning. Then get o
 | Finish | "You're ready." The sun rises; your intention, with Edit |
 
 Open it again the same day and you see today's intention. The next day it offers the routine again;
-earlier intentions stay on your phone, listed by date. Adding it to your home screen and a calendar reminder
-are optional, on the screen after you finish. It never asks for notification permission.
+earlier intentions stay on your phone, listed by date. A calendar reminder is optional, on the screen after you finish. It never asks for notification permission.
 Light and dark: it follows your phone, or pick one under Appearance.
+Begin and the screen after Finish show an "Add to home screen" box (Chrome's one-tap install on Android, Apple's
+Share steps on iPhone) and a week strip: each morning you did it is a sun, and tomorrow waits as an outline.
 
 Design reasoning: [`docs/mornward-ui-ux-rationale.md`](docs/mornward-ui-ux-rationale.md).
 
