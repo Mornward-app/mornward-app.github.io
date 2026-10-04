@@ -140,6 +140,21 @@ The add-to-home-screen guide now says which phone it's for: an **iPhone | Androi
 the browser named under it ("On iPhone, in Safari", "On Android, in Samsung Internet"; inside Instagram: "Open this
 page in Safari first, then:"). Checked in `qa/redesign/handoff.js`, which reads the QR code back from a screenshot.
 
+### Pass 8: a morning reminder that works on iPhone too
+
+Android already had Google Calendar (an event that pops up at the chosen time). For iPhone, the options were:
+
+| Option | How | Trade-off | Decision |
+| --- | --- | --- | --- |
+| **Apple Calendar alert** | A calendar file made on the phone, with an alert, for 7 mornings | Same as Google Calendar; a time, not the alarm itself | **Yes, the default on iPhone** |
+| **Shortcuts: "when my alarm stops, open Mornward"** | Apple's Shortcuts app: Automation, Alarm, Is Stopped, Run Immediately, Open URLs | Fits the product best (Mornward appears the moment the alarm is off); a website can't create it, so it's about six taps by hand. It opens in Safari, which on iPhone keeps a separate history from the home-screen icon | **Yes, as "Better: …"**, with picture steps, Copy Mornward link, Open Shortcuts |
+| Web push notifications | iOS 16.4+ allows them for home-screen web apps | Needs a server to send them on schedule and a permission prompt; a backend project | **Later**; noted, not built |
+
+The section is now **Morning reminder**, with the same iPhone | Android switch as the add guide, preset from the
+browser. The copied Shortcut link is `mornward.app/?via=alarm#r=…` (anonymous ID after `#`), so routines opened by the
+alarm show `via: "alarm"`. Nothing is counted when someone sets a reminder, because it can't be confirmed. Checked in
+`qa/redesign/reminder.js`. **Not tried on a real iPhone:** the Shortcuts steps can differ a little by iOS version.
+
 ## What was removed from the core flow, and what was kept
 
 Removed from the screens: the five-step timeline and sky arc, the daily quote, the movement checklist, the

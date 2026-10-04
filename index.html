@@ -268,6 +268,9 @@
     .handoff .qr { width: 200px; }
   }
   .seg + .support { margin-top: -6px; }
+  .rempane { display: flex; flex-direction: column; gap: 12px; }
+  .rempane[hidden] { display: none; }
+  .vsteps.four li { font-size: 0.75rem; line-height: 1rem; }
   /* Week strip: done days are suns, tomorrow is an outline */
   .week { display: flex; flex-direction: column; gap: 8px; }
   .week ol { list-style: none; margin: 0; padding: 0; display: flex; justify-content: space-between; gap: 4px; }
@@ -707,7 +710,7 @@
     routine = { day: today, run, phase: "breathe", breaths: 0, breathing: null, intention: null, startedAt: nowMs() };
     saveRoutine();
     store.set("everStarted", true);
-    emit("routine_started", { ...(viaCalendar ? { via: "calendar" } : {}), ...(first ? { first: true, from: store.get("from", null) } : {}) });
+    emit("routine_started", { ...(via ? { via } : {}), ...(first ? { first: true, from: store.get("from", null) } : {}) });
     renderBreathe(false);
   }
 
@@ -1449,23 +1452,56 @@
     try { q.set("ctz", Intl.DateTimeFormat().resolvedOptions().timeZone); } catch {}
     return "https://calendar.google.com/calendar/render?" + q.toString();
   }
-  // Google Calendar is a real link (it opens even where pages can't open windows); the calendar file is made on the phone.
-  // iPhones list the calendar file first (Apple Calendar), Android phones Google Calendar.
+  // A morning reminder, set up for the person's phone (switchable):
+  //   Android: a Google Calendar event, which pops up at the time (a real link, so it opens even where pages can't
+  //            open windows), or a calendar file.
+  //   iPhone:  an Apple Calendar event with an alert (a calendar file made on the phone), or, better for the minute
+  //            after the alarm, a Shortcuts automation: "when my alarm stops, open Mornward". A website can't create
+  //            that automation, so the app shows the steps and copies the link to paste.
+  // None of these can be confirmed from here, so nothing says "set" and nothing is counted.
+  const alarmLink = () => "https://mornward.app/?via=alarm#r=" + carryState();
   function reminderSection() {
     const at = store.get("alarmAt", "", isAlarmTime) || "07:00";
-    const google = `<a class="${isIOS ? "link start" : "button secondary"}" id="remGoogle" href="#" target="_blank" rel="noopener">${isIOS ? "Use Google Calendar instead" : "Add to Google Calendar"}</a>`;
-    const file = `<button class="${isIOS ? "secondary" : "link start"}" id="remIcs" type="button">${isIOS ? "Add to Calendar" : "Download a calendar file instead"}</button>`;
-    return `<details class="section" id="remindSec"><summary><span class="sl">${icon("cal")}Calendar reminder</span></summary><div class="inner">
-        <p>Mornward doesn't send notifications. This adds an event to your own calendar for the next ${REMIND_DAYS} mornings.</p>
+    const os = isIOS ? "ios" : "android";
+    const S = (g, t) => `<li><span class="g">${GLYPH[g]}</span><span>${t}</span></li>`;
+    return `<details class="section" id="remindSec"><summary><span class="sl">${icon("cal")}Morning reminder</span></summary><div class="inner">
+        <div class="seg" role="group" aria-label="Your phone">
+          <button type="button" data-rem-os="ios" aria-pressed="${os === "ios"}">iPhone</button>
+          <button type="button" data-rem-os="android" aria-pressed="${os === "android"}">Android</button>
+        </div>
         <label class="flabel" for="remAt">Time</label>
         <input type="time" id="remAt" value="${esc(at)}">
-        ${isIOS ? file + google : google + file}
+        <div class="rempane" data-pane="android"${os === "android" ? "" : " hidden"}>
+          <p>A Google Calendar event pops up at this time for the next ${REMIND_DAYS} mornings.</p>
+          <a class="button secondary" id="remGoogle" href="#" target="_blank" rel="noopener">Add to Google Calendar</a>
+          <button class="link start" id="remIcsAlt" type="button">Use a calendar file instead</button>
+        </div>
+        <div class="rempane" data-pane="ios"${os === "ios" ? "" : " hidden"}>
+          <p>An Apple Calendar alert pops up at this time for the next ${REMIND_DAYS} mornings.</p>
+          <button class="secondary" id="remIcs" type="button">Add to Apple Calendar</button>
+          <details class="cantfind" id="remShortcut"><summary>Better: open Mornward when your alarm stops</summary>
+            <p>Apple's Shortcuts app can do this every morning. It takes a minute, once.</p>
+            <ol class="vsteps four">
+              ${S("out", "Open <b>Shortcuts</b>, then <b>Automation</b>")}
+              ${S("add", "<b>+</b>, <b>Alarm</b>, <b>Is Stopped</b>")}
+              ${S("ok", "<b>Run Immediately</b>, <b>Next</b>")}
+              ${S("share", "<b>Open URLs</b>: paste the link, <b>Done</b>")}
+            </ol>
+            <div class="horow">
+              <button class="secondary" id="remCopy" type="button">Copy Mornward link</button>
+              <a class="link" id="remShortcuts" href="shortcuts://">Open Shortcuts</a>
+            </div>
+            <input type="text" readonly aria-label="Mornward link for Shortcuts" id="remField" hidden>
+            <p class="support">Steps can differ a little between iOS versions.</p>
+          </details>
+        </div>
         <p role="status" id="remMsg"></p>
       </div></details>`;
   }
   function wireReminder() {
     const g = $("#remGoogle");
     if (!g) return;
+    const msg = (t) => { $("#remMsg").textContent = t; };
     const time = () => $("#remAt").value;
     const point = () => { if (isAlarmTime(time())) g.href = googleCalendarLink(time(), carryLink()); };
     point();
@@ -1473,22 +1509,34 @@
     $("#remAt").addEventListener("change", point);
     const check = () => {
       if (isAlarmTime(time())) { store.set("alarmAt", time()); return true; }
-      $("#remMsg").textContent = "Pick a time first."; $("#remAt").focus(); return false;
+      msg("Pick a time first."); $("#remAt").focus(); return false;
     };
+    card.querySelectorAll("[data-rem-os]").forEach((b) => (b.onclick = () => {
+      card.querySelectorAll("[data-rem-os]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      card.querySelectorAll(".rempane").forEach((pane) => { pane.hidden = pane.dataset.pane !== b.dataset.remOs; });
+      msg("");
+    }));
     g.onclick = (e) => {
       if (!check()) { e.preventDefault(); return; }
       point();
       // We can only hand it over, not confirm it was saved
-      $("#remMsg").textContent = "Google Calendar opened. Save the event there to keep it.";
+      msg("Google Calendar opened. Save the event there to keep it.");
     };
-    $("#remIcs").onclick = () => {
+    const file = () => {
       if (!check()) return;
       const a = document.createElement("a");
       a.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(calendarFile(time(), carryLink()));
       a.download = "mornward.ics";
       document.body.appendChild(a); a.click(); a.remove();
-      $("#remMsg").textContent = isIOS ? "Tap Add to Calendar on the next screen. If a file downloaded instead, open it from Downloads."
-        : "Open the downloaded file to add it to your calendar.";
+      msg(isIOS ? "Tap Add to Calendar on the next screen. If a file downloaded instead, open it from Downloads."
+        : "Open the downloaded file to add it to your calendar.");
+    };
+    $("#remIcs").onclick = file;
+    $("#remIcsAlt").onclick = file;
+    $("#remCopy").onclick = async () => {
+      const url = alarmLink();
+      try { await navigator.clipboard.writeText(url); msg("Copied. Paste it in the Open URLs step."); }
+      catch { const f = $("#remField"); f.value = url; f.hidden = false; f.focus(); f.select(); msg("Copy this link, then paste it in the Open URLs step."); }
     };
   }
 
@@ -1538,7 +1586,9 @@
   }
 
   // ---------- arriving from a reminder, a link, or the iPhone home-screen icon ----------
-  const viaCalendar = new URLSearchParams(location.search).get("via") === "calendar";
+  // Opened from the calendar reminder or the iPhone alarm Shortcut
+  const via = (() => { const v = new URLSearchParams(location.search).get("via"); return v === "calendar" || v === "alarm" ? v : null; })();
+  const viaCalendar = via !== null;
   // The reminder link carries the anonymous ID and choices. A browser that has never seen Mornward (the first
   // visit happened inside another app's browser) takes them, so the same person isn't counted twice.
   (() => {

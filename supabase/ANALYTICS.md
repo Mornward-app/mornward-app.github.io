@@ -13,7 +13,7 @@ app drops rejected rows rather than retrying them, so those routines are lost fr
 
 | Kind | Sent when | `data` |
 | --- | --- | --- |
-| `routine_started` | Begin is tapped | `first: true` and `from` (link source; `qr` = scanned from the computer card) on a device's first routine ever; `via: "calendar"` when opened from the reminder |
+| `routine_started` | Begin is tapped | `first: true` and `from` (link source; `qr` = scanned from the computer card) on a device's first routine ever; `via: "calendar"` when opened from the calendar reminder, `via: "alarm"` from the iPhone alarm Shortcut |
 | `breathing_completed` | The third full breath (in + out) ends | — |
 | `breathing_skipped` | Skip breathing is tapped | `breaths_done` (0–2) |
 | `intention_saved` | Mini tasks are saved and read back from the phone's storage (the first save of a routine) | `count` (1–3), `kept_defaults` (the two pre-ticked tasks saved unchanged), `own` (wrote or reused their own) — never the text |
