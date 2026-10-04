@@ -155,6 +155,18 @@ browser. The copied Shortcut link is `mornward.app/?via=alarm#r=…` (anonymous 
 alarm show `via: "alarm"`. Nothing is counted when someone sets a reminder, because it can't be confirmed. Checked in
 `qa/redesign/reminder.js`. **Not tried on a real iPhone:** the Shortcuts steps can differ a little by iOS version.
 
+### Pass 9: the week strip becomes a path, with a fair percentage
+
+- **A path between the days:** a thin track joins the seven circles. Back-to-back mornings join in a thicker sun-coloured
+  line, so a run of days reads as one stretch; from the last morning, a dashed sun line points to tomorrow ("Next").
+- **A ring and a percentage** ("67% · 4 of 6 mornings this week"). It counts only days since the first morning, and
+  never a day that isn't over yet, so day one is 1 of 1 (100%), not 1 of 7 (14%). Days before the first morning are drawn
+  quieter so they don't read as misses. Screen readers hear "4 of 6 mornings this week, 67 percent. See you tomorrow."
+- **Uncertainty:** a percentage can motivate or pressure; it stays off Finish and never says "lost". Watch next-day
+  return and ask testers how it felt.
+- Also fixed while testing: on day 5 (where the mini-task bank comes round again) a few tasks could repeat from day 4;
+  now no two routine days in a row share a task (checked over 10 days and six different shuffles).
+
 ## What was removed from the core flow, and what was kept
 
 Removed from the screens: the five-step timeline and sky arc, the daily quote, the movement checklist, the

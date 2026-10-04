@@ -272,16 +272,35 @@
   .rempane[hidden] { display: none; }
   .vsteps.four li { font-size: 0.75rem; line-height: 1rem; }
   /* Week strip: done days are suns, tomorrow is an outline */
-  .week { display: flex; flex-direction: column; gap: 8px; }
+  .week { display: flex; flex-direction: column; gap: 10px; }
   .week ol { list-style: none; margin: 0; padding: 0; display: flex; justify-content: space-between; gap: 4px; }
-  .week li { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-  .week .dot { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--track); display: grid; place-items: center; }
+  .week li { position: relative; flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  /* The path: a thin track between days; back-to-back mornings join in sun colour; a dashed line points to tomorrow */
+  .week li + li::before { content: ""; position: absolute; top: 16px; right: 50%; width: calc(100% + 4px); height: 2px;
+    background: var(--track); border-radius: 1px; }
+  .week li.joined::before { height: 4px; top: 15px; background: var(--sun); }
+  .week li.tonext::before { background: none; border-top: 2px dashed var(--sun); height: 0; }
+  .week .dot { position: relative; z-index: 1; width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--track);
+    background: var(--bg); display: grid; place-items: center; }
   .week .done .dot { background: var(--sun); border-color: var(--sun); color: #18222F; }
   .week .done .dot .i { width: 20px; height: 20px; }
   .week .now .dot { border-color: var(--sun); border-width: 3px; }
   .week .next .dot { border-style: dashed; border-color: var(--text-2); }
+  /* Days before the first morning: quieter, but solid, so the track doesn't show through */
+  .week .pre .dot { border-color: color-mix(in srgb, var(--track) 45%, var(--bg)); }
+  .week .pre .wd { color: color-mix(in srgb, var(--text-2) 45%, var(--bg)); }
   .week .wd { font-size: 0.75rem; line-height: 1rem; color: var(--text-2); }
   .week .now .wd, .week .next .wd { font-weight: 700; color: var(--text); }
+  .wsum { display: flex; align-items: center; gap: 12px; }
+  .ring { width: 52px; height: 52px; flex: none; }
+  .ring circle { fill: none; stroke-width: 4; }
+  .ring .rt { stroke: var(--track); }
+  .ring .rf { stroke: var(--sun); stroke-linecap: round; }
+  .ring text { font: 700 11px var(--font); fill: var(--text); letter-spacing: -0.02em; }
+  .wsum p { display: flex; flex-direction: column; font-size: 0.875rem; line-height: 1.25rem; }
+  .wsum b { color: var(--text); }
+  .wsum span { color: var(--text-2); }
+  @media (prefers-reduced-motion: no-preference) { .ring .rf { transition: stroke-dasharray .6s ease-out; } }
   /* Test drive (preview build only): a slim tab, and a panel that slides up */
   .tdtab { width: auto; min-height: 44px; margin: 20px auto 0; padding: 8px 16px; gap: 8px; border-radius: 999px;
     font-size: 0.875rem; color: var(--text-2); border: 1.5px dashed var(--chip-line); }
@@ -861,15 +880,23 @@
     orders.set(cycle, seq);
     return seq;
   }
+  // The ten for set number n. Where the bank comes round again (a new shuffle), anything shown in the set before is
+  // skipped, so two routine days in a row never share a task.
+  function setFor(n, avoid = []) {
+    const len = POOL.size, out = [];
+    for (let k = n * CHIP_MAX; out.length < CHIP_MAX && k < (n + 3) * CHIP_MAX + len; k++) {
+      const x = bankOrder(Math.floor(k / len))[k % len];
+      if (!out.includes(x) && !avoid.includes(x)) out.push(x);
+    }
+    return out;
+  }
   // Today's ten: set number = routine days done before today
   function todaysSet(day) {
     const n = [...doneDays()].filter((d) => d < day).length;
-    const len = POOL.size, out = [];
-    for (let k = n * CHIP_MAX; out.length < CHIP_MAX; k++) {
-      const x = bankOrder(Math.floor(k / len))[k % len];
-      if (!out.includes(x)) out.push(x);
-    }
-    return out;
+    // Built day by day from the first, so "the day before" is exactly what was shown then
+    let set = [];
+    for (let i = 0; i <= n; i++) set = setFor(i, set);
+    return set;
   }
   function ownRecent(day) {
     const own = [];
@@ -1382,18 +1409,36 @@
   function weekStrip(doneToday) {
     const today = dayKey(), done = doneDays();
     const offs = doneToday ? [-5, -4, -3, -2, -1, 0, 1] : [-6, -5, -4, -3, -2, -1, 0];
+    // Count only days since the first morning, and never a day that isn't over yet: day one reads 1 of 1, 100%
+    const start = [...done].sort()[0] || today;
+    const counted = offs.filter((o) => o <= 0).map((o) => addDays(today, o))
+      .filter((d) => d >= start && (d !== today || done.has(d)));
+    const n = counted.filter((d) => done.has(d)).length, den = counted.length;
+    const pct = den ? Math.round((100 * n) / den) : 0;
+    let prevDone = false;
     const slots = offs.map((o) => {
       const d = addDays(today, o);
       const [y, m, dd] = d.split("-").map(Number);
       const wd = new Date(y, m - 1, dd).toLocaleDateString([], { weekday: "narrow" });
-      const cls = done.has(d) ? "done" : o === 1 ? "next" : o === 0 ? "now" : "";
-      return `<li class="${cls}"><span class="dot">${done.has(d) ? icon("sun") : ""}</span><span class="wd">${o === 0 ? "Today" : o === 1 ? "Next" : esc(wd)}</span></li>`;
+      const isDone = done.has(d);
+      const cls = [isDone ? "done" : o === 1 ? "next" : o === 0 ? "now" : d < start ? "pre" : "",
+        isDone && prevDone ? "joined" : "", o === 1 && prevDone ? "tonext" : ""].filter(Boolean).join(" ");
+      prevDone = isDone;
+      return `<li class="${cls}"><span class="dot">${isDone ? icon("sun") : ""}</span><span class="wd">${o === 0 ? "Today" : o === 1 ? "Next" : esc(wd)}</span></li>`;
     }).join("");
-    const n = offs.filter((o) => o <= 0 && done.has(addDays(today, o))).length;
-    const line = doneToday ? `${n} ${n === 1 ? "morning" : "mornings"} this week · see you tomorrow`
-      : n ? `${n} ${n === 1 ? "morning" : "mornings"} this week · today's is next` : "";
-    return `<div class="week" role="img" aria-label="${esc(line || "Your mornings this week")}">
-        <ol>${slots}</ol>${line ? `<p class="support">${esc(line)}</p>` : ""}
+    if (!den) return `<div class="week"><ol>${slots}</ol></div>`;
+    const tail = doneToday ? "See you tomorrow" : "Today's is next";
+    const label = `${n} of ${den} ${den === 1 ? "morning" : "mornings"} this week, ${pct} percent. ${tail}.`;
+    // A small ring fills with the share of mornings done
+    const C = 2 * Math.PI * 21;
+    return `<div class="week" role="img" aria-label="${esc(label)}">
+        <ol aria-hidden="true">${slots}</ol>
+        <div class="wsum" aria-hidden="true">
+          <svg class="ring" viewBox="0 0 52 52"><circle class="rt" cx="26" cy="26" r="21"/>
+            <circle class="rf" cx="26" cy="26" r="21" stroke-dasharray="${((C * pct) / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 26 26)"/>
+            <text x="26" y="30" text-anchor="middle">${pct}%</text></svg>
+          <p><b>${n} of ${den} ${den === 1 ? "morning" : "mornings"}</b><span>this week · ${esc(tail.toLowerCase())}</span></p>
+        </div>
       </div>`;
   }
 
