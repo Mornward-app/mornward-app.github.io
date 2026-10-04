@@ -68,6 +68,16 @@ after. Two earlier decisions change because of it, and the reasons are recorded 
 - **Why the home screen** (one line in the sheet): "It opens straight to Mornward, full screen, even offline."
 - **iPhone carry-over runs only when Add is tapped**, after agreeing, instead of whenever the box appears.
 
+### Pass 3c: changes from a design review
+
+| Review point | Change |
+| --- | --- |
+| Begin also asked people to install | The box appears only after the first routine is finished. The ✕ is a real "no": the box doesn't come back, and a closed "Add to home screen" row stays under Today for later. It disappears once installed or opened from the icon. |
+| Counts could only be turned off after the first routine | Begin now says "Anonymous usage counts are on. Turn off", before anything is sent. |
+| Two progress systems on Breathe | The step bars are gone (from Choose too). Breathe shows the dots with "Breath 1 of 3" written next to them. |
+| Ideas sat below Save | Order is now field → ideas → Save. The ideas are one row you can swipe, so Save moves only about 50 px and stays above an iPhone keyboard. Tapping an idea only fills the field. |
+| "3 taps" and arrows at browser buttons | Removed. The title is "Add Mornward to your home screen", every set of steps ends with the confirmation (for example "Tap Add"), and there are no arrows. The steps still need checking on real browsers. |
+
 ## What was removed from the core flow, and what was kept
 
 Removed from the screens: the five-step timeline and sky arc, the daily quote, the movement checklist, the

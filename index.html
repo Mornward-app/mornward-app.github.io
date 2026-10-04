@@ -104,7 +104,14 @@
   /* On Choose the actions sit right under the field, not at the bottom: an iPhone keyboard doesn't resize
      the page, so anything at the bottom would end up behind it */
   .actions { display: flex; flex-direction: column; gap: 12px; }
-  .actions .chips { margin-top: 4px; }
+  /* Ideas: one row you can swipe, so Save stays close to the field (and above an iPhone keyboard) */
+  .chips.strip { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: calc(-1 * var(--gutter));
+    padding: 2px var(--gutter); scroll-padding-inline: var(--gutter); -webkit-overflow-scrolling: touch; }
+  .chips.strip::-webkit-scrollbar { display: none; }
+  /* Soft edges show the row continues */
+  .chips.strip { -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--gutter), #000 calc(100% - var(--gutter)), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, #000 var(--gutter), #000 calc(100% - var(--gutter)), transparent 100%); }
+  .chips.strip .chip { flex: none; max-width: 80vw; }
 
   h1 {
     font-size: 2rem;           /* 32px */
@@ -178,10 +185,6 @@
     font-size: 0.875rem; line-height: 1.125rem; font-weight: 600; text-align: center; }
   .flow .i { width: 28px; height: 28px; color: var(--text-2); }
   .flow li:last-child .i { color: var(--text); }
-  .steps { display: flex; gap: 6px; }
-  .steps span { flex: 1; height: 6px; border-radius: 3px; background: var(--track); }
-  .steps .done { background: var(--text-2); }
-  .steps .now { background: var(--sun); }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip {
     width: auto; min-height: 44px; padding: 8px 14px; border-radius: 999px; gap: 6px;
@@ -223,20 +226,6 @@
     max-width: 480px; width: 100%; margin: 0 auto; }
   .gsheet h2 { margin: 0; font-size: 1.25rem; line-height: 1.625rem; }
   .gsheet .row .ix { margin-right: -10px; }
-  .garrow { position: absolute; z-index: 1; width: 44px; height: 44px; color: var(--sun); filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
-  .garrow svg { width: 44px; height: 44px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
-  .garrow.down-center { bottom: 6px; left: calc(50% - 22px); }
-  .garrow.down-right { bottom: 6px; right: 14px; }
-  .garrow.up-right { top: 6px; right: 14px; transform: rotate(180deg); }
-  .garrow.down-center, .garrow.down-right { bottom: calc(6px + env(safe-area-inset-bottom)); }
-  /* The sheet covers the bottom, so a downward arrow sits above it, pointing past it to the toolbar */
-  .guide:has(.garrow.down-center) .gsheet, .guide:has(.garrow.down-right) .gsheet { margin-bottom: 56px; border-radius: 22px; }
-  @media (prefers-reduced-motion: no-preference) {
-    .garrow { animation: nudge 1.2s ease-in-out infinite; }
-    @keyframes nudge { 50% { translate: 0 6px; } }
-    .garrow.up-right { animation-name: nudgeUp; }
-    @keyframes nudgeUp { 50% { translate: 0 -6px; } }
-  }
   .vsteps { list-style: none; margin: 0; padding: 0; display: flex; gap: 8px; counter-reset: st; }
   .vsteps li { flex: 1 1 0; min-width: 0; counter-increment: st; display: flex; flex-direction: column; align-items: center; gap: 6px;
     padding: 12px 6px 10px; border-radius: 14px; background: var(--bg); font-size: 0.8125rem; line-height: 1.125rem; text-align: center; color: var(--text); }
@@ -289,6 +278,7 @@
   .orb[data-phase="out"] { transform: scale(.55); }
   .orbwrap { cursor: pointer; -webkit-tap-highlight-color: transparent; }
   .orbwrap.paused .orb { opacity: .55; }
+  .bprog { display: flex; align-items: center; gap: 12px; }
   .dots { display: flex; gap: 10px; }
   .dots span { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--text-2); }
   .dots .done { background: var(--text-2); }
@@ -627,9 +617,6 @@
       <line class="horizon" x1="8" y1="96" x2="232" y2="96"/>
     </svg>`;
   }
-  // Where you are: three short bars. The label says it in words for screen readers.
-  const steps = (at) => `<div class="steps" role="img" aria-label="Step ${at} of 3">${[1, 2, 3]
-    .map((i) => `<span class="${i < at ? "done" : i === at ? "now" : ""}"></span>`).join("")}</div>`;
   // A short buzz at each in/out change, so breathing works with eyes closed (Android; iPhones ignore it)
   const buzz = () => { try { if (navigator.vibrate) navigator.vibrate(12); } catch { /* not allowed here */ } };
 
@@ -652,15 +639,27 @@
         <p class="support center tag">${icon("clock")}About one minute</p>
         ${agreed ? "" : `<div class="consent" id="consent">
           <p>Free · No account · Your words stay on this phone.</p>
-          <p>Tapping Begin accepts the <a href="terms.html" target="_blank" rel="noopener">beta terms</a> and anonymous usage counts.</p>
+          <p>Tapping Begin accepts the <a href="terms.html" target="_blank" rel="noopener">beta terms</a>.</p>
+          <p id="preStats"></p>
           <details><summary>What's counted</summary>${COUNTED}<p><b>Never sent:</b></p>${NOT_SENT}
-            <p>Stored on Supabase in the United States and deleted within 90 days after the beta. You can turn the counts
-            off after your first routine. Questions: ${CONTACT}</p></details>
+            <p>Stored on Supabase in the United States and deleted within 90 days after the beta. You can change this
+            here or any time later. Questions: ${CONTACT}</p></details>
         </div>`}
         ${earlier ? `<div class="more">${earlier}</div>` : ""}
       </div>`, "Mornward. Before the scroll, one clear intention.");
     $("#begin").onclick = begin;
-    renderInstall();
+    // The counts choice, before anything is sent
+    const pre = $("#preStats");
+    if (pre) {
+      const draw = () => {
+        const off = store.get("noStats", false) === true;
+        pre.innerHTML = `Anonymous usage counts are ${off ? "off" : "on"}. <button class="link inline" type="button" id="preToggle">${off ? "Turn on" : "Turn off"}</button>`;
+        $("#preToggle").onclick = () => { store.set("noStats", !off); if (!off) { store.set("outbox", []); store.set("viewbox", []); } draw(); $("#preToggle").focus(); };
+      };
+      draw();
+    }
+    // The home-screen box waits until someone has finished a routine
+    if (doneDays().size) renderInstall();
   }
   function begin() {
     if (!hasAgreed()) store.set("agreed", { version: TERMS_VERSION, on: dayKey(), how: "begin" });
@@ -687,10 +686,8 @@
     `<span class="${i < routine.breaths ? "done" : i === routine.breaths ? "now" : ""}"></span>`).join("");
   function renderBreathe(paused) {
     show(`
-      ${steps(1)}
       <h1 id="bword">${paused ? "Paused" : "Breathe in"}</h1>
-      <div class="dots" id="bdots" aria-hidden="true">${dots()}</div>
-      <p class="sr-only" id="bcount">${breathLabel()}</p>
+      <div class="bprog"><div class="dots" id="bdots" aria-hidden="true">${dots()}</div><p class="support" id="bcount">${breathLabel()}</p></div>
       <div class="orbwrap" id="orbTap"><div class="orb" id="orb" aria-hidden="true"></div></div>
       <p class="sr-only" id="bstatus" role="status"></p>
       <div class="push">
@@ -781,7 +778,7 @@
   document.addEventListener("visibilitychange", () => { if (document.hidden) pauseBreathing(); });
 
   // ---------- 3. Choose ----------
-  // One-tap ideas: your own last few intentions first, then a few small starters. Tapping fills the field;
+  // One-tap ideas, between the field and Save: your own last few intentions first, then a few small starters. Tapping fills the field;
   // you can still change the words before saving.
   const STARTERS = ["One focused hour", "Move my body", "Get outside", "Call someone"];
   function ideas(day) {
@@ -796,7 +793,6 @@
     const draft = store.get(draftKey(day), null, isText);
     const value = draft !== null && draft.trim() ? draft : saved;
     show(`
-      ${editing ? "" : steps(2)}
       <h1>What matters<br>this morning?</h1>
       <div class="field">
         <label for="intent">My intention</label>
@@ -804,12 +800,12 @@
           autocapitalize="sentences" placeholder="Something small is enough" aria-describedby="imsg">${esc(value)}</textarea>
         <p class="msg" id="imsg" role="status"></p>
       </div>
+        <div class="chips strip" id="ideas" role="group" aria-label="Ideas to tap">
+        ${ideas(day).map((x, i) => `<button class="chip${x.own ? " own" : ""}" type="button" data-idea="${i}"
+          aria-pressed="false"${x.own ? ` aria-label="Use again: ${esc(x.t)}"` : ""}>${x.own ? icon("again") : ""}<span>${esc(x.t)}</span></button>`).join("")}
+      </div>
       <div class="actions">
         <button class="primary" id="isave" type="button">Save my intention</button>
-        <div class="chips" id="ideas" role="group" aria-label="Ideas to tap">
-          ${ideas(day).map((x, i) => `<button class="chip${x.own ? " own" : ""}" type="button" data-idea="${i}"
-            aria-pressed="false"${x.own ? ` aria-label="Use again: ${esc(x.t)}"` : ""}>${x.own ? icon("again") : ""}<span>${esc(x.t)}</span></button>`).join("")}
-        </div>
         <button class="link" id="iskip" type="button">${editing ? "Keep it as it was" : "Skip for today"}</button>
       </div>`, editing ? "Edit your intention" : "What matters this morning?");
     const field = $("#intent");
@@ -832,8 +828,8 @@
       grow(); keepDraft(); markIdeas();
     }));
     field.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); save(); } });
-    // Keep the field and its button above the keyboard once it opens. Ideas sit below Save and never move,
-    // so a tap meant for Save can't land on an idea.
+    // Keep the field and its button above the keyboard once it opens. The ideas are one row and never move or
+    // hide, so a tap meant for Save can't land on an idea.
     field.addEventListener("focus", () => setTimeout(() => { const b = $("#isave"); if (b) b.scrollIntoView({ block: "nearest" }); }, 350));
     if (window.visualViewport) {
       const keep = () => { if (document.activeElement === field) { const b = $("#isave"); if (b) b.scrollIntoView({ block: "nearest" }); } };
@@ -914,6 +910,7 @@
       <button class="chip" id="again" type="button">${icon("again")}<span>Do the routine again</span></button>
       <div class="more">
         ${earlierSection(routine.day)}
+        ${quietAdd()}
         ${reminderSection()}
         ${themeSection()}
         ${privacySection()}
@@ -921,6 +918,7 @@
     ($("#iedit") || $("#iadd")).onclick = () => renderChoose(true, renderToday);
     $("#again").onclick = begin;
     renderInstall();
+    syncQuiet();
     wireReminder();
     wireTheme();
     wirePrivacy();
@@ -1040,13 +1038,13 @@
     const steps = {
       "inapp": [S("menu", `Tap <b>⋯</b> or <b>⋮</b> in this app`), S("out", `<b>Open in browser</b> (${main})`), S("add", `Then add it from there`)],
       "ios-safari": iosVersion >= 26
-        ? [S("more", `Tap <b>⋯</b> by the address bar`), S("share", `Tap <b>Share</b>`), S("add", `<b>Add to Home Screen</b>`)]
+        ? [S("more", `Tap <b>⋯</b> by the address bar`), S("share", `Tap <b>Share</b>`), S("add", `<b>Add to Home Screen</b>`), S("ok", `Tap <b>Add</b>`)]
         : [S("share", `Tap <b>Share</b>`), S("add", `<b>Add to Home Screen</b>`), S("ok", `Tap <b>Add</b>`)],
       "ios-chrome": [S("share", `Tap <b>Share</b> in the address bar`), S("add", `<b>Add to Home Screen</b>`), S("ok", `Tap <b>Add</b>`)],
-      "ios-other": [S("out", `Open in <b>Safari</b>`), S("share", `Tap <b>Share</b>`), S("add", `<b>Add to Home Screen</b>`)],
-      "android-chrome": [S("menu", `Tap <b>⋮</b> at the top`), S("add", `<b>Add to home screen</b>`), S("ok", `Tap <b>Install</b>`)],
-      "samsung": [S("menu", `Tap <b>☰</b> at the bottom`), S("add", `<b>Add page to</b>`), S("ok", `<b>Home screen</b>`)],
-      "android-firefox": [S("menu", `Tap <b>⋮</b>`), S("add", `<b>Add to Home screen</b>`), S("ok", `Tap <b>Add</b>`)],
+      "ios-other": [S("out", `Open in <b>Safari</b>`), S("share", `Tap <b>Share</b>`), S("add", `<b>Add to Home Screen</b>`), S("ok", `Tap <b>Add</b>`)],
+      "android-chrome": [S("menu", `Tap <b>⋮</b> at the top`), S("add", `<b>Add to home screen</b> or <b>Install app</b>`), S("ok", `Tap <b>Install</b> or <b>Add</b>`)],
+      "samsung": [S("menu", `Tap <b>☰</b> at the bottom`), S("add", `<b>Add page to</b>`), S("ok", `<b>Home screen</b>, then <b>Add</b>`)],
+      "android-firefox": [S("menu", `Tap <b>⋮</b>`), S("add", `<b>Add to Home screen</b> or <b>Install</b>`), S("ok", `Tap <b>Add</b>`)],
       "android-other": [S("menu", `Open the browser menu`), S("add", `<b>Add to Home screen</b>`), S("ok", `Confirm`)],
       "computer": [S("out", `Open <b>mornward.app</b> on your phone`), S("add", `Add it to the home screen`)],
     }[k];
@@ -1055,21 +1053,13 @@
   const onComputer = () => !isIOS && !isAndroid && !onHomeScreen;
   const installState = () => (onHomeScreen ? "home" : installed ? "installed" : installAccepted ? "accepted"
     : installPrompt ? "prompt" : "manual");
-  // Where the button to tap is in this browser, for the guide's arrow. Approximate: browsers move their buttons.
-  const isIPad = /iPad/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  function arrowSpot(k) {
-    if (k === "ios-safari") return isIPad ? "up-right" : iosVersion >= 26 ? "down-right" : "down-center";
-    if (k === "ios-chrome" || k === "android-chrome" || k === "android-other" || k === "android-firefox") return "up-right";
-    if (k === "samsung") return "down-right";
-    return "";
-  }
-  // The box at the bottom of Begin and Today: one row. Gone once Mornward is on the home screen;
-  // the ✕ hides it until tomorrow.
+  // The box at the bottom of Today (and Begin, once someone has finished a routine): one row. Gone once Mornward is on
+  // the home screen. The ✕ means no: the box doesn't come back, and a quiet row under Today stays for later.
   function installBoxHtml() {
     const st = installState();
     if (st === "home") return "";
     if (!PREVIEW && onComputer()) return "";
-    if (store.get("installSnooze", "", isDay) === dayKey() && st !== "installed" && st !== "accepted") return "";
+    if (store.get("installNo", false) === true && st !== "installed" && st !== "accepted") return "";
     const line = st === "installed" ? "Added. Open it from there tomorrow."
       : st === "accepted" ? "Adding it now…"
       : installNote || "One tap tomorrow, no feed first.";
@@ -1089,23 +1079,24 @@
     if (slot.firstElementChild) wireHome();
   }
   // Chrome's offer can arrive seconds after the page opens; redraw the box if it's on screen
-  function refreshHome() { if (card.querySelector("#begin, #again")) renderInstall(); }
+  function refreshHome() {
+    if (card.querySelector("#again") || (card.querySelector("#begin") && doneDays().size)) renderInstall();
+    syncQuiet();
+  }
 
   // The guide for adding by hand (iPhone always; Android when Chrome hasn't offered its dialog): a sheet at the
-  // bottom with the steps and an arrow toward the button to tap. Esc, Done or tapping outside closes it.
+  // bottom with the steps, including the final confirmation. Esc, Done or tapping outside closes it.
   function openGuide() {
     closeGuide();
     const k = stepKind();
     // iPhone: the icon gets its own storage, so point its start address at this phone's anonymous ID first
     if (k.startsWith("ios")) prepareIconStart(true);
-    const spot = arrowSpot(k);
     const wrap = document.createElement("div");
     wrap.className = "guide";
     wrap.id = "installGuide";
     wrap.innerHTML = `<div class="gback" data-guide-close></div>
-      ${spot ? `<div class="garrow ${spot}" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4v15M6 13l6 6 6-6"/></svg></div>` : ""}
       <div class="gsheet" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
-        <div class="row"><h2 id="guideTitle" tabindex="-1">Add Mornward in 3 taps</h2>
+        <div class="row"><h2 id="guideTitle" tabindex="-1">Add Mornward to your home screen</h2>
           <button class="ix" data-guide-close type="button" aria-label="Close"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
         ${installStepsList()}
         <p class="support">It opens straight to Mornward, full screen, even offline.</p>
@@ -1138,7 +1129,7 @@
     const g = $("#installGuide");
     if (!g) return;
     g.remove();
-    const add = $("[data-install-add]");
+    const add = $("[data-install-add]") || $("#addQuiet");
     if (refocus && add) add.focus();
   }
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeGuide(true); });
@@ -1146,30 +1137,55 @@
     const box = $("#installBox");
     if (!box) return;
     const add = box.querySelector("[data-install-add]");
-    if (add) add.onclick = async () => {
-      if (!installPrompt) { openGuide(); return; }
-      // Chrome's own dialog: it allows each prompt to be shown once, and only from a tap
-      if (installBusy) return;
-      installBusy = true;
-      add.disabled = true;
-      const ask = installPrompt;
-      installPrompt = null;
-      try {
-        await ask.prompt();
-        const choice = await ask.userChoice;
-        const outcome = choice && choice.outcome === "accepted" ? "accepted" : "dismissed";
-        emitDay("install_prompt", { outcome });
-        if (outcome === "accepted") { installAccepted = true; installNote = ""; }
-        else installNote = "No problem. Tap Add any time for the steps.";
-      } catch {
-        installNote = "That didn't open. Tap Add for the steps instead.";
-      }
-      installBusy = false;
-      renderInstall();
-    };
+    if (add) add.onclick = () => startAdd(add);
     const later = box.querySelector("[data-install-later]");
-    if (later) later.onclick = () => { store.set("installSnooze", dayKey()); renderInstall(); };
+    if (later) later.onclick = () => {
+      store.set("installNo", true);
+      renderInstall();
+      // On Today, the quiet row takes its place
+      if (card.querySelector("#again") && !$("#addSec")) { $("#remindSec").insertAdjacentHTML("beforebegin", quietAdd()); syncQuiet(); }
+    };
   }
+  // Chrome's own dialog when it's offered (it allows each one once, and only from a tap); otherwise the guide
+  async function startAdd(btn) {
+    if (!installPrompt) { openGuide(); return; }
+    // Chrome's own dialog: it allows each prompt to be shown once, and only from a tap
+    if (installBusy) return;
+    installBusy = true;
+    btn.disabled = true;
+    const ask = installPrompt;
+    installPrompt = null;
+    try {
+      await ask.prompt();
+      const choice = await ask.userChoice;
+      const outcome = choice && choice.outcome === "accepted" ? "accepted" : "dismissed";
+      emitDay("install_prompt", { outcome });
+      if (outcome === "accepted") { installAccepted = true; installNote = ""; }
+      else installNote = "No problem. Tap Add any time for the steps.";
+    } catch {
+      installNote = "That didn't open. Tap Add for the steps instead.";
+    }
+    installBusy = false;
+    btn.disabled = false;
+    renderInstall();
+    syncQuiet();
+  }
+  // Keep the quiet row's words and button in step with what the browser says
+  function syncQuiet() {
+    const sec = $("#addSec");
+    if (!sec) return;
+    const st = installState();
+    if (st === "home" || st === "installed") { sec.querySelector(".inner").innerHTML = `<p role="status">Added. Open it from your home screen tomorrow.</p>`; return; }
+    sec.querySelector("p").textContent = installNote || "Opens in one tap tomorrow, no feed first.";
+    const b = $("#addQuiet");
+    b.textContent = st === "accepted" ? "Adding…" : "Add to home screen";
+    b.onclick = () => startAdd(b);
+  }
+  // After someone said no to the box: a closed row under Today, so it's still there when they want it
+  const quietAdd = () => (store.get("installNo", false) !== true || ["home", "installed"].includes(installState()) || (!PREVIEW && onComputer())) ? ""
+    : `<details class="section" id="addSec"><summary><span class="sl">${icon("home")}Add to home screen</span></summary><div class="inner">
+        <p>${esc(installNote || "Opens in one tap tomorrow, no feed first.")}</p>
+        <button class="secondary" id="addQuiet" type="button">${installState() === "accepted" ? "Adding…" : "Add to home screen"}</button></div></details>`;
 
   // ---------- the week strip: the last few mornings, and tomorrow ----------
   // Shows that this is something you come back to, without a streak to lose: done days fill with a sun,
