@@ -117,6 +117,29 @@ after. Two earlier decisions change because of it, and the reasons are recorded 
 - Checked by `qa/redesign/rotate.js` (no overlap day 1→2 and 2→3, all 39 seen in four days, stable within a day,
   nothing sent).
 
+### Pass 7: from a computer to the phone; which phone the steps are for
+
+People who find the link on a computer (ads, posts) won't open a laptop first thing in the morning, so the computer
+visit has to end on the phone. Options weighed:
+
+| Option | For | Against | Decision |
+| --- | --- | --- | --- |
+| Block computers ("use your phone") | Clear | Hostile; loses curious visitors | No |
+| Email or text yourself the link | Familiar | Typing an address is friction | Not on its own |
+| **QR code: point your phone's camera** | One action, no typing; the pattern Apple uses on apple.com ("scan with your iPhone") | Needs a phone nearby, which is usually true | **Primary** |
+| **Send to my phone** (the computer's share menu: AirDrop, Nearby Share, Messages) | One tap on a Mac with an iPhone | Not every computer has it | Secondary; shown only where it works |
+| Copy link | Works everywhere | More steps | Quiet fallback |
+| Let them use it on the computer | No dead end | Doesn't build the morning habit | Still allowed; Begin is never blocked |
+
+Applied the Apple way: one obvious action (scan), a card that never blocks the routine (beside the app on wide
+screens, below it on narrow ones), secondary options quiet, and plain words ("Take it to your phone"). The code opens
+`mornward.app/?from=qr`, so `from: qr` on a phone's first routine counts these hand-offs. The computer never shows the
+phone install box, because it would ask for something a computer can't do.
+
+The add-to-home-screen guide now says which phone it's for: an **iPhone | Android** switch, set from the browser, with
+the browser named under it ("On iPhone, in Safari", "On Android, in Samsung Internet"; inside Instagram: "Open this
+page in Safari first, then:"). Checked in `qa/redesign/handoff.js`, which reads the QR code back from a screenshot.
+
 ## What was removed from the core flow, and what was kept
 
 Removed from the screens: the five-step timeline and sky arc, the daily quote, the movement checklist, the
