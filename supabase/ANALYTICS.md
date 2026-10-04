@@ -20,6 +20,8 @@ The 1-minute version (offered after setup in the afternoon and evening) sends on
 
 `morning_start` carries `via: calendar` when the morning was opened from the calendar reminder.
 
+New visitors (from the reset-first welcome) do the 1-minute reset before any setup question. Their `setup_done` is sent once, when that first reset is finished, with `flow: "reset"` and `habit: null`; if they answer the optional question afterwards, the habit is saved on the phone and shows up on their `morning_start` events, without a second `setup_done`.
+
 `setup_done` also carries `from`: the link source (`?from=reddit` → `reddit`), or null. Count sign-ups by source:
 
 ```sql

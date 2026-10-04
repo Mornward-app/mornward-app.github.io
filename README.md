@@ -11,7 +11,7 @@ No lock. No lecture. Just a better first move.
 
 ## How it works
 
-**Once (about a minute):** add Mornward to your home screen, answer one question, and leave a note for tomorrow with a calendar reminder at your alarm time.
+**First visit (about a minute):** try a 1-minute reset (three breaths, one line, one thing for today). Then, if you like, add Mornward to your home screen, answer one question, and leave a note for tomorrow with a calendar reminder at your alarm time.
 
 **Every morning (about 5 minutes):**
 

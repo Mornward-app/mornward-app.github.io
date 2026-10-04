@@ -304,6 +304,18 @@
   .howto li::marker { color: var(--sun-deep); font-weight: 700; }
   .howto b { font-weight: 700; }
   .check { color: var(--ok-text); font-weight: 600; }
+  .instbox { display: flex; flex-direction: column; gap: 10px; }
+  .instbox .istatus { margin: 0; }
+  .instbox .isteps { margin: 0; padding-left: 1.4em; display: flex; flex-direction: column; gap: 8px; font-size: 16.5px; }
+  .instbox .isteps b { font-weight: 700; }
+  .instbox .ic { display: inline-grid; place-items: center; width: 24px; height: 24px; vertical-align: -6px; border-radius: 6px;
+    color: var(--sun-deep); background: color-mix(in srgb, var(--sun-deep) 12%, transparent); }
+  .instbox .ic svg { width: 15px; height: 15px; }
+  .instbox details.cantfind { margin-top: 4px; }
+  .instbox details.cantfind summary { cursor: pointer; font-weight: 600; color: var(--accent-text); }
+  .instbox details.cantfind p { margin: 8px 0; font-size: 15px; }
+  .instbox input[data-link-field] { width: 100%; margin-top: 6px; font: inherit; font-size: 14px; }
+  .okline { color: var(--ok-text); font-weight: 700; }
   .remind { display: flex; flex-direction: column; gap: 12px; margin: 8px 0; padding: 18px; border-radius: 16px;
     border: 1px solid color-mix(in srgb, var(--sun-deep) 45%, transparent); background: color-mix(in srgb, var(--sun-deep) 8%, transparent); }
   .remind h2 { margin: 0; }
@@ -389,6 +401,16 @@
   .welcome .wpin .ic { display: inline-grid; place-items: center; width: 24px; height: 24px; vertical-align: -6px;
     border-radius: 6px; color: var(--w-amber); background: rgba(245, 178, 92, .14); }
   .welcome .wpin .ic svg { width: 15px; height: 15px; }
+  .welcome .instbox { margin-top: 2px; padding: 12px 14px; border-radius: 14px; gap: 8px;
+    background: rgba(245, 178, 92, .08); border: 1px solid rgba(245, 178, 92, .3); color: var(--w-soft); text-align: left; }
+  .welcome .instbox .istatus { color: var(--w-ink); font-size: 15.5px; }
+  .welcome .instbox .isteps { font-size: 15px; color: var(--w-soft); }
+  .welcome .instbox .isteps b { color: var(--w-ink); }
+  .welcome .instbox .ic { color: var(--w-amber); background: rgba(245, 178, 92, .14); }
+  .welcome .instbox details.cantfind summary { color: var(--w-amber); font-size: 14.5px; }
+  .welcome .instbox details.cantfind p { color: var(--w-soft); font-size: 14px; }
+  .welcome .instbox details.cantfind button { background: transparent; color: var(--w-ink); border-color: rgba(245, 178, 92, .5); }
+  .welcome .instbox .saved { color: var(--w-amber); }
   .welcome button.wpingo { background: transparent; color: var(--w-amber); border-color: var(--w-amber); font-weight: 700; width: 100%; }
   .welcome button.wpingo:focus-visible { outline-color: var(--w-ink); }
   .welcome button.wlater { background: transparent; border-color: transparent; color: var(--w-soft); width: 100%; }
@@ -1111,6 +1133,7 @@
     const outbox = store.get("outbox", [], Array.isArray);
     if (!outbox.length) return;
     flushing = true;
+    let sent = false;
     try {
       const res = await fetch(STATS.url, {
         method: "POST",
@@ -1122,9 +1145,12 @@
       if (res.ok || (res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429)) {
         const now = store.get("outbox", [], Array.isArray);
         store.set("outbox", now.slice(outbox.length));
+        sent = true;
       }
     } catch { /* offline or blocked: keep them for next time */ }
     flushing = false;
+    // Rows queued while this request was out (two events close together) go now, not on the next visit
+    if (sent && store.get("outbox", [], Array.isArray).length) flushStats();
   }
   function track(kind, data = {}) {
     if (!statsOn()) return;
@@ -1659,13 +1685,14 @@
   // The link in the reminder carries this phone's setup in the part after "#", which never leaves the phone.
   // It matters because a page opened inside Reddit or Instagram keeps its own storage: without it, the
   // morning would open in the real browser and start over from the welcome screen.
-  function carryLink(note, forDay) {
+  function carryState(note, forDay) {
     const st = store.get("setup", {}, isSetup);
     const r = { v: 1, i: deviceId(), h: st.habit || null, d: chosenDoors() || [], a: store.get("alarmAt", null, isAlarmTime),
       f: store.get("from", null), t: TERMS_VERSION, s: store.get("noStats", false) === true ? 1 : 0 };
     if (note) { r.n = note; r.nd = forDay; r.nw = dayKey(); }
-    return "https://mornward.app/?via=calendar#r=" + encodeURIComponent(JSON.stringify(r));
+    return encodeURIComponent(JSON.stringify(r));
   }
+  const carryLink = (note, forDay) => "https://mornward.app/?via=calendar#r=" + carryState(note, forDay);
   const reminderText = (note, link) => (note ? `Your note: "${note}"\n\n` : "") + `Open this before anything else: ${link}\nA few minutes, then you're free.`;
   const icsEsc = (t) => t.replace(/\\/g, "\\\\").replace(/;/g, "\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
   // Calendar files want lines of at most 75 bytes; longer ones continue on the next line after a space
@@ -1760,7 +1787,7 @@
   // Setup is one question. The useful-apps picker is offered later, from the end of a morning.
   const setupScreens = [
     () => `
-      <p class="eyebrow">One question</p>
+      <p class="eyebrow">Optional · one question</p>
       <h2>Alarm off. Your thumb goes straight to…</h2>
       <div class="choices">
         ${Object.entries(HABITS).map(([k, h]) => `<button type="button" data-habit="${k}"><strong>${esc(h.label)}</strong></button>`).join("")}
@@ -1817,12 +1844,15 @@
     card.innerHTML = setupScreens[setupStep]();
     window.scrollTo(0, 0);
     announceScreen(setupStep === 0 ? "Setup: one question" : "Pick your useful apps");
+    // After the first reset, setup is already counted: answering here only personalizes tomorrow
     const finish = (skipped = false) => {
+      const already = store.get("setup", { done: false }, isSetup).done;
       saveSetup({ done: true });
       const st = store.get("setup", {}, isSetup);
-      track("setup_done", skipped ? { skipped: true, from: store.get("from", null) }
+      if (!already) track("setup_done", skipped ? { skipped: true, from: store.get("from", null) }
         : { habit: st.habit || null, doors: chosenDoors() || [], own_apps: customDoors().length, skipped: false, from: store.get("from", null) });
-      renderSeeYou();
+      prepareIconStart();
+      renderSeeYou(true);
     };
     const on = (id, fn) => { const el = $("#" + id); if (el) el.onclick = fn; };
     on("sSkip", () => finish(true));
@@ -1888,18 +1918,24 @@
     <text x="180" y="30" text-anchor="middle" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="11" letter-spacing="2" fill="#9aa0c8">7:02 · ALARM OFF</text>
   </svg>`;
   let welcomed = false;
-  // Android Chrome can install in one tap; keep its install prompt for our own button
-  let installPrompt = null, installed = false;
+  // ---------- adding Mornward to the home screen: state ----------
+  // Browsers that support it (Chrome on Android, mostly) fire beforeinstallprompt, sometimes seconds after load.
+  // The saved event can be shown once, only from a tap. "Accepted" means the person said yes to the prompt;
+  // only appinstalled (or opening from the icon) confirms it's actually on the home screen.
+  let installPrompt = null;     // the saved, unused prompt
+  let installBusy = false;      // a prompt is open: ignore more taps
+  let installAccepted = false;  // said yes; waiting for the browser to confirm
+  let installNote = "";         // what happened last time (dismissed, failed), shown next to the steps
+  let installed = false;        // confirmed by the browser
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
+    if (installed) return;
     installPrompt = e;
-    if ($("#installScreen")) renderInstall();
-    refreshWelcomeInstall();
+    refreshInstallPanels();
   });
   window.addEventListener("appinstalled", () => {
-    installed = true; installPrompt = null;
-    if ($("#installScreen")) renderInstall();
-    refreshWelcomeInstall();
+    installed = true; installPrompt = null; installAccepted = false; installNote = "";
+    refreshInstallPanels();
   });
   // Opened from the calendar reminder. If this browser has never seen Mornward (the setup happened inside
   // another app's browser), take the setup the link carries, so the morning starts instead of the welcome.
@@ -1929,78 +1965,28 @@
     return /^[a-z0-9-]{1,20}$/.test(v) ? v : null;
   })();
   if (linkFrom && store.get("from", null) === null) store.set("from", linkFrom);
-  if (linkFrom && isIOS && !onHomeScreen) {
+  // On iPhone the home-screen icon starts with empty storage. Point it at an address that carries the link
+  // source and, once set up, the setup itself (after "#", which never reaches a server), so the icon opens
+  // the morning instead of the welcome. Safari uses the manifest's start address if it reads it, otherwise
+  // the page's own address, so both are updated.
+  function prepareIconStart(updateAddress = false) {
+    if (!isIOS || onHomeScreen) return;
+    const from = store.get("from", null);
+    const setUp = hasAgreed() && store.get("setup", { done: false }, isSetup).done;
+    if (!from && !setUp) return;
+    const rel = "./" + (from ? "?from=" + encodeURIComponent(from) : "") + (setUp ? "#r=" + carryState() : "");
     const abs = (u) => new URL(u, location.href).href;
-    const m = { name: "Mornward", short_name: "Mornward", start_url: abs("./?from=" + linkFrom), scope: abs("./"),
+    const m = { name: "Mornward", short_name: "Mornward", start_url: abs(rel), scope: abs("./"),
       display: "standalone", background_color: "#10143a", theme_color: "#0a0d22",
       icons: [{ src: abs("icons/icon-192.png"), sizes: "192x192", type: "image/png" },
               { src: abs("icons/icon-512.png"), sizes: "512x512", type: "image/png" }] };
     const link = document.querySelector('link[rel="manifest"]');
     if (link) link.href = "data:application/manifest+json," + encodeURIComponent(JSON.stringify(m));
+    if (setUp && updateAddress) { try { history.replaceState(null, "", rel); } catch {} }
   }
+  prepareIconStart();
 
-  const needsInstallStep = () => (isIOS || isAndroid) && !onHomeScreen;
-
-  // Right after the welcome on a phone: put Mornward on the home screen first, so setup happens once,
-  // inside the icon they'll tap tomorrow. (On iPhone, Safari and the icon keep separate storage.)
   const IC_SHARE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg>`;
-  const IC_ADD = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8.5v7M8.5 12h7"/></svg>`;
-  const IC_DOTS = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>`;
-  const row = (icon, text, note = "", cls = "ic") => `<li><span class="${cls}">${icon}</span><span>${text}${note ? `<small>${note}</small>` : ""}</span></li>`;
-  function renderInstall() {
-    clearTimers();
-    document.body.classList.add("welcoming");
-    const later = () => { welcomed = true; boot(); };
-    let body;
-    if (installed) {
-      body = `<p class="wdone">✓ Added to your home screen.</p>
-        <p class="wnote">Open it from there, or keep going here. Nothing gets lost.</p>`;
-    } else if (isAndroid && installPrompt) {
-      body = `<p class="wnote">One tap. Nothing gets lost.</p>`;
-    } else if (isAndroid) {
-      body = `<ol class="wrows">
-          ${row(IC_DOTS, "Tap <b>⋮</b>", "Top right of Chrome")}
-          ${row(IC_ADD, "Tap <b>Add to Home screen</b>", "Or <b>Install app</b>")}
-          ${row(LOGO, "Open <b>Mornward</b> from your home screen", "", "ic logo")}
-        </ol>`;
-    } else {
-      body = `<ol class="wrows">
-          ${row(IC_SHARE, "Tap <b>Share</b>", "Bottom of Safari")}
-          ${row(IC_ADD, "Tap <b>Add to Home Screen</b>", "Scroll down to find it")}
-          ${row(LOGO, "Open <b>Mornward</b> from your home screen", "Set up there, not here", "ic logo")}
-        </ol>`;
-    }
-    const main = installed ? `<button class="wgo" id="installGo" type="button">Continue here →</button>`
-      : isAndroid && installPrompt ? `<button class="wgo" id="installGo" type="button">Add to home screen</button>` : "";
-    card.innerHTML = `
-      <div class="welcome card" id="installScreen">
-        <p class="wbrand">${LOGO}<span>MORNWARD</span></p>
-        <div class="wmid">
-          <h1>Put Mornward where your <em>thumb</em> goes.</h1>
-          <p class="wlede">Your thumb goes to the same spot every morning. Put the sun there.</p>
-          ${body}
-        </div>
-        <div class="wbottom">
-          ${main}
-          ${installed ? "" : `<button class="wlater" id="installLater" type="button">Not now, continue here</button>`}
-        </div>
-      </div>`;
-    window.scrollTo(0, 0);
-    announceScreen("Add Mornward to your home screen");
-    if ($("#installLater")) $("#installLater").onclick = later;
-    if (installed) $("#installGo").onclick = later;
-    else if ($("#installGo")) $("#installGo").onclick = async () => {
-      const ask = installPrompt;
-      if (!ask) return;
-      try {
-        ask.prompt();
-        const choice = await ask.userChoice;
-        installPrompt = null;
-        if (choice && choice.outcome === "accepted") installed = true;
-      } catch { installPrompt = null; }
-      renderInstall();
-    };
-  }
 
   // On a computer: Mornward is for the phone in your hand at 7am, so point people there first
   const QR_SVG = `<svg class="qr" viewBox="0 0 27 27" shape-rendering="crispEdges" aria-hidden="true"><rect width="27" height="27" fill="#f4efe6"/><path fill="#10143a" d="M1 1h7v1h-7zM10 1h3v1h-3zM15 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h6v1h-6zM16 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM10 3h3v1h-3zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM13 4h1v1h-1zM15 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM9 5h2v1h-2zM12 5h1v1h-1zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM10 6h3v1h-3zM14 6h1v1h-1zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM13 8h2v1h-2zM16 8h2v1h-2zM1 9h1v1h-1zM3 9h1v1h-1zM5 9h1v1h-1zM7 9h1v1h-1zM11 9h2v1h-2zM14 9h1v1h-1zM17 9h1v1h-1zM21 9h1v1h-1zM24 9h1v1h-1zM2 10h4v1h-4zM8 10h8v1h-8zM17 10h3v1h-3zM25 10h1v1h-1zM4 11h6v1h-6zM12 11h2v1h-2zM15 11h1v1h-1zM17 11h2v1h-2zM20 11h2v1h-2zM23 11h3v1h-3zM2 12h1v1h-1zM5 12h2v1h-2zM8 12h1v1h-1zM11 12h4v1h-4zM19 12h1v1h-1zM21 12h1v1h-1zM24 12h1v1h-1zM2 13h1v1h-1zM5 13h4v1h-4zM10 13h1v1h-1zM13 13h3v1h-3zM18 13h2v1h-2zM22 13h1v1h-1zM24 13h2v1h-2zM3 14h1v1h-1zM9 14h2v1h-2zM12 14h2v1h-2zM17 14h1v1h-1zM19 14h1v1h-1zM22 14h1v1h-1zM25 14h1v1h-1zM1 15h1v1h-1zM4 15h1v1h-1zM6 15h2v1h-2zM10 15h1v1h-1zM12 15h3v1h-3zM19 15h2v1h-2zM23 15h3v1h-3zM2 16h1v1h-1zM4 16h2v1h-2zM10 16h2v1h-2zM13 16h4v1h-4zM18 16h2v1h-2zM21 16h1v1h-1zM24 16h1v1h-1zM1 17h1v1h-1zM6 17h3v1h-3zM10 17h3v1h-3zM15 17h1v1h-1zM17 17h6v1h-6zM9 18h2v1h-2zM12 18h1v1h-1zM16 18h2v1h-2zM21 18h2v1h-2zM24 18h2v1h-2zM1 19h7v1h-7zM10 19h2v1h-2zM14 19h1v1h-1zM16 19h2v1h-2zM19 19h1v1h-1zM21 19h2v1h-2zM24 19h2v1h-2zM1 20h1v1h-1zM7 20h1v1h-1zM10 20h1v1h-1zM12 20h1v1h-1zM17 20h1v1h-1zM21 20h2v1h-2zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM9 21h3v1h-3zM13 21h1v1h-1zM17 21h6v1h-6zM24 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM12 22h3v1h-3zM17 22h1v1h-1zM20 22h4v1h-4zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM9 23h5v1h-5zM15 23h3v1h-3zM21 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM10 24h2v1h-2zM13 24h3v1h-3zM17 24h1v1h-1zM19 24h1v1h-1zM21 24h2v1h-2zM24 24h1v1h-1zM1 25h7v1h-7zM9 25h1v1h-1zM12 25h1v1h-1zM15 25h3v1h-3zM20 25h1v1h-1zM24 25h2v1h-2z"/></svg>`;
@@ -2026,47 +2012,137 @@
     $("#phoneLater").onclick = () => { welcomed = true; boot(); };
   }
 
-  // Bottom of the welcome: pull people to put Mornward on their home screen before anything else.
-  // Testers who opened it from the icon kept coming back; nobody who stayed in a browser tab did.
-  // Android Chrome can install in one tap (needs the service worker); iPhone only allows Share → Add to Home Screen.
-  // Instagram, Facebook, TikTok and others say so in their browser's name; Reddit doesn't, so the hint covers it too.
+  // ---------- adding Mornward to the home screen: one panel for every screen ----------
+  // What to show depends first on what the browser supports (a one-tap prompt), then on which browser this is.
+  // Browser detection is best effort: Instagram, Facebook, TikTok and others name themselves; Reddit often
+  // doesn't, so every panel also has a "Can't find this option?" fallback with a copy-link button.
   const inAppBrowser = /Instagram|FBAN|FBAV|FB_IAB|TikTok|musical_ly|Snapchat|Line\/|Twitter|LinkedInApp|reddit/i.test(ua);
-  function welcomeInstall() {
-    if (onHomeScreen || onComputer()) return "";
-    if (installed) return `<div class="wpin"><p class="wpinhead"><b>✓ On your home screen.</b> Open it from there.</p></div>`;
-    if (isAndroid && installPrompt) {
-      return `<div class="wpin"><button class="wpingo" id="welcomeInstallGo" type="button">Add to home screen</button>
-        <p class="wpinhow">Works best from there.</p></div>`;
+  const iosVersion = (() => { const m = ua.match(/Version\/(\d+)/); return m ? Number(m[1]) : 0; })();
+  function browserKind() {
+    if (inAppBrowser) return "inapp";
+    if (isIOS) return /CriOS/.test(ua) ? "ios-chrome" : /FxiOS|EdgiOS|OPiOS|GSA\//.test(ua) ? "ios-other" : "ios-safari";
+    if (isAndroid) {
+      if (/SamsungBrowser/.test(ua)) return "samsung";
+      if (/Firefox/.test(ua)) return "android-firefox";
+      if (/EdgA|OPR\/|YaBrowser|UCBrowser|MiuiBrowser|HuaweiBrowser|Brave/.test(ua)) return "android-other";
+      return /Chrome\//.test(ua) ? "android-chrome" : "android-other";
     }
-    const browser = isIOS ? "Safari" : "Chrome";
-    const steps = isIOS ? `<span class="ic" role="img" aria-label="Share">${IC_SHARE}</span> → <b>Add to Home Screen</b>` : `<b>⋮</b> → <b>Add to Home screen</b>`;
-    if (inAppBrowser) {
-      return `<div class="wpin"><p class="wpinhead"><b>Best on your home screen.</b></p>
-        <p class="wpinhow">First tap <b>⋯</b> → <b>Open in ${browser}</b></p></div>`;
-    }
-    return `<div class="wpin"><p class="wpinhead"><b>Best on your home screen.</b></p>
-      <p class="wpinhow">${steps}</p></div>`;
+    return "computer";
   }
-  function wireWelcomeInstall() {
-    const go = $("#welcomeInstallGo");
-    if (!go) return;
-    go.onclick = async () => {
+  const share = `<span class="ic" role="img" aria-label="Share">${IC_SHARE}</span>`;
+  function installStepsList() {
+    const k = browserKind();
+    const main = isIOS ? "Safari" : "Chrome";
+    const steps = {
+      "inapp": [`Tap <b>⋯</b> or <b>⋮</b> in this app's corner`, `Choose <b>Open in browser</b> (or <b>Open in ${main}</b>)`, `Add it to your home screen from there`],
+      "ios-safari": iosVersion >= 26
+        ? [`Tap <b>⋯</b> next to the address bar`, `Tap ${share} <b>Share</b>`, `Tap <b>Add to Home Screen</b>, then <b>Add</b>`]
+        : [`Tap ${share} <b>Share</b>`, `Scroll and tap <b>Add to Home Screen</b>`, `Tap <b>Add</b>`],
+      "ios-chrome": [`Tap ${share} <b>Share</b> in the address bar`, `Tap <b>Add to Home Screen</b>`, `Tap <b>Add</b>`],
+      "ios-other": [`Open this page in <b>Safari</b>`, `Tap ${share} <b>Share</b> → <b>Add to Home Screen</b>`],
+      "android-chrome": [`Tap <b>⋮</b> at the top right`, `Tap <b>Add to home screen</b>`, `Tap <b>Install</b> (or <b>Add</b>)`],
+      "samsung": [`Tap <b>☰</b> at the bottom`, `Tap <b>Add page to</b>`, `Tap <b>Home screen</b>`],
+      "android-firefox": [`Tap <b>⋮</b>`, `Look for <b>Add to Home screen</b> or <b>Install</b>`],
+      "android-other": [`Open your browser's menu`, `Look for <b>Add to Home screen</b> or <b>Install</b>`],
+      "computer": [`Open <b>mornward.app</b> on your phone`, `Add it to the home screen there`],
+    }[k];
+    return `<ol class="isteps">${steps.map((t) => `<li>${t}</li>`).join("")}</ol>`;
+  }
+  // The address to copy: set-up people get one that carries their setup, so another browser doesn't start over
+  function shareUrl() {
+    const from = store.get("from", null);
+    const setUp = hasAgreed() && store.get("setup", { done: false }, isSetup).done;
+    return "https://mornward.app/" + (from ? "?from=" + encodeURIComponent(from) : "") + (setUp ? "#r=" + carryState() : "");
+  }
+  const installState = () => (onHomeScreen ? "home" : installed ? "installed" : installAccepted ? "accepted"
+    : installPrompt ? "prompt" : "manual");
+  // ctx: "welcome" (a small secondary box) or "done" (the main ask after the first reset)
+  let installOpen = {};
+  function installPanelBody(ctx) {
+    const st = installState();
+    const status = (t) => `<p class="istatus" role="status">${t}</p>`;
+    if (st === "home" || st === "installed") return status(`<b>✓ Mornward is on your home screen.</b>${ctx === "done" ? " Open it from there tomorrow." : ""}`);
+    if (st === "accepted") return status(`<b>Adding it now…</b> Look for the Mornward sun on your home screen.`);
+    if (st === "prompt") {
+      return `<button class="${ctx === "done" ? "primary" : "wpingo"}" data-install-go type="button">Add to home screen</button>
+        ${installNote ? status(installNote) : ""}`;
+    }
+    const open = !!installOpen[ctx];
+    const pid = `isteps-${ctx}`;
+    return `${installNote ? status(installNote) : ""}
+      <button class="${ctx === "done" ? "primary" : "wpingo"}" data-install-how aria-expanded="${open}" aria-controls="${pid}" type="button">${ctx === "done" ? "Show me how to add it" : "Add to home screen first"}</button>
+      <div id="${pid}"${open ? "" : " hidden"}>
+        ${installStepsList()}
+        <details class="cantfind">
+          <summary>Can't find this option?</summary>
+          <p>You may be inside another app's browser, like Reddit's or Instagram's. Open this page in your phone's main browser (Safari on iPhone, Chrome on Android), then try again.</p>
+          <button type="button" data-copy-link>Copy link</button>
+          <input type="text" readonly aria-label="Link to Mornward" data-link-field hidden>
+          <span class="saved" data-copy-msg role="status"></span>
+        </details>
+      </div>`;
+  }
+  function installPanel(ctx) {
+    if (ctx === "welcome" && (onHomeScreen || onComputer())) return "";
+    return `<div class="instbox" data-install="${ctx}">${installPanelBody(ctx)}</div>`;
+  }
+  function wireInstallPanel(box) {
+    const ctx = box.dataset.install;
+    const go = box.querySelector("[data-install-go]");
+    if (go) go.onclick = async () => {
+      if (installBusy || !installPrompt) return;
+      installBusy = true;
+      go.disabled = true;
       const ask = installPrompt;
-      if (!ask) return;
+      installPrompt = null; // a prompt can only be shown once
       try {
-        ask.prompt();
+        await ask.prompt();
         const choice = await ask.userChoice;
-        installPrompt = null;
-        if (choice && choice.outcome === "accepted") installed = true;
-      } catch { installPrompt = null; }
-      refreshWelcomeInstall();
+        if (choice && choice.outcome === "accepted") { installAccepted = true; installNote = ""; }
+        else installNote = "No problem. You can add it later from your browser's menu:";
+      } catch {
+        installNote = "That didn't open. You can add it from your browser's menu instead:";
+      }
+      installBusy = false;
+      if (!installAccepted) installOpen[ctx] = true;
+      refreshInstallPanels();
+    };
+    const how = box.querySelector("[data-install-how]");
+    if (how) how.onclick = () => {
+      installOpen[ctx] = !installOpen[ctx];
+      if (installOpen[ctx]) prepareIconStart(true);
+      refreshInstallPanels();
+      const again = document.querySelector(`[data-install="${ctx}"] [data-install-how]`);
+      if (again) again.focus();
+    };
+    const copy = box.querySelector("[data-copy-link]");
+    if (copy) copy.onclick = async () => {
+      const url = shareUrl();
+      const msg = box.querySelector("[data-copy-msg]");
+      try {
+        await navigator.clipboard.writeText(url);
+        msg.textContent = "Copied. Paste it into Safari or Chrome.";
+      } catch {
+        const f = box.querySelector("[data-link-field]");
+        f.value = url; f.hidden = false; f.focus(); f.select();
+        msg.textContent = "Copy this link, then paste it into Safari or Chrome.";
+      }
     };
   }
-  function refreshWelcomeInstall() {
-    const box = $("#welcomeInstall");
-    if (!box) return;
-    box.innerHTML = welcomeInstall();
-    wireWelcomeInstall();
+  function refreshInstallPanels() {
+    document.querySelectorAll("[data-install]").forEach((box) => {
+      const keep = box.querySelector("details.cantfind");
+      const wasOpen = keep && keep.open;
+      box.innerHTML = installPanelBody(box.dataset.install);
+      const d = box.querySelector("details.cantfind");
+      if (d && wasOpen) d.open = true;
+      wireInstallPanel(box);
+    });
+    // After the first reset: once it's added (or being added), "Maybe later" becomes "Continue"
+    const later = $("#firstLater");
+    if (later && ["accepted", "installed", "home"].includes(installState())) {
+      later.textContent = "Continue"; later.className = "primary";
+    }
   }
 
   function renderWelcome() {
@@ -2084,16 +2160,15 @@
         </div>
         <div class="wbottom">
           <p class="wtrust"><span>Free ·</span> <span>No account ·</span> <span>Lives on your home screen</span></p>
-          <p class="whint">1-minute setup · real start tomorrow</p>
-          <button class="wgo" id="welcomeGo" type="button">Get started →</button>
-          <div id="welcomeInstall">${welcomeInstall()}</div>
+          <button class="wgo" id="welcomeGo" type="button">Try a 1-minute reset</button>
+          ${installPanel("welcome")}
         </div>
       </div>`;
     window.scrollTo(0, 0);
     announceScreen("Welcome to Mornward");
-    wireWelcomeInstall();
+    document.querySelectorAll("[data-install]").forEach(wireInstallPanel);
+    // Straight to the short reset (after the terms): the home-screen ask comes after they've felt it work
     $("#welcomeGo").onclick = () => {
-      if (needsInstallStep()) { guardTaps(); renderInstall(); return; }
       if (onComputer()) { guardTaps(); renderPhoneFirst(); return; }
       welcomed = true; boot();
     };
@@ -2183,7 +2258,7 @@
     const everAgreed = store.get("agreed", null, (v) => typeof v === "object") !== null;
     if (!hasAgreed()) welcomed || everAgreed || onHomeScreen ? renderAgreement() : renderWelcome();
     else if (store.get("setup", { done: false }, isSetup).done) { run = newRun(); step = 0; render(); }
-    else startSetup(0);
+    else startReset(true);
   }
   // A practice run right after setup is marked as practice: it doesn't start the streak, and its stats say so.
   function leaveSetup(practice = false) {
@@ -2198,7 +2273,7 @@
   let seeYouAt = 0;
   // Set by "Put the phone down" on the done screen
   let closedAt = 0;
-  function renderSeeYou() {
+  function renderSeeYou(afterReset = false) {
     clearTimers();
     guardTaps();
     setupStep = -1;
@@ -2211,31 +2286,27 @@
       <h1>See you <em class="hl">${nextMorning().toLowerCase()}</em>.</h1>
       <p class="lede">Alarm off → open Mornward.</p>
       ${part === "morning" ? `<div class="btnrow stack"><button class="primary" id="startNow" type="button">It's morning. Start now</button></div>` : ""}
-      ${part === "afternoon" ? `<div class="btnrow stack"><button class="primary" id="resetGo" type="button">Try the 1-minute version now</button></div>` : ""}
+      ${part === "afternoon" && !afterReset ? `<div class="btnrow stack"><button class="primary" id="resetGo" type="button">Try the 1-minute reset now</button></div>` : ""}
       ${tomorrowKit()}
-      ${isAndroid && !onHomeScreen && installPrompt ? `<div class="btnrow stack"><button type="button" id="seeInstall">Also add it to my home screen</button></div>` : ""}
-      ${part === "evening" ? `<div class="btnrow stack"><button class="quiet" id="resetGo" type="button">Or try the 1-minute version now</button></div>` : ""}`;
+      ${part === "evening" && !afterReset ? `<div class="btnrow stack"><button class="quiet" id="resetGo" type="button">Or try the 1-minute reset now</button></div>` : ""}`;
     window.scrollTo(0, 0);
     announceScreen("Setup finished. See you tomorrow.");
     wireKit();
     if ($("#startNow")) $("#startNow").onclick = () => { seeYouAt = 0; leaveSetup(); };
     if ($("#resetGo")) $("#resetGo").onclick = () => { seeYouAt = 0; startReset(); };
-    if ($("#seeInstall")) $("#seeInstall").onclick = async () => {
-      const ask = installPrompt;
-      if (!ask) return;
-      try { ask.prompt(); await ask.userChoice; } catch {}
-      installPrompt = null;
-      $("#seeInstall").remove();
-    };
   }
 
   // ---------- the 1-minute version ----------
   // For people who find Mornward in the afternoon or evening: a short taste now (three breaths, the quote,
   // one thing for the rest of today), counted as a practice run, then the note and reminder for tomorrow.
-  function startReset() {
+  // first: the very first visit (straight from the terms). Works before any setup answer: habit-specific
+  // wording falls back to "something else".
+  function startReset(first = false) {
+    setupStep = -1;
     run = newRun();
     run.practice = true;
     run.mode = "reset";
+    run.first = first;
     renderReset("breathe");
   }
   function renderReset(stage) {
@@ -2243,7 +2314,7 @@
     guardTaps();
     stepsEl.hidden = true;
     $("#restart").hidden = true;
-    placeSun("1-minute version");
+    placeSun("1-minute reset");
     if (stage === "breathe") {
       card.innerHTML = `
         <p class="eyebrow">1 of 3 · about 30 seconds</p>
@@ -2283,8 +2354,9 @@
         track("morning_done", { mode: "reset", breathe: run.stats.breathe, intention: run.stats.intention,
           minutes: Math.max(1, Math.round((Date.now() - run.startedAt) / 60000)) });
       }
+      if (run.first) { renderFirstResetDone(one); return; }
       card.innerHTML = `
-        <p class="eyebrow">That's the 1-minute version</p>
+        <p class="eyebrow">That's the 1-minute reset</p>
         <h1>Tomorrow, this is the <em class="hl">first</em> thing you do.</h1>
         ${one ? `<p class="lede">For the rest of today: <strong>${esc(one)}</strong></p>` : ""}
         <p class="lede">The full morning is about 5 minutes: breathe, read, get out of bed, plan your day. Then it ends.</p>
@@ -2302,7 +2374,32 @@
       };
     }
     window.scrollTo(0, 0);
-    announceScreen(stage.startsWith("done") ? "That's the 1-minute version" : `1-minute version, step ${["breathe", "read", "one"].indexOf(stage) + 1} of 3`);
+    announceScreen(stage.startsWith("done") ? "That's the 1-minute reset" : `1-minute reset, step ${["breathe", "read", "one"].indexOf(stage) + 1} of 3`);
+  }
+  // Only reached once the reset is actually finished. Setup counts as done here, so the next open is the
+  // morning itself; the habit question and the reminder stay optional.
+  function renderFirstResetDone(one) {
+    if (!store.get("setup", { done: false }, isSetup).done) {
+      saveSetup({ done: true });
+      track("setup_done", { habit: null, doors: [], own_apps: 0, skipped: false, flow: "reset", from: store.get("from", null) });
+    }
+    prepareIconStart(true);
+    const home = onHomeScreen || installed;
+    card.innerHTML = `
+      <p class="eyebrow okline">✓ First reset complete</p>
+      <h1>Make tomorrow's first step <em class="hl">easier</em></h1>
+      ${one ? `<p class="small">For the rest of today: <strong>${esc(one)}</strong></p>` : ""}
+      <p class="lede">${home ? "It's already on your home screen, so it's easy to find after your alarm." : "Add Mornward to your home screen so it's easy to find after your alarm."}</p>
+      ${home ? "" : installPanel("done")}
+      <div class="btnrow stack">
+        <button class="${home ? "primary" : "quiet"}" id="firstLater" type="button">${home ? "Continue" : "Maybe later"}</button>
+        <button class="quiet" id="firstPersonal" type="button">Personalize tomorrow</button>
+      </div>`;
+    document.querySelectorAll("[data-install]").forEach(wireInstallPanel);
+    $("#firstLater").onclick = () => renderSeeYou(true);
+    $("#firstPersonal").onclick = () => startSetup(0);
+    window.scrollTo(0, 0);
+    announceScreen("First reset complete");
   }
 
   // Evening, morning already done: just the note for tomorrow, without running the morning again
