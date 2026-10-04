@@ -89,6 +89,21 @@ after. Two earlier decisions change because of it, and the reasons are recorded 
 - **Preview tools are a slim "Test drive" tab** that slides up a panel (Next day, Back to today, Theme, Steps, Start
   fresh). Preview build only.
 
+### Pass 5: pick a few mini tasks (chips, two pre-ticked)
+
+- **Chips instead of a list**, like a tag picker: twelve short labels ("Water first", "Make my bed", "Plan my top 3"…),
+  two or three per row. Ticked chips show a check and an amber outline.
+- **Two come pre-ticked**, a different pair each day. The button reads **Keep these** while they're untouched (one tap
+  to finish) and **Save my tasks** once anything changes. Up to three in total, including "Add your own".
+- **Your own past tasks** appear as extra chips marked ↺, never ticked for you, so yesterday's choice isn't presented
+  as today's.
+- **Headline:** "Before the scroll, a few mini tasks." (two ticked contradicted "one").
+- **Measurement risk, handled:** pre-ticked options inflate whatever is ticked. `intention_saved` now carries
+  `kept_defaults` (the pair saved unchanged), `count` and `own`, so "kept the suggestion" can be told apart from a real
+  choice. Which tasks were picked is not sent.
+- **Uncertainty:** defaults may make the routine feel less personal, or more effortless. Compare `kept_defaults`
+  with next-day return once there's data.
+
 ## What was removed from the core flow, and what was kept
 
 Removed from the screens: the five-step timeline and sky arc, the daily quote, the movement checklist, the

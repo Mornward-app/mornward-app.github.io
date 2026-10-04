@@ -16,7 +16,7 @@ app drops rejected rows rather than retrying them, so those routines are lost fr
 | `routine_started` | Begin is tapped | `first: true` and `from` (link source) on a device's first routine ever; `via: "calendar"` when opened from the reminder |
 | `breathing_completed` | The third full breath (in + out) ends | — |
 | `breathing_skipped` | Skip breathing is tapped | `breaths_done` (0–2) |
-| `intention_saved` | An intention is saved and read back from the phone's storage | — (never the text) |
+| `intention_saved` | Mini tasks are saved and read back from the phone's storage (the first save of a routine) | `count` (1–3), `kept_defaults` (the two pre-ticked tasks saved unchanged), `own` (wrote or reused their own) — never the text |
 | `intention_skipped` | Skip for today is tapped and nothing was saved for that day | — |
 | `routine_finished` | The Finish screen is reached, whatever was skipped | `breathing`: completed / skipped, `intention`: saved / skipped, `seconds` |
 | `core_routine_completed` | An intention is saved in a routine whose breathing was completed | — |
@@ -74,6 +74,8 @@ Leave your own phones out (your ID is under **Privacy and your data** in the app
 ```sql
 insert into public.excluded_devices (device_id, note) values ('YOUR-ID-HERE', 'my phone');
 ```
+
+**Pre-ticked tasks.** Two of the twelve starters come ticked (a different pair each day), so many people will keep them. `kept_defaults` shows how often; read any "which task" interest with that in mind. (Which tasks were picked is not sent at all.)
 
 **Reading the numbers honestly.** With tens of devices, one person moves a percentage by several points: read the
 counts first. `routine_metrics` covers only the beta-4 routine. **Don't compare it with `testers` / `pass_rules`,**

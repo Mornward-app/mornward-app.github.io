@@ -2,19 +2,19 @@
 <html lang="en">
 <meta charset="utf-8">
 <title>Mornward</title>
-<meta name="description" content="Before the scroll, one mini task. Three breaths, then pick one small thing for this morning. About one minute. Free, no account.">
+<meta name="description" content="Before the scroll, a few mini tasks. Three breaths, then pick up to three small things for this morning. About one minute. Free, no account.">
 <!-- Link previews (Reddit, iMessage, WhatsApp, Discord, X) -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://mornward.app/">
 <meta property="og:site_name" content="Mornward">
-<meta property="og:title" content="Mornward: before the scroll, one mini task">
+<meta property="og:title" content="Mornward: before the scroll, a few mini tasks">
 <meta property="og:description" content="Three breaths. Choose what matters. Then get on with your morning. About one minute. Free, no account.">
 <meta property="og:image" content="https://mornward.app/icons/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Mornward. Before the scroll, one mini task. 3 breaths, 1 mini task, about a minute.">
+<meta property="og:image:alt" content="Mornward. Before the scroll, a few mini tasks. 3 breaths, mini tasks, about a minute.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Mornward: before the scroll, one mini task">
+<meta name="twitter:title" content="Mornward: before the scroll, a few mini tasks">
 <meta name="twitter:description" content="Three breaths. Choose what matters. About one minute. Free, no account.">
 <meta name="twitter:image" content="https://mornward.app/icons/og-image.png">
 <!-- resizes-content: on Android Chrome the keyboard shrinks the layout, so the field and its button stay above it -->
@@ -51,6 +51,8 @@
     --chip-line: #788BA0;
     --track: #C9D7E5;
     --focus: #25374D;
+    --pick-bg: #FBF1CF;
+    --pick-line: #9A7A12;
     --gutter: 24px;
     --radius: 16px;
   }
@@ -61,6 +63,7 @@
       --bg: #0F1B2A; --text: #E8EFF7; --text-2: #A9B9CA; --button: #F2D77A; --button-text: #18222F;
       --sun: #F2D77A; --field: #182A3D; --field-line: #7F93A8; --placeholder: #93A5B8; --rule: #2A3E55;
       --error: #FFA394; --chip: #182A3D; --chip-line: #5E7894; --track: #2A3E55; --focus: #F2D77A;
+      --pick-bg: #2E3A3A; --pick-line: #F2D77A;
     }
   }
   :root[data-theme="dark"] {
@@ -68,6 +71,7 @@
     --bg: #0F1B2A; --text: #E8EFF7; --text-2: #A9B9CA; --button: #F2D77A; --button-text: #18222F;
     --sun: #F2D77A; --field: #182A3D; --field-line: #7F93A8; --placeholder: #93A5B8; --rule: #2A3E55;
     --error: #FFA394; --chip: #182A3D; --chip-line: #5E7894; --track: #2A3E55; --focus: #F2D77A;
+      --pick-bg: #2E3A3A; --pick-line: #F2D77A;
   }
   @media (max-width: 374px) { :root { --gutter: 20px; } }
 
@@ -104,19 +108,16 @@
   /* On Choose the actions sit right under the field, not at the bottom: an iPhone keyboard doesn't resize
      the page, so anything at the bottom would end up behind it */
   .actions { display: flex; flex-direction: column; gap: 12px; }
-  /* Mini tasks: one tap each, in a list */
-  .picks { display: flex; flex-direction: column; gap: 8px; }
-  .picks #picksTitle { margin-bottom: -2px; }
-  .typing .picks { display: none; }
-  .pick { min-height: 52px; padding: 12px 14px; border-radius: 14px; background: var(--chip); border: 1.5px solid var(--chip-line);
-    justify-content: flex-start; gap: 10px; text-align: left; font-weight: 600; font-size: 1rem; }
-  .pick .pt { flex: 1; min-width: 0; overflow-wrap: break-word; }
-  .pick .tagown { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: 600; color: var(--text-2); flex: none; }
-  .pick .tagown .i { width: 0.95em; height: 0.95em; }
-  .pick .tick { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--chip-line); flex: none; }
-  .pick[aria-pressed="true"] { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
-  .pick[aria-pressed="true"] .tick { border-color: var(--sun); background: var(--sun)
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12.5l4 4L18 8' fill='none' stroke='%2318222F' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 16px no-repeat; }
+  /* Mini tasks: wrapped chips; ticked ones get a check and the accent outline */
+  .chips.picks { gap: 8px; }
+  .typing .picks, .typing #pickHint { display: none; }
+  .chip.pick { min-height: 44px; padding: 8px 14px; font-size: 0.875rem; border-radius: 999px; gap: 6px; }
+  .chip.pick span { white-space: normal; text-align: left; }
+  .chip.pick .ck { display: none; width: 1.05em; height: 1.05em; stroke-width: 2.6; color: var(--text); }
+  .chip.pick .ag { width: 0.95em; height: 0.95em; color: var(--text-2); }
+  .chip.pick[aria-pressed="true"] { background: var(--pick-bg); border-color: var(--pick-line); box-shadow: inset 0 0 0 1px var(--pick-line); }
+  .chip.pick[aria-pressed="true"] .ck { display: block; }
+  .intention .tasks { margin: 4px 0 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
   /* Save and Skip stay at the bottom of the screen while you look through the list */
   .actions.sticky { position: sticky; bottom: 0; z-index: 2; background: var(--bg); margin-inline: calc(-1 * var(--gutter));
     padding: 12px var(--gutter) max(8px, env(safe-area-inset-bottom)); box-shadow: 0 -12px 16px -12px rgba(15, 27, 42, .25); gap: 4px; }
@@ -492,7 +493,7 @@
   // Keep in sync with terms.html
   const COUNTED = `<ul>
       <li>A random ID made on this phone, not linked to your name, email or any account.</li>
-      <li>The date, and which steps happened: started, breathing finished or skipped, mini task saved or skipped, finished.</li>
+      <li>The date, and which steps happened: started, breathing finished or skipped, mini tasks saved or skipped (how many, and whether you kept the suggested ones), finished.</li>
       <li>Whether you opened it from the home screen, whether you added it there, and which link you came from (like "reddit"), if the link says so.</li>
     </ul>`;
   const NOT_SENT = `<ul>
@@ -644,11 +645,11 @@
     show(`
       <p class="wordmark">mornward</p>
       ${SUN(false)}
-      <h1>Before the scroll,<br>one mini task.</h1>
+      <h1>Before the scroll,<br>a few mini tasks.</h1>
       ${doneDays().size ? weekStrip(false) : ""}
-      <ol class="flow" aria-label="Three breaths, one mini task, then you're ready">
+      <ol class="flow" aria-label="Three breaths, a few mini tasks, then you're ready">
         <li>${icon("breath")}<span>3 breaths</span></li>
-        <li>${icon("pen")}<span>1 mini task</span></li>
+        <li>${icon("pen")}<span>Mini tasks</span></li>
         <li>${icon("sun")}<span>Ready</span></li>
       </ol>
       <div class="push">
@@ -663,7 +664,7 @@
             here or any time later. Questions: ${CONTACT}</p></details>
         </div>`}
         ${earlier ? `<div class="more">${earlier}</div>` : ""}
-      </div>`, "Mornward. Before the scroll, one mini task.");
+      </div>`, "Mornward. Before the scroll, a few mini tasks.");
     $("#begin").onclick = begin;
     // The counts choice, before anything is sent
     const pre = $("#preStats");
@@ -795,59 +796,91 @@
   document.addEventListener("visibilitychange", () => { if (document.hidden) pauseBreathing(); });
 
   // ---------- 3. Choose ----------
-  // One-tap mini tasks: your own last two first ("Use again"), then twelve small starters. Tapping one fills the
-  // field; you can still change the words before saving.
-  const STARTERS = ["Drink a glass of water", "Make my bed", "No phone until I'm dressed", "Stretch for two minutes",
-    "Step outside for five minutes", "Eat a proper breakfast", "Plan my top three for today", "One focused hour on what matters",
-    "Reply to one message I've put off", "Tidy one small space", "Text someone I care about", "Take a short walk"];
-  function ideas(day) {
-    const own = [];
-    for (const [, t] of earlierEntries(day)) { if (!own.includes(t)) own.push(t); if (own.length === 2) break; }
-    return [...own.map((t) => ({ t, own: true })), ...STARTERS.filter((x) => !own.includes(x)).map((t) => ({ t, own: false }))];
+  // Mini tasks: chips you tap. Two of the twelve starters come ticked (a different pair each day); people keep them
+  // or change them. Their own recent tasks appear as extra chips (marked "again"), never ticked for them.
+  // Up to three tasks, saved together as one entry: "Make my bed · Drink a glass of water".
+  const STARTERS = ["Water first", "Make my bed", "No phone till dressed", "Stretch", "Step outside", "Real breakfast",
+    "Plan my top 3", "One focused hour", "Reply to one message", "Tidy one spot", "Text someone", "Short walk"];
+  const PICK_MAX = 3;
+  const SEP = " · ";
+  const tasksOf = (text) => text.split(SEP).map((x) => x.trim()).filter(Boolean);
+  const dayNumber = (key) => { const [y, m, d] = key.split("-").map(Number); return Math.floor(Date.UTC(y, m - 1, d) / 864e5); };
+  function dailyPair(day) {
+    const n = dayNumber(day), a = n % STARTERS.length;
+    let b = (n * 5 + 3) % STARTERS.length;
+    if (b === a) b = (b + 1) % STARTERS.length;
+    return [STARTERS[a], STARTERS[b]];
   }
-  // editing: changing (or adding) a mini task after the routine; `back` draws the screen to return to
+  function ownRecent(day) {
+    const own = [];
+    for (const [, t] of earlierEntries(day)) for (const x of tasksOf(t)) {
+      if (!own.includes(x) && !STARTERS.includes(x)) own.push(x);
+      if (own.length === 3) return own;
+    }
+    return own;
+  }
+  const isPicks = (v) => typeof v === "object" && Array.isArray(v.sel) && v.sel.every(isText) && typeof v.touched === "boolean";
+  const picksKey = (day) => "picks:" + day;
+
+  // editing: changing (or adding) mini tasks after the routine; `back` draws the screen to return to
   function renderChoose(editing = false, back = null) {
     const day = routine.day;
     const saved = intentionFor(day);
+    const savedTasks = tasksOf(saved);
     const draft = store.get(draftKey(day), null, isText);
-    const value = draft !== null && draft.trim() ? draft : saved;
+    const keptPicks = store.get(picksKey(day), null, isPicks);
+    const defaults = saved ? savedTasks : dailyPair(day);
+    let sel = keptPicks ? keptPicks.sel.slice(0, PICK_MAX) : defaults.slice();
+    let touched = keptPicks ? keptPicks.touched : false;
+    // Every chip: your own recent ones, today's saved custom ones, then the starters
+    const own = ownRecent(day).filter((x) => !savedTasks.includes(x));
+    const custom = savedTasks.filter((x) => !STARTERS.includes(x));
+    const options = [...custom, ...own, ...STARTERS];
+    for (const x of sel) if (!options.includes(x)) options.unshift(x);
+    const label = () => (touched ? "Save my tasks" : "Keep these");
     show(`
       <h1>What matters<br>this morning?</h1>
+      <p class="body" id="pickHint">${saved ? "Your tasks for today. Keep them or change." : "Two picked to start. Keep them, or tap to change."}</p>
+      <div class="chips picks" id="ideas" role="group" aria-label="Mini tasks, up to ${PICK_MAX}">
+        ${options.map((x, i) => `<button class="chip pick" type="button" data-idea="${i}" aria-pressed="${sel.includes(x)}">
+          <svg class="i ck" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>${own.includes(x) ? `<svg class="i ag" viewBox="0 0 24 24" aria-hidden="true">${ICON.again}</svg>` : ""}<span>${esc(x)}</span>${own.includes(x) ? `<span class="sr-only"> (used before)</span>` : ""}</button>`).join("")}
+      </div>
       <div class="field">
-        <label for="intent">My mini task</label>
+        <label for="intent">Add your own</label>
         <textarea id="intent" rows="1" maxlength="${MAX_INTENTION}" enterkeyhint="done" autocomplete="off"
-          autocapitalize="sentences" placeholder="Write your own, or pick one below" aria-describedby="imsg">${esc(value)}</textarea>
+          autocapitalize="sentences" placeholder="Something small is enough" aria-describedby="imsg">${esc(draft || "")}</textarea>
         <p class="msg" id="imsg" role="status"></p>
       </div>
-      <div class="picks" id="ideas" role="group" aria-labelledby="picksTitle">
-        <p class="support" id="picksTitle">Or pick one</p>
-        ${ideas(day).map((x, i) => `<button class="pick" type="button" data-idea="${i}" aria-pressed="false">
-          <span class="pt">${esc(x.t)}</span>${x.own ? `<span class="tagown">${icon("again")}Use again</span>` : ""}<span class="tick" aria-hidden="true"></span></button>`).join("")}
-      </div>
       <div class="actions sticky">
-        <button class="primary" id="isave" type="button">Save my task</button>
+        <button class="primary" id="isave" type="button">${label()}</button>
         <button class="link" id="iskip" type="button">${editing ? "Keep it as it was" : "Skip for today"}</button>
-      </div>`, editing ? "Edit your mini task" : "What matters this morning?");
+      </div>`, editing ? "Edit your mini tasks" : "What matters this morning?");
     const field = $("#intent");
     const msg = (t, err = false) => { $("#imsg").textContent = t; $("#imsg").className = "msg" + (err ? " err" : ""); };
     const grow = () => { field.style.height = "auto"; field.style.height = field.scrollHeight + 4 + "px"; };
     grow();
+    // Drafts (typed words and ticks) are kept as you go, so a reload, a call or a closed tab doesn't lose them
     const keepDraft = () => {
-      // Drafts are kept as you type, so a reload, a call or a closed tab doesn't lose them
-      const kept = store.set(draftKey(day), field.value);
+      const kept = store.set(draftKey(day), field.value) && store.set(picksKey(day), { sel, touched });
       if (!kept) msg("This phone isn't saving drafts right now. Keep this page open.", true);
       else if ($("#imsg").classList.contains("err")) msg("");
     };
-    const list = ideas(day);
-    const markIdeas = () => card.querySelectorAll("[data-idea]").forEach((b) =>
-      b.setAttribute("aria-pressed", String(list[b.dataset.idea].t === cleanIntention(field.value))));
-    markIdeas();
-    field.addEventListener("input", () => { grow(); keepDraft(); markIdeas(); });
+    const total = () => sel.length + (cleanIntention(field.value) ? 1 : 0);
+    const redraw = () => {
+      card.querySelectorAll("[data-idea]").forEach((b) => b.setAttribute("aria-pressed", String(sel.includes(options[b.dataset.idea]))));
+      $("#isave").textContent = label();
+    };
     card.querySelectorAll("[data-idea]").forEach((b) => (b.onclick = () => {
-      field.value = list[b.dataset.idea].t;
-      grow(); keepDraft(); markIdeas();
+      const x = options[b.dataset.idea];
+      if (sel.includes(x)) sel = sel.filter((y) => y !== x);
+      else if (total() >= PICK_MAX) { msg(`Up to ${PICK_MAX}. Untick one first.`, true); return; }
+      else sel = [...sel, x];
+      touched = true;
+      msg("");
+      redraw(); keepDraft();
     }));
-    // While typing, the list folds away so Save sits right under the field, above the keyboard. It comes back a
+    field.addEventListener("input", () => { grow(); if (cleanIntention(field.value)) touched = true; redraw(); keepDraft(); });
+    // While typing, the chips fold away so Save sits right under the field, above the keyboard. They come back a
     // moment after typing ends, so a tap meant for Save lands before anything moves.
     let unfold = 0;
     field.addEventListener("focus", () => { clearTimeout(unfold); card.classList.add("typing"); });
@@ -856,29 +889,33 @@
     // Keep Save in view once the keyboard opens
     field.addEventListener("focus", () => setTimeout(() => { const b = $("#isave"); if (b) b.scrollIntoView({ block: "nearest" }); }, 350));
     const save = () => {
-      const text = cleanIntention(field.value);
-      if (!text) { msg("Write a few words first, or skip for today.", true); field.focus(); return; }
+      const typed = cleanIntention(field.value);
+      const tasks = [...sel, typed].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i);
+      if (!tasks.length) { msg("Write a few words or pick one, or skip for today.", true); return; }
+      if (tasks.length > PICK_MAX) { msg(`Up to ${PICK_MAX}. Untick one first.`, true); return; }
+      const text = tasks.join(SEP).slice(0, MAX_INTENTION * PICK_MAX);
       if (!saveIntention(day, text)) {
-        store.set(draftKey(day), field.value);
+        keepDraft();
         msg("Couldn't save it on this phone. Your words are still here. Try again.", true);
         return;
       }
-      store.del(draftKey(day));
+      store.del(draftKey(day)); store.del(picksKey(day));
       const firstSave = routine.intention !== "saved";
       routine.intention = "saved";
       if (routine.phase === "choose") routine.phase = "finish";
       saveRoutine();
       if (firstSave) {
-        emit("intention_saved");
+        // Counts only: how many, whether the suggested pair was kept as it was, whether they wrote their own
+        emit("intention_saved", { count: tasks.length, kept_defaults: !touched && !saved, own: !!typed || tasks.some((x) => !STARTERS.includes(x)) });
         if (routine.breathing === "completed") emit("core_routine_completed");
       }
-      if (editing && back) back("Saved.");
+      if (editing && back) back(touched ? "Saved." : "");
       else renderFinish();
     };
     $("#isave").onclick = save;
     $("#iskip").onclick = () => {
-      if (editing && back) { store.del(draftKey(day)); back(""); return; }
-      // Skipping never removes something already written today
+      if (editing && back) { store.del(draftKey(day)); store.del(picksKey(day)); back(""); return; }
+      // Skipping never removes something already saved today
       if (routine.intention !== "saved") routine.intention = saved ? "saved" : "skipped";
       routine.phase = "finish";
       saveRoutine();
@@ -889,19 +926,24 @@
 
   // ---------- 4. Finish ----------
   function intentionBlock(text, label) {
+    const tasks = tasksOf(text);
+    const body = tasks.length > 1
+      ? `<ul class="text tasks" id="itext">${tasks.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`
+      : `<p class="text" id="itext">${esc(text)}</p>`;
     return `<div class="intention">
         <div class="row"><span class="support">${label}</span>
-          <button class="link" id="iedit" type="button" aria-label="Edit your mini task">Edit</button></div>
-        <p class="text" id="itext">${esc(text)}</p>
+          <button class="link" id="iedit" type="button" aria-label="Edit your mini tasks">Edit</button></div>
+        ${body}
       </div>`;
   }
-  const addButton = `<button class="chip add" id="iadd" type="button">${icon("plus")}<span>Add a mini task</span></button>`;
+  const many = (text) => tasksOf(text).length > 1;
+  const addButton = `<button class="chip add" id="iadd" type="button">${icon("plus")}<span>Add mini tasks</span></button>`;
   function renderFinish(note = "") {
     const text = intentionFor(routine.day);
     show(`
       ${SUN(true, !note)}
       <h1>You're ready.</h1>
-      ${text ? intentionBlock(text, "Your mini task") : `<p class="body">No task today.</p>${addButton}`}
+      ${text ? intentionBlock(text, many(text) ? "Your mini tasks" : "Your mini task") : `<p class="body">No task today.</p>${addButton}`}
       <p class="msg ok" role="status">${esc(note)}</p>
       <div class="push">
         <button class="primary" id="finish" type="button">Finish</button>
@@ -923,7 +965,7 @@
     const text = intentionFor(routine.day);
     show(`
       <div class="row"><p class="wordmark">mornward</p><p class="support">${esc(fmtDay(routine.day))}</p></div>
-      <h1>${text ? "Today's mini task" : "Done for today"}</h1>
+      <h1>${text ? (many(text) ? "Today's mini tasks" : "Today's mini task") : "Done for today"}</h1>
       ${text ? intentionBlock(text, "Today") : `<p class="body">No task today.</p>${addButton}`}
       <p class="msg ok" role="status">${esc(note)}</p>
       ${weekStrip(true)}
@@ -934,7 +976,7 @@
         ${reminderSection()}
         ${themeSection()}
         ${privacySection()}
-      </div>`, text ? "Today's mini task" : "Done for today");
+      </div>`, text ? (many(text) ? "Today's mini tasks" : "Today's mini task") : "Done for today");
     ($("#iedit") || $("#iadd")).onclick = () => renderChoose(true, renderToday);
     $("#again").onclick = begin;
     renderInstall();
