@@ -199,17 +199,44 @@
   .ask { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 12px; background: var(--field); color: var(--text); }
   .sl { display: flex; align-items: center; gap: 10px; }
   .sl .i { color: var(--text-2); }
-  /* Home-screen box: its own card at the bottom of Begin and Today */
+  /* Home-screen box: one row at the bottom of Begin and Today */
   #installSlot:empty { display: none; }
-  .installbox { margin-top: 24px; padding: 18px; border-radius: 20px; background: var(--field); border: 1.5px solid var(--chip-line);
-    display: flex; flex-direction: column; gap: 14px; }
-  .ihead { display: flex; gap: 14px; align-items: center; }
-  .ihead img { width: 48px; height: 48px; border-radius: 12px; flex: none; }
-  .ihead h2 { margin: 0; font-size: 1.0625rem; line-height: 1.375rem; }
-  .ihead p { font-size: 0.875rem; line-height: 1.25rem; color: var(--text-2); }
-  .installbox .ok { display: flex; gap: 8px; align-items: center; font-weight: 600; }
-  .installbox .link { align-self: center; }
-  .inote { font-size: 0.875rem; color: var(--text-2); }
+  .installbox { position: relative; margin-top: 28px; padding: 10px 10px 10px 10px; border-radius: 18px; background: var(--field); border: 1.5px solid var(--chip-line);
+    display: flex; align-items: center; gap: 8px; }
+  .installbox img { width: 40px; height: 40px; border-radius: 10px; flex: none; }
+  .itext { flex: 1; min-width: 0; }
+  .itext h2 { margin: 0; font-size: 0.9375rem; line-height: 1.25rem; }
+  .itext p { font-size: 0.8125rem; line-height: 1.125rem; color: var(--text-2); }
+  .iadd { width: auto; min-height: 44px; padding: 8px 14px; font-size: 0.9375rem; flex: none; }
+  .ix { width: 44px; min-height: 44px; padding: 0; flex: none; color: var(--text-2); }
+  /* The box's ✕ sits on its corner: a small circle to see, a full 44px to tap */
+  .ix.corner { position: absolute; top: -18px; right: -14px; }
+  .ix.corner span { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--field); border: 1.5px solid var(--chip-line); }
+  .ix.corner .i { width: 14px; height: 14px; stroke-width: 2.4; }
+  .idone { color: var(--text); padding-right: 10px; }
+  /* The guide: a sheet at the bottom, with an arrow toward the browser's own button */
+  .guide { position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column; justify-content: flex-end; }
+  .gback { position: absolute; inset: 0; background: rgba(10, 18, 30, .45); }
+  .gsheet { position: relative; background: var(--bg); color: var(--text); border-radius: 22px 22px 0 0; max-height: 85vh; overflow: auto;
+    padding: 18px var(--gutter) max(18px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 14px;
+    max-width: 480px; width: 100%; margin: 0 auto; }
+  .gsheet h2 { margin: 0; font-size: 1.25rem; line-height: 1.625rem; }
+  .gsheet .row .ix { margin-right: -10px; }
+  .garrow { position: absolute; z-index: 1; width: 44px; height: 44px; color: var(--sun); filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
+  .garrow svg { width: 44px; height: 44px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+  .garrow.down-center { bottom: 6px; left: calc(50% - 22px); }
+  .garrow.down-right { bottom: 6px; right: 14px; }
+  .garrow.up-right { top: 6px; right: 14px; transform: rotate(180deg); }
+  .garrow.down-center, .garrow.down-right { bottom: calc(6px + env(safe-area-inset-bottom)); }
+  /* The sheet covers the bottom, so a downward arrow sits above it, pointing past it to the toolbar */
+  .guide:has(.garrow.down-center) .gsheet, .guide:has(.garrow.down-right) .gsheet { margin-bottom: 56px; border-radius: 22px; }
+  @media (prefers-reduced-motion: no-preference) {
+    .garrow { animation: nudge 1.2s ease-in-out infinite; }
+    @keyframes nudge { 50% { translate: 0 6px; } }
+    .garrow.up-right { animation-name: nudgeUp; }
+    @keyframes nudgeUp { 50% { translate: 0 -6px; } }
+  }
   .vsteps { list-style: none; margin: 0; padding: 0; display: flex; gap: 8px; counter-reset: st; }
   .vsteps li { flex: 1 1 0; min-width: 0; counter-increment: st; display: flex; flex-direction: column; align-items: center; gap: 6px;
     padding: 12px 6px 10px; border-radius: 14px; background: var(--bg); font-size: 0.8125rem; line-height: 1.125rem; text-align: center; color: var(--text); }
@@ -561,6 +588,7 @@
     guardTaps();
     card.innerHTML = html;
     $("#installSlot").innerHTML = ""; // only Begin and Today show the home-screen box
+    closeGuide();
     window.scrollTo(0, 0);
     if (screensShown++ === 0) return;
     $("#announce").textContent = label;
@@ -1027,81 +1055,120 @@
   const onComputer = () => !isIOS && !isAndroid && !onHomeScreen;
   const installState = () => (onHomeScreen ? "home" : installed ? "installed" : installAccepted ? "accepted"
     : installPrompt ? "prompt" : "manual");
-  // The box at the bottom of Begin and Today. Gone once Mornward is on the home screen; "Not now" hides it until tomorrow.
+  // Where the button to tap is in this browser, for the guide's arrow. Approximate: browsers move their buttons.
+  const isIPad = /iPad/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  function arrowSpot(k) {
+    if (k === "ios-safari") return isIPad ? "up-right" : iosVersion >= 26 ? "down-right" : "down-center";
+    if (k === "ios-chrome" || k === "android-chrome" || k === "android-other" || k === "android-firefox") return "up-right";
+    if (k === "samsung") return "down-right";
+    return "";
+  }
+  // The box at the bottom of Begin and Today: one row. Gone once Mornward is on the home screen;
+  // the ✕ hides it until tomorrow.
   function installBoxHtml() {
     const st = installState();
     if (st === "home") return "";
     if (!PREVIEW && onComputer()) return "";
     if (store.get("installSnooze", "", isDay) === dayKey() && st !== "installed" && st !== "accepted") return "";
-    const note = installNote ? `<p class="inote" role="status">${installNote}</p>` : "";
-    let body;
-    if (st === "installed") body = `<p class="ok" role="status">${GLYPH.ok} Added. Tomorrow, open Mornward from your home screen.</p>`;
-    else if (st === "accepted") body = `<p role="status">Adding it now. Look for the sun on your home screen.</p>`;
-    else if (st === "prompt") body = `${note}<button class="primary" data-install-go type="button">Add to home screen</button>`;
-    else body = `${note}${installStepsList()}
-      <details class="cantfind"><summary>Can't find it?</summary>
-        <p>You may be inside another app's browser (Reddit, Instagram). Open this page in ${isIOS ? "Safari" : "Chrome"}, then try again.</p>
-        <button class="link start" type="button" data-copy-link>Copy link</button>
-        <input type="text" readonly aria-label="Link to Mornward" data-link-field hidden>
-        <p role="status" data-copy-msg></p>
-      </details>`;
+    const line = st === "installed" ? "Added. Open it from there tomorrow."
+      : st === "accepted" ? "Adding it now…"
+      : installNote || "One tap tomorrow, no feed first.";
     return `<section class="installbox" id="installBox" aria-labelledby="instTitle">
-        <div class="ihead"><img src="icons/icon-192.png" alt="" width="48" height="48">
-          <div><h2 id="instTitle">${st === "installed" ? "On your home screen" : "Add to home screen"}</h2>
-          <p>Open it like an app, first thing tomorrow.</p></div></div>
-        ${body}
-        ${st === "installed" || st === "accepted" ? "" : `<button class="link" data-install-later type="button">Not now</button>`}
+        <img src="icons/icon-192.png" alt="" width="40" height="40">
+        <div class="itext"><h2 id="instTitle">${st === "installed" ? "On your home screen" : "Add to home screen"}</h2>
+          <p role="status">${esc(line)}</p></div>
+        ${st === "installed" || st === "accepted" ? `<span class="idone">${GLYPH.ok}</span>`
+        : `<button class="primary iadd" data-install-add type="button" aria-haspopup="${st === "prompt" ? "false" : "dialog"}">Add</button>
+          <button class="ix corner" data-install-later type="button" aria-label="Not now"><span><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></span></button>`}
       </section>`;
   }
   // Called by Begin and Today
   function renderInstall() {
     const slot = $("#installSlot");
     slot.innerHTML = installBoxHtml();
-    if (!slot.firstElementChild) return;
-    // iPhone: the icon gets its own storage, so point its start address at this phone's anonymous ID first
-    if (installState() === "manual" && (isIOS || stepKind().startsWith("ios"))) prepareIconStart(true);
-    wireHome();
+    if (slot.firstElementChild) wireHome();
   }
   // Chrome's offer can arrive seconds after the page opens; redraw the box if it's on screen
   function refreshHome() { if (card.querySelector("#begin, #again")) renderInstall(); }
+
+  // The guide for adding by hand (iPhone always; Android when Chrome hasn't offered its dialog): a sheet at the
+  // bottom with the steps and an arrow toward the button to tap. Esc, Done or tapping outside closes it.
+  function openGuide() {
+    closeGuide();
+    const k = stepKind();
+    // iPhone: the icon gets its own storage, so point its start address at this phone's anonymous ID first
+    if (k.startsWith("ios")) prepareIconStart(true);
+    const spot = arrowSpot(k);
+    const wrap = document.createElement("div");
+    wrap.className = "guide";
+    wrap.id = "installGuide";
+    wrap.innerHTML = `<div class="gback" data-guide-close></div>
+      ${spot ? `<div class="garrow ${spot}" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4v15M6 13l6 6 6-6"/></svg></div>` : ""}
+      <div class="gsheet" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+        <div class="row"><h2 id="guideTitle" tabindex="-1">Add Mornward in 3 taps</h2>
+          <button class="ix" data-guide-close type="button" aria-label="Close"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+        ${installStepsList()}
+        <p class="support">It opens straight to Mornward, full screen, even offline.</p>
+        <details class="cantfind"><summary>Can't find it?</summary>
+          <p>You may be inside another app's browser (Reddit, Instagram). Open this page in ${isIOS ? "Safari" : "Chrome"}, then try again.</p>
+          <button class="link start" type="button" data-copy-link>Copy link</button>
+          <input type="text" readonly aria-label="Link to Mornward" data-link-field hidden>
+          <p role="status" data-copy-msg></p>
+        </details>
+        <button class="primary" data-guide-close type="button">Done</button>
+      </div>`;
+    document.body.appendChild(wrap);
+    wrap.querySelectorAll("[data-guide-close]").forEach((x) => (x.onclick = () => closeGuide(true)));
+    const copy = wrap.querySelector("[data-copy-link]");
+    copy.onclick = async () => {
+      const url = shareUrl();
+      const msg = wrap.querySelector("[data-copy-msg]");
+      try {
+        await navigator.clipboard.writeText(url);
+        msg.textContent = "Copied. Paste it into Safari or Chrome.";
+      } catch {
+        const f = wrap.querySelector("[data-link-field]");
+        f.value = url; f.hidden = false; f.focus(); f.select();
+        msg.textContent = "Copy this link, then paste it into Safari or Chrome.";
+      }
+    };
+    $("#guideTitle").focus();
+  }
+  function closeGuide(refocus = false) {
+    const g = $("#installGuide");
+    if (!g) return;
+    g.remove();
+    const add = $("[data-install-add]");
+    if (refocus && add) add.focus();
+  }
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeGuide(true); });
   function wireHome() {
     const box = $("#installBox");
     if (!box) return;
-    const go = box.querySelector("[data-install-go]");
-    if (go) go.onclick = async () => {
-      if (installBusy || !installPrompt) return;
+    const add = box.querySelector("[data-install-add]");
+    if (add) add.onclick = async () => {
+      if (!installPrompt) { openGuide(); return; }
+      // Chrome's own dialog: it allows each prompt to be shown once, and only from a tap
+      if (installBusy) return;
       installBusy = true;
-      go.disabled = true;
+      add.disabled = true;
       const ask = installPrompt;
-      installPrompt = null; // Chrome allows each prompt to be shown once, and only from a tap
+      installPrompt = null;
       try {
         await ask.prompt();
         const choice = await ask.userChoice;
         const outcome = choice && choice.outcome === "accepted" ? "accepted" : "dismissed";
         emitDay("install_prompt", { outcome });
         if (outcome === "accepted") { installAccepted = true; installNote = ""; }
-        else installNote = "No problem. You can also add it from the browser menu:";
+        else installNote = "No problem. Tap Add any time for the steps.";
       } catch {
-        installNote = "That didn't open. You can add it from the browser menu instead:";
+        installNote = "That didn't open. Tap Add for the steps instead.";
       }
       installBusy = false;
       renderInstall();
     };
     const later = box.querySelector("[data-install-later]");
     if (later) later.onclick = () => { store.set("installSnooze", dayKey()); renderInstall(); };
-    const copy = box.querySelector("[data-copy-link]");
-    if (copy) copy.onclick = async () => {
-      const url = shareUrl();
-      const msg = box.querySelector("[data-copy-msg]");
-      try {
-        await navigator.clipboard.writeText(url);
-        msg.textContent = "Copied. Paste it into Safari or Chrome.";
-      } catch {
-        const f = box.querySelector("[data-link-field]");
-        f.value = url; f.hidden = false; f.focus(); f.select();
-        msg.textContent = "Copy this link, then paste it into Safari or Chrome.";
-      }
-    };
   }
 
   // ---------- the week strip: the last few mornings, and tomorrow ----------

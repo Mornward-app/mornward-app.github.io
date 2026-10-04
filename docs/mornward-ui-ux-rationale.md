@@ -57,6 +57,17 @@ after. Two earlier decisions change because of it, and the reasons are recorded 
 | **The new icon** matches the app: a sun rising over a horizon in the app's colours. | It's the thing people see each morning, so it should look like what they used. | None. | None. | Look at it on a real home screen next to other apps. |
 | **Carried IDs only via the icon or the calendar link.** The iPhone box writes the anonymous ID into the address so the icon isn't counted as a new person; a copied address opened by someone else is now ignored. | Keeps one person, one ID. | None. | Removes a mix-up between people sharing a link. | Covered by `qa/redesign/extras.js`. |
 
+### Pass 3b: a smaller box, a smoother add
+
+- **One row instead of a card.** Icon, "Add to home screen", "One tap tomorrow, no feed first.", an **Add** button and a
+  corner ✕ (Not now). About 70–80 px tall on most phones (it was about 330 px).
+- **Add does the most the browser allows.** Android with Chrome's offer: Chrome's own install dialog (two taps). iPhone,
+  or Android before Chrome offers: a sheet with the three steps as pictures and an arrow toward the browser button to
+  tap (iOS 26: ⋯ at the bottom right; older iOS: Share in the bottom bar; Android Chrome: ⋮ at the top). Arrow
+  positions are approximate, because browsers move their buttons. Esc, Done or tapping outside closes it.
+- **Why the home screen** (one line in the sheet): "It opens straight to Mornward, full screen, even offline."
+- **iPhone carry-over runs only when Add is tapped**, after agreeing, instead of whenever the box appears.
+
 ## What was removed from the core flow, and what was kept
 
 Removed from the screens: the five-step timeline and sky arc, the daily quote, the movement checklist, the
