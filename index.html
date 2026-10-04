@@ -379,13 +379,16 @@
   .welcome .wrows small { display: block; font-size: 14px; color: var(--w-quiet); margin-top: 2px; }
   .welcome .wnote { color: var(--w-quiet); font-size: 15px; line-height: 1.5; margin-top: 16px; text-wrap: pretty; }
   .welcome .wdone { color: var(--w-amber); font-weight: 700; font-size: 17px; margin-top: 18px; }
-  .welcome .wpin { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; padding: 14px 16px; border-radius: 16px;
-    background: rgba(245, 178, 92, .08); border: 1px solid rgba(245, 178, 92, .3); }
-  .welcome .wpin .wpinhead { display: flex; align-items: center; gap: 12px; color: var(--w-ink); font-size: 15.5px; line-height: 1.4; }
-  .welcome .wpin .wpinhead svg { flex: none; width: 36px; height: 36px; border-radius: 9px; }
+  .welcome .wpin { display: flex; flex-direction: column; gap: 6px; margin-top: 2px; padding: 12px 14px; border-radius: 14px;
+    background: rgba(245, 178, 92, .08); border: 1px solid rgba(245, 178, 92, .3); text-align: center; }
+  .welcome .wpin .wpinhead { margin: 0; color: var(--w-ink); font-size: 16px; }
   .welcome .wpin .wpinhead b { font-weight: 700; }
-  .welcome .wpin .wpinhow { color: var(--w-soft); font-size: 14.5px; line-height: 1.5; margin: 0; }
+  .welcome .wpin .wpinhow { margin: 0; color: var(--w-soft); font-size: 15.5px; line-height: 1.4; }
   .welcome .wpin .wpinhow b { color: var(--w-ink); }
+  .welcome .wpin .wpinhow.small { font-size: 13.5px; color: var(--w-quiet); }
+  .welcome .wpin .ic { display: inline-grid; place-items: center; width: 24px; height: 24px; vertical-align: -6px;
+    border-radius: 6px; color: var(--w-amber); background: rgba(245, 178, 92, .14); }
+  .welcome .wpin .ic svg { width: 15px; height: 15px; }
   .welcome button.wpingo { background: transparent; color: var(--w-amber); border-color: var(--w-amber); font-weight: 700; width: 100%; }
   .welcome button.wpingo:focus-visible { outline-color: var(--w-ink); }
   .welcome button.wlater { background: transparent; border-color: transparent; color: var(--w-soft); width: 100%; }
@@ -2116,23 +2119,20 @@
   const inAppBrowser = /Instagram|FBAN|FBAV|FB_IAB|TikTok|musical_ly|Snapchat|Line\/|Twitter|LinkedInApp|reddit/i.test(ua);
   function welcomeInstall() {
     if (onHomeScreen || onComputer()) return "";
-    const head = (text) => `<div class="wpinhead">${LOGO}<span>${text}</span></div>`;
-    if (installed) {
-      return `<div class="wpin">${head("<b>✓ Added to your home screen.</b> Open Mornward from there to set up.")}</div>`;
-    }
+    if (installed) return `<div class="wpin"><p class="wpinhead"><b>✓ On your home screen.</b> Open it from there.</p></div>`;
     if (isAndroid && installPrompt) {
-      return `<div class="wpin">${head("<b>Works best from your home screen.</b> One tap, and tomorrow your thumb finds it.")}
-        <button class="wpingo" id="welcomeInstallGo" type="button">Add to home screen</button></div>`;
+      return `<div class="wpin"><button class="wpingo" id="welcomeInstallGo" type="button">Add to home screen</button>
+        <p class="wpinhow">Works best from there.</p></div>`;
     }
-    const how = isIOS
-      ? "Tap <b>Share</b> (the square with the arrow), then <b>Add to Home Screen</b>."
-      : "Tap <b>⋮</b> at the top right, then <b>Add to Home screen</b>.";
-    const away = isIOS ? "Open in Safari" : "Open in Chrome";
-    const tip = inAppBrowser
-      ? `This app's browser can't add it. Tap <b>⋯</b>, choose <b>${away}</b>, then: ${how.charAt(0).toLowerCase() + how.slice(1)}`
-      : `${how} Opened this from Reddit or another app? Tap <b>⋯</b> and choose <b>${away}</b> first.`;
-    return `<div class="wpin">${head("<b>Works best from your home screen.</b> Tomorrow your thumb finds it there.")}
-      <p class="wpinhow">${tip}</p></div>`;
+    const browser = isIOS ? "Safari" : "Chrome";
+    const steps = isIOS ? `<span class="ic" role="img" aria-label="Share">${IC_SHARE}</span> → <b>Add to Home Screen</b>` : `<b>⋮</b> → <b>Add to Home screen</b>`;
+    if (inAppBrowser) {
+      return `<div class="wpin"><p class="wpinhead"><b>Best on your home screen.</b></p>
+        <p class="wpinhow">First tap <b>⋯</b> → <b>Open in ${browser}</b></p></div>`;
+    }
+    return `<div class="wpin"><p class="wpinhead"><b>Best on your home screen.</b></p>
+      <p class="wpinhow">${steps}</p>
+      <p class="wpinhow small">In Reddit? <b>⋯</b> → <b>Open in ${browser}</b></p></div>`;
   }
   function wireWelcomeInstall() {
     const go = $("#welcomeInstallGo");
