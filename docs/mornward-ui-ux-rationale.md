@@ -33,6 +33,18 @@ Two supporting decisions:
   beta data suggests home-screen users were the only ones who returned, but that is correlation in a handful of
   devices, so it stays offered, never pushed.
 
+## Visual pass 2: fewer words, more taps, more to see
+
+| Decision | Mechanism | Uncertainty | Risk to the person | Validation |
+| --- | --- | --- | --- | --- |
+| **Pictures instead of explanation**: Begin shows "3 breaths → 1 intention → Ready" as three icons; "At your own pace", "Choose one small thing." and "Take it into your day." are gone | Less to read when half awake; the minute's shape is visible at a glance. | Some people may miss the reassurance the removed lines gave. | Low. Every step still has its words for screen readers. | Five-person test: can people say what will happen before tapping Begin? |
+| **Visible progress**: three bars at the top of Breathe and Choose; three dots for the breaths (done, current) | You can see how far you are without reading a number. | Bars may look like a loading indicator. | None. The dots follow real breaths, and the bars real steps; nothing is faked. | Tests check dots against the breath count. |
+| **Tap the circle to pause**; a short buzz at each in/out change (Android) | A big target for a sleepy thumb; the buzz lets people breathe with their eyes closed. | Unknown whether people find the circle tap; the Pause button stays. The buzz may annoy some people. iPhones ignore it. | Low. The buzz is 12 ms and only during breathing. | Ask in the user test; if people dislike the buzz, add a switch. |
+| **One-tap ideas** under Save: your own last two intentions ("Use again") and four small starters | Typing at 7 am is effort; a tap plus Save is two taps. Your own words come first, so it stays personal. | Starters may make intentions generic. | Low. Tapping only fills the field; nothing is saved until Save, and yesterday's text is never filled in on its own. | Compare saved vs skipped intentions before and after; ask whether the ideas felt pushy. |
+| **The sun rises on Finish** (1.4 s, none with reduced motion) | One small moment of completion instead of words or a score. | It could feel childish to some. | None. | User test reactions. |
+| **Dark mode**: follows the phone (Auto), or Light/Dark under Appearance; in dark, the sun colour becomes the button | A bright screen at 6 am in a dark room is unpleasant; the one action stays the brightest thing on screen. | Dark colours were chosen by contrast ratio, not tested with people. | None known. | Contrast: text 15.0:1, secondary text 8.7:1, button text 11.3:1, field edge 4.6:1, chip edge 3.2:1. |
+| **The idea chips sit below Save** and never hide | An earlier version hid them while typing; that moved Save as the keyboard closed, so a tap meant for Save could land on an idea and replace the words. Caught by the tests before release. | None. | Avoided. | Covered in `qa/redesign/v2.js`. |
+
 ## What was removed from the core flow, and what was kept
 
 Removed from the screens: the five-step timeline and sky arc, the daily quote, the movement checklist, the

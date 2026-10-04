@@ -11,14 +11,15 @@ Three breaths, then choose one small thing that matters this morning. Then get o
 
 | Screen | What happens |
 | --- | --- |
-| Begin | One button. About one minute. |
+| Begin | One button: 3 breaths → 1 intention → ready. About one minute. |
 | Breathe | Three slow breaths (4 seconds in, 6 out), with Pause and Skip |
-| Choose | "What matters this morning?" One small intention, or skip for today |
-| Finish | "You're ready." Your intention, with Edit |
+| Choose | "What matters this morning?" Type one small intention, or tap an idea (your own recent ones first), or skip |
+| Finish | "You're ready." The sun rises; your intention, with Edit |
 
 Open it again the same day and you see today's intention. The next day it offers the routine again;
 earlier intentions stay on your phone, listed by date. Adding it to your home screen and a calendar reminder
 are optional, on the screen after you finish. It never asks for notification permission.
+Light and dark: it follows your phone, or pick one under Appearance.
 
 Design reasoning: [`docs/mornward-ui-ux-rationale.md`](docs/mornward-ui-ux-rationale.md).
 

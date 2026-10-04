@@ -12,7 +12,7 @@
 <meta property="og:image" content="https://mornward.app/icons/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Mornward: a sunrise over a horizon">
+<meta property="og:image:alt" content="Mornward. Before the scroll, one clear intention. 3 breaths, 1 intention, about a minute.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Mornward: before the scroll, one clear intention">
 <meta name="twitter:description" content="Three breaths. Choose what matters. About one minute. Free, no account.">
@@ -20,7 +20,8 @@
 <!-- resizes-content: on Android Chrome the keyboard shrinks the layout, so the field and its button stay above it -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#EDF5FC">
-<meta name="color-scheme" content="light">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0F1B2A">
+<meta name="color-scheme" content="light dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Mornward">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -45,8 +46,27 @@
     --rule: #C9D7E5;
     --error: #9A2A1F;
     --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --chip: #FFFFFF;
+    --chip-line: #788BA0;
+    --track: #C9D7E5;
+    --focus: #25374D;
     --gutter: 24px;
     --radius: 16px;
+  }
+  /* Dark: the sky before sunrise. The sun becomes the button, so the one action is the brightest thing on screen. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0F1B2A; --text: #E8EFF7; --text-2: #A9B9CA; --button: #F2D77A; --button-text: #18222F;
+      --sun: #F2D77A; --field: #182A3D; --field-line: #7F93A8; --placeholder: #93A5B8; --rule: #2A3E55;
+      --error: #FFA394; --chip: #182A3D; --chip-line: #5E7894; --track: #2A3E55; --focus: #F2D77A;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0F1B2A; --text: #E8EFF7; --text-2: #A9B9CA; --button: #F2D77A; --button-text: #18222F;
+    --sun: #F2D77A; --field: #182A3D; --field-line: #7F93A8; --placeholder: #93A5B8; --rule: #2A3E55;
+    --error: #FFA394; --chip: #182A3D; --chip-line: #5E7894; --track: #2A3E55; --focus: #F2D77A;
   }
   @media (max-width: 374px) { :root { --gutter: 20px; } }
 
@@ -82,7 +102,8 @@
   .push { margin-top: auto; padding-top: 16px; display: flex; flex-direction: column; gap: 12px; }
   /* On Choose the actions sit right under the field, not at the bottom: an iPhone keyboard doesn't resize
      the page, so anything at the bottom would end up behind it */
-  .actions { display: flex; flex-direction: column; gap: 4px; }
+  .actions { display: flex; flex-direction: column; gap: 12px; }
+  .actions .chips { margin-top: 4px; }
 
   h1 {
     font-size: 2rem;           /* 32px */
@@ -131,16 +152,67 @@
   .link.start { align-self: flex-start; margin-left: -12px; }
   .link.inline { display: inline-flex; min-height: 44px; padding: 0 4px; margin: 0; vertical-align: middle; }
   button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visible, summary:focus-visible {
-    outline: 3px solid var(--button);
+    outline: 3px solid var(--focus);
     outline-offset: 3px;
   }
   button:disabled { opacity: .55; cursor: default; }
+  /* Links that look like buttons (the calendar link) */
+  a.button {
+    font-weight: 600; min-height: 54px; padding: 14px 20px; border-radius: var(--radius); border: 2px solid var(--button);
+    display: flex; align-items: center; justify-content: center; text-decoration: none; color: var(--text);
+  }
+  a.link { display: inline-flex; align-items: center; font-weight: 600; }
+  .danger { background: var(--error); color: var(--bg); }
+  .btnrow { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btnrow > button { flex: 1 1 140px; width: auto; }
+
+  /* ---------- icons, chips, progress ---------- */
+  .i { width: 1.25em; height: 1.25em; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .tag { display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .tag .i { width: 1.1em; height: 1.1em; }
+  /* Begin: what the minute holds, as three pictures */
+  .flow { list-style: none; margin: 4px 0 0; padding: 0; display: flex; gap: 8px; }
+  .flow li { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 12px 6px; border-radius: var(--radius); background: var(--chip); color: var(--text);
+    font-size: 0.875rem; line-height: 1.125rem; font-weight: 600; text-align: center; }
+  .flow .i { width: 28px; height: 28px; color: var(--text-2); }
+  .flow li:last-child .i { color: var(--text); }
+  .steps { display: flex; gap: 6px; }
+  .steps span { flex: 1; height: 6px; border-radius: 3px; background: var(--track); }
+  .steps .done { background: var(--text-2); }
+  .steps .now { background: var(--sun); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    width: auto; min-height: 44px; padding: 8px 14px; border-radius: 999px; gap: 6px;
+    background: var(--chip); border: 1.5px solid var(--chip-line); color: var(--text); font-size: 0.9375rem; font-weight: 600;
+    max-width: 100%;
+  }
+  .chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip .i { width: 1.05em; height: 1.05em; color: var(--text-2); }
+  .chip[aria-pressed="true"] { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
+  .chip.add, #again { align-self: flex-start; }
+  .seg { display: flex; gap: 0; border: 1.5px solid var(--chip-line); border-radius: 14px; overflow: hidden; }
+  .seg button { flex: 1; min-height: 48px; border-radius: 0; font-size: 0.9375rem; }
+  .seg button + button { border-left: 1.5px solid var(--chip-line); }
+  .seg button[aria-pressed="true"] { background: var(--button); color: var(--button-text); }
+  .ask { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 12px; background: var(--field); color: var(--text); }
+  .sl { display: flex; align-items: center; gap: 10px; }
+  .sl .i { color: var(--text-2); }
+  .preview { margin-top: 28px; padding: 12px 14px; border-radius: 12px; border: 1.5px dashed var(--chip-line); font-size: 0.875rem; line-height: 1.25rem;
+    color: var(--text-2); display: flex; flex-direction: column; gap: 10px; }
+  .preview button { min-height: 44px; padding: 8px 12px; font-size: 0.875rem; }
 
   /* ---------- sunrise ---------- */
   .sunrise { display: block; width: min(200px, 56%); height: auto; margin: 4px 0; }
   .sunrise .disc { fill: var(--sun); }
   .sunrise .ray { stroke: var(--sun); stroke-width: 6; stroke-linecap: round; }
   .sunrise .horizon { stroke: var(--text); stroke-opacity: .28; stroke-width: 2; }
+  /* Finish: the sun lifts out of the horizon, then its rays appear */
+  .sunrise.rise .sunbody { animation: rise 1.4s cubic-bezier(.2, .7, .2, 1) both; }
+  .sunrise.rise .rays { animation: rays 1.8s ease-out both; }
+  @keyframes rise { from { transform: translateY(60px); } to { transform: none; } }
+  @keyframes rays { 0%, 60% { opacity: 0; } 100% { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .sunrise.rise .sunbody, .sunrise.rise .rays { animation: none; } }
 
   /* ---------- breathe ---------- */
   .orbwrap { display: grid; place-items: center; padding: 8px 0; min-height: min(220px, 32vh); }
@@ -155,7 +227,12 @@
   }
   .orb[data-phase="in"] { transform: scale(1); }
   .orb[data-phase="out"] { transform: scale(.55); }
-  .breathcount { font-weight: 600; }
+  .orbwrap { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .orbwrap.paused .orb { opacity: .55; }
+  .dots { display: flex; gap: 10px; }
+  .dots span { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--text-2); }
+  .dots .done { background: var(--text-2); }
+  .dots .now { border-color: var(--sun); background: var(--sun); }
   /* Reduced motion: no growing circle; the words carry the rhythm */
   @media (prefers-reduced-motion: reduce) {
     .orb, .orb[data-phase] { transform: none !important; transition: none !important; width: min(120px, 22vh, 40vw); }
@@ -256,8 +333,14 @@
     keys() { try { return Object.keys(localStorage).filter((k) => k.startsWith("fl.")).map((k) => k.slice(3)); } catch { return []; } }
   };
 
+  // A preview build (window.MORNWARD_PREVIEW) sends nothing and can pretend it's a later day, to try every state.
+  const PREVIEW = window.MORNWARD_PREVIEW === true;
+  const shiftMs = () => (PREVIEW ? store.get("previewShift", 0, Number.isFinite) : 0);
+  const nowMs = () => Date.now() + shiftMs();
+  const now = () => new Date(nowMs());
+
   // Days are the phone's local calendar date. A routine belongs to the date it started on.
-  const dayKey = (d = new Date()) =>
+  const dayKey = (d = now()) =>
     d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   const isDay = (v) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
   // Adds whole calendar days (not 24-hour blocks, so daylight saving can't skip a day)
@@ -268,7 +351,7 @@
   const fmtDay = (key) => {
     const [y, m, d] = key.split("-").map(Number);
     const opts = { weekday: "long", month: "long", day: "numeric" };
-    if (y !== new Date().getFullYear()) opts.year = "numeric";
+    if (y !== now().getFullYear()) opts.year = "numeric";
     return new Date(y, m - 1, d).toLocaleDateString([], opts);
   };
   const isText = (v) => typeof v === "string";
@@ -322,7 +405,7 @@
     const a = store.get("agreed", null, (v) => typeof v === "object");
     return !!a && a.version === TERMS_VERSION;
   };
-  const statsOn = () => hasAgreed() && store.get("noStats", false) !== true;
+  const statsOn = () => !PREVIEW && hasAgreed() && store.get("noStats", false) !== true;
   // Keep in sync with terms.html
   const COUNTED = `<ul>
       <li>A random ID made on this phone, not linked to your name, email or any account.</li>
@@ -426,40 +509,67 @@
     if (h) { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); }
   }
 
-  // A sun on the horizon (rising) or above it (risen). Decorative.
-  function SUN(risen) {
+  // Small line icons, drawn in the text colour. Decorative: every one sits next to words or a label.
+  const ICON = {
+    breath: '<path d="M3 9h10a3 3 0 1 0-3-3"/><path d="M3 13h14a3 3 0 1 1-3 3"/><path d="M3 17h6"/>',
+    pen: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/>',
+    sun: '<circle cx="12" cy="14" r="4"/><path d="M12 5v2M5.6 8.6 7 10M18.4 8.6 17 10M3 18h18"/>',
+    again: '<path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/>',
+    clock: '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',
+    home: '<path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/>',
+    cal: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
+    lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    list: '<path d="M9 7h11M9 12h11M9 17h11M4 7h1M4 12h1M4 17h1"/>',
+    theme: '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>'
+  };
+  const icon = (k) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${ICON[k]}</svg>`;
+
+  // A sun on the horizon (rising) or above it (risen). `animate` lifts it out of the horizon on Finish. Decorative.
+  function SUN(risen, animate = false) {
     const cy = risen ? 60 : 96, r = risen ? 26 : 40;
     const rays = [-60, -30, 0, 30, 60].map((a) => {
-      const t = (a - 90) * Math.PI / 180, p = (d) => `${(120 + Math.cos(t) * d).toFixed(1)},${(cy + Math.sin(t) * d).toFixed(1)}`;
-      const [x1, y1] = p(r + 10).split(","), [x2, y2] = p(r + 22).split(",");
+      const t = (a - 90) * Math.PI / 180, p = (d) => [(120 + Math.cos(t) * d).toFixed(1), (cy + Math.sin(t) * d).toFixed(1)];
+      const [x1, y1] = p(r + 10), [x2, y2] = p(r + 22);
       return `<line class="ray" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
     }).join("");
-    return `<svg class="sunrise" viewBox="0 0 240 104" aria-hidden="true" focusable="false">
-      <defs><clipPath id="sky${risen ? 1 : 0}"><rect width="240" height="95"/></clipPath></defs>
-      <g clip-path="url(#sky${risen ? 1 : 0})"><circle class="disc" cx="120" cy="${cy}" r="${r}"/>${rays}</g>
+    const id = "sky" + (risen ? 1 : 0);
+    return `<svg class="sunrise${animate ? " rise" : ""}" viewBox="0 0 240 104" aria-hidden="true" focusable="false">
+      <defs><clipPath id="${id}"><rect width="240" height="95"/></clipPath></defs>
+      <g clip-path="url(#${id})"><g class="sunbody"><circle class="disc" cx="120" cy="${cy}" r="${r}"/></g><g class="rays">${rays}</g></g>
       <line class="horizon" x1="8" y1="96" x2="232" y2="96"/>
     </svg>`;
   }
+  // Where you are: three short bars. The label says it in words for screen readers.
+  const steps = (at) => `<div class="steps" role="img" aria-label="Step ${at} of 3">${[1, 2, 3]
+    .map((i) => `<span class="${i < at ? "done" : i === at ? "now" : ""}"></span>`).join("")}</div>`;
+  // A short buzz at each in/out change, so breathing works with eyes closed (Android; iPhones ignore it)
+  const buzz = () => { try { if (navigator.vibrate) navigator.vibrate(12); } catch { /* not allowed here */ } };
 
   // ---------- 1. Begin ----------
   function renderBegin() {
     const agreed = hasAgreed();
+    const earlier = earlierSection(dayKey());
     show(`
       <p class="wordmark">mornward</p>
       ${SUN(false)}
       <h1>Before the scroll,<br>one clear intention.</h1>
-      <p class="body">Three breaths. Choose what matters.<br>Then get on with your morning.</p>
+      <ol class="flow" aria-label="Three breaths, one intention, then you're ready">
+        <li>${icon("breath")}<span>3 breaths</span></li>
+        <li>${icon("pen")}<span>1 intention</span></li>
+        <li>${icon("sun")}<span>Ready</span></li>
+      </ol>
       <div class="push">
         <button class="primary" id="begin" type="button">Begin</button>
-        <p class="support center">About one minute</p>
+        <p class="support center tag">${icon("clock")}About one minute</p>
         ${agreed ? "" : `<div class="consent" id="consent">
-          <p>Free, no account. What you write stays on this phone. By tapping Begin you agree to the
-            <a href="terms.html" target="_blank" rel="noopener">beta terms</a>, including anonymous usage counts.</p>
+          <p>Free · No account · Your words stay on this phone.</p>
+          <p>Tapping Begin accepts the <a href="terms.html" target="_blank" rel="noopener">beta terms</a> and anonymous usage counts.</p>
           <details><summary>What's counted</summary>${COUNTED}<p><b>Never sent:</b></p>${NOT_SENT}
             <p>Stored on Supabase in the United States and deleted within 90 days after the beta. You can turn the counts
-            off after your first routine. Questions: <a href="mailto:${CONTACT}">${CONTACT}</a></p></details>
+            off after your first routine. Questions: ${CONTACT}</p></details>
         </div>`}
-        ${earlierSection(dayKey()) ? `<div class="more">${earlierSection(dayKey())}</div>` : ""}
+        ${earlier ? `<div class="more">${earlier}</div>` : ""}
       </div>`, "Mornward. Before the scroll, one clear intention.");
     $("#begin").onclick = begin;
   }
@@ -468,7 +578,7 @@
     const today = dayKey();
     const first = store.get("everStarted", false) !== true;
     const run = routine && routine.day === today ? routine.run + 1 : 1;
-    routine = { day: today, run, phase: "breathe", breaths: 0, breathing: null, intention: null, startedAt: Date.now() };
+    routine = { day: today, run, phase: "breathe", breaths: 0, breathing: null, intention: null, startedAt: nowMs() };
     saveRoutine();
     store.set("everStarted", true);
     emit("routine_started", { ...(viaCalendar ? { via: "calendar" } : {}), ...(first ? { first: true, from: store.get("from", null) } : {}) });
@@ -483,19 +593,26 @@
     br = null;
   }
   const breathLabel = () => `Breath ${Math.min(routine.breaths + 1, BREATH.count)} of ${BREATH.count}`;
+  // One dot per breath: filled when done, the current one glows
+  const dots = () => Array.from({ length: BREATH.count }, (_, i) =>
+    `<span class="${i < routine.breaths ? "done" : i === routine.breaths ? "now" : ""}"></span>`).join("");
   function renderBreathe(paused) {
     show(`
-      <p class="breathcount" id="bcount">${breathLabel()}</p>
+      ${steps(1)}
       <h1 id="bword">${paused ? "Paused" : "Breathe in"}</h1>
-      <p class="body">At your own pace</p>
-      <div class="orbwrap"><div class="orb" id="orb" aria-hidden="true"></div></div>
+      <div class="dots" id="bdots" aria-hidden="true">${dots()}</div>
+      <p class="sr-only" id="bcount">${breathLabel()}</p>
+      <div class="orbwrap" id="orbTap"><div class="orb" id="orb" aria-hidden="true"></div></div>
       <p class="sr-only" id="bstatus" role="status"></p>
       <div class="push">
         <button class="primary" id="bpause" type="button">${paused ? "Resume" : "Pause"}</button>
         <button class="link" id="bskip" type="button">Skip breathing</button>
       </div>`, `Breathing. ${breathLabel()}.`);
     br = { phase: "in", left: BREATH.inMs, at: 0, timer: 0, paused: true };
-    $("#bpause").onclick = () => (br && br.paused ? resumeBreathing() : pauseBreathing());
+    const toggle = () => (br && br.paused ? resumeBreathing() : pauseBreathing());
+    $("#bpause").onclick = toggle;
+    // Tapping the circle does the same as the button: a big target for a sleepy thumb
+    $("#orbTap").onclick = toggle;
     $("#bskip").onclick = () => {
       const breathsDone = routine.breaths;
       routine.breathing = "skipped";
@@ -504,7 +621,7 @@
       emit("breathing_skipped", { breaths_done: breathsDone });
       renderChoose();
     };
-    if (paused) $("#bstatus").textContent = "Paused.";
+    if (paused) { $("#bstatus").textContent = "Paused."; $("#orbTap").classList.add("paused"); }
     else resumeBreathing();
   }
   function setPhase(phase, ms) {
@@ -516,6 +633,7 @@
       orb.style.transitionDuration = ms + "ms";
       orb.dataset.phase = phase;
     }
+    buzz();
     br.timer = setTimeout(phaseDone, ms);
   }
   function phaseDone() {
@@ -523,6 +641,7 @@
     if (br.phase === "in") { setPhase("out", BREATH.outMs); return; }
     routine.breaths += 1;
     saveRoutine();
+    $("#bdots").innerHTML = dots();
     if (routine.breaths >= BREATH.count) {
       routine.breathing = "completed";
       routine.phase = "choose";
@@ -543,6 +662,7 @@
     br.paused = true;
     const orb = $("#orb");
     if (orb) { orb.style.transform = getComputedStyle(orb).transform; orb.style.transitionDuration = "0ms"; }
+    $("#orbTap").classList.add("paused");
     $("#bword").textContent = "Paused";
     $("#bpause").textContent = "Resume";
     $("#bstatus").textContent = "Paused.";
@@ -550,6 +670,7 @@
   function resumeBreathing() {
     if (!br || !br.paused) return;
     br.paused = false;
+    $("#orbTap").classList.remove("paused");
     $("#bpause").textContent = "Pause";
     $("#bstatus").textContent = "";
     const orb = $("#orb");
@@ -571,6 +692,14 @@
   document.addEventListener("visibilitychange", () => { if (document.hidden) pauseBreathing(); });
 
   // ---------- 3. Choose ----------
+  // One-tap ideas: your own last few intentions first, then a few small starters. Tapping fills the field;
+  // you can still change the words before saving.
+  const STARTERS = ["One focused hour", "Move my body", "Get outside", "Call someone"];
+  function ideas(day) {
+    const own = [];
+    for (const [, t] of earlierEntries(day)) { if (!own.includes(t)) own.push(t); if (own.length === 2) break; }
+    return [...own.map((t) => ({ t, own: true })), ...STARTERS.filter((s) => !own.includes(s)).map((t) => ({ t, own: false }))].slice(0, 5);
+  }
   // editing: changing (or adding) an intention after the routine; `back` draws the screen to return to
   function renderChoose(editing = false, back = null) {
     const day = routine.day;
@@ -578,8 +707,8 @@
     const draft = store.get(draftKey(day), null, isText);
     const value = draft !== null && draft.trim() ? draft : saved;
     show(`
+      ${editing ? "" : steps(2)}
       <h1>What matters<br>this morning?</h1>
-      <p class="body">Choose one small thing.</p>
       <div class="field">
         <label for="intent">My intention</label>
         <textarea id="intent" rows="1" maxlength="${MAX_INTENTION}" enterkeyhint="done" autocomplete="off"
@@ -588,21 +717,34 @@
       </div>
       <div class="actions">
         <button class="primary" id="isave" type="button">Save my intention</button>
+        <div class="chips" id="ideas" role="group" aria-label="Ideas to tap">
+          ${ideas(day).map((x, i) => `<button class="chip${x.own ? " own" : ""}" type="button" data-idea="${i}"
+            aria-pressed="false"${x.own ? ` aria-label="Use again: ${esc(x.t)}"` : ""}>${x.own ? icon("again") : ""}<span>${esc(x.t)}</span></button>`).join("")}
+        </div>
         <button class="link" id="iskip" type="button">${editing ? "Keep it as it was" : "Skip for today"}</button>
       </div>`, editing ? "Edit your intention" : "What matters this morning?");
     const field = $("#intent");
     const msg = (t, err = false) => { $("#imsg").textContent = t; $("#imsg").className = "msg" + (err ? " err" : ""); };
     const grow = () => { field.style.height = "auto"; field.style.height = field.scrollHeight + 4 + "px"; };
     grow();
-    field.addEventListener("input", () => {
-      grow();
+    const keepDraft = () => {
       // Drafts are kept as you type, so a reload, a call or a closed tab doesn't lose them
       const kept = store.set(draftKey(day), field.value);
       if (!kept) msg("This phone isn't saving drafts right now. Keep this page open.", true);
       else if ($("#imsg").classList.contains("err")) msg("");
-    });
+    };
+    const list = ideas(day);
+    const markIdeas = () => card.querySelectorAll("[data-idea]").forEach((b) =>
+      b.setAttribute("aria-pressed", String(list[b.dataset.idea].t === cleanIntention(field.value))));
+    markIdeas();
+    field.addEventListener("input", () => { grow(); keepDraft(); markIdeas(); });
+    card.querySelectorAll("[data-idea]").forEach((b) => (b.onclick = () => {
+      field.value = list[b.dataset.idea].t;
+      grow(); keepDraft(); markIdeas();
+    }));
     field.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); save(); } });
-    // Keep the field and its button above the keyboard once it opens
+    // Keep the field and its button above the keyboard once it opens. Ideas sit below Save and never move,
+    // so a tap meant for Save can't land on an idea.
     field.addEventListener("focus", () => setTimeout(() => { const b = $("#isave"); if (b) b.scrollIntoView({ block: "nearest" }); }, 350));
     if (window.visualViewport) {
       const keep = () => { if (document.activeElement === field) { const b = $("#isave"); if (b) b.scrollIntoView({ block: "nearest" }); } };
@@ -648,21 +790,19 @@
         <p class="text" id="itext">${esc(text)}</p>
       </div>`;
   }
+  const addButton = `<button class="chip add" id="iadd" type="button">${icon("plus")}<span>Add an intention</span></button>`;
   function renderFinish(note = "") {
     const text = intentionFor(routine.day);
     show(`
-      ${SUN(true)}
+      ${SUN(true, !note)}
       <h1>You're ready.</h1>
-      ${text ? `${intentionBlock(text, "Your intention")}
-        <p class="body">Take it into your day.</p>`
-      : `<p class="body">No intention today. You can still add one later.</p>
-        <button class="link start" id="iadd" type="button">Add an intention</button>`}
+      ${text ? intentionBlock(text, "Your intention") : `<p class="body">No intention today.</p>${addButton}`}
       <p class="msg ok" role="status">${esc(note)}</p>
       <div class="push">
         <button class="primary" id="finish" type="button">Finish</button>
       </div>`, "You're ready.");
     emit("routine_finished", { breathing: routine.breathing || "skipped", intention: text ? "saved" : "skipped",
-      seconds: Math.round((Date.now() - routine.startedAt) / 1000) });
+      seconds: Math.round((nowMs() - routine.startedAt) / 1000) });
     ($("#iedit") || $("#iadd")).onclick = () => renderChoose(true, renderFinish);
     $("#finish").onclick = () => {
       routine.phase = "done";
@@ -676,25 +816,57 @@
     if (!routine || routine.day !== dayKey()) { renderBegin(); return; }
     const text = intentionFor(routine.day);
     show(`
-      <p class="wordmark">mornward</p>
-      <p class="support">${esc(fmtDay(routine.day))}</p>
+      <div class="row"><p class="wordmark">mornward</p><p class="support">${esc(fmtDay(routine.day))}</p></div>
       <h1>${text ? "Today's intention" : "Done for today"}</h1>
-      ${text ? `${intentionBlock(text, "Today")}<p class="body">Take it into your day.</p>`
-      : `<p class="body">You did the routine without an intention today.</p>
-        <button class="link start" id="iadd" type="button">Add an intention</button>`}
+      ${text ? intentionBlock(text, "Today") : `<p class="body">No intention today.</p>${addButton}`}
       <p class="msg ok" role="status">${esc(note)}</p>
-      <button class="link start" id="again" type="button">Do the routine again</button>
+      <button class="chip" id="again" type="button">${icon("again")}<span>Do the routine again</span></button>
       <div class="more">
         ${earlierSection(routine.day)}
         ${homeSection()}
         ${reminderSection()}
+        ${themeSection()}
         ${privacySection()}
       </div>`, text ? "Today's intention" : "Done for today");
     ($("#iedit") || $("#iadd")).onclick = () => renderChoose(true, renderToday);
     $("#again").onclick = begin;
     wireHome();
     wireReminder();
+    wireTheme();
     wirePrivacy();
+  }
+
+  // ---------- appearance: follows the phone, or pick light or dark ----------
+  const THEMES = ["auto", "light", "dark"];
+  let themeSet = false; // only clear a theme this page set itself (a host page may set its own)
+  function applyTheme() {
+    const t = store.get("theme", "auto", (v) => THEMES.includes(v));
+    const root = document.documentElement;
+    if (t === "auto") { if (themeSet) root.removeAttribute("data-theme"); themeSet = false; }
+    else { root.setAttribute("data-theme", t); themeSet = true; }
+    // The phone's status bar colour: its light/dark pair on Auto, the chosen background otherwise
+    const bgNow = getComputedStyle(document.body).backgroundColor;
+    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
+      if (!m.dataset.auto) m.dataset.auto = m.content;
+      m.content = t === "auto" ? m.dataset.auto : bgNow;
+    });
+  }
+  const themeSection = () => {
+    const t = store.get("theme", "auto", (v) => THEMES.includes(v));
+    return `<details class="section" id="themeSec"><summary><span class="sl">${icon("theme")}Appearance</span></summary><div class="inner">
+        <div class="seg" role="group" aria-label="Appearance">
+          ${[["auto", "Auto"], ["light", "Light"], ["dark", "Dark"]].map(([k, l]) =>
+            `<button type="button" data-theme-pick="${k}" aria-pressed="${t === k}">${l}</button>`).join("")}
+        </div>
+        <p>Auto follows your phone's light or dark setting.</p>
+      </div></details>`;
+  };
+  function wireTheme() {
+    card.querySelectorAll("[data-theme-pick]").forEach((b) => (b.onclick = () => {
+      store.set("theme", b.dataset.themePick);
+      applyTheme();
+      card.querySelectorAll("[data-theme-pick]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    }));
   }
 
   // ---------- earlier intentions: always dated, never shown as today's ----------
@@ -716,7 +888,7 @@
     const note = letter && letter.text.trim() ? letter : null;
     if (!items.length && !note) return "";
     return `<details class="section" id="earlier">
-        <summary>Earlier intentions</summary>
+        <summary><span class="sl">${icon("list")}Earlier intentions</span></summary>
         <div class="inner"><ul class="history">
           ${items.map(([d, t]) => `<li><span class="when">${esc(fmtDay(d))}</span><span class="what">${esc(t)}</span></li>`).join("")}
           ${note ? `<li><span class="when">A note you wrote${isDay(note.writtenOn) ? " on " + esc(fmtDay(note.writtenOn)) : ""}</span><span class="what">${esc(note.text)}</span></li>` : ""}
@@ -791,7 +963,7 @@
         <p role="status" data-copy-msg></p>
       </div>`;
   }
-  const homeSection = () => `<details class="section" id="homeSec"><summary>Add to home screen</summary><div class="inner" id="homeBox">${homeBody()}</div></details>`;
+  const homeSection = () => `<details class="section" id="homeSec"><summary><span class="sl">${icon("home")}Add to home screen</span></summary><div class="inner" id="homeBox">${homeBody()}</div></details>`;
   function refreshHome() {
     const box = $("#homeBox");
     if (!box) return;
@@ -850,9 +1022,9 @@
   const isAlarmTime = (v) => typeof v === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
   function nextAlarm(v) {
     const [h, m] = v.split(":").map(Number);
-    const d = new Date();
+    const d = now();
     d.setHours(h, m, 0, 0);
-    if (d <= new Date()) d.setDate(d.getDate() + 1);
+    if (d <= now()) d.setDate(d.getDate() + 1);
     return d;
   }
   const icsLocal = (d) => `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}T${pad2(d.getHours())}${pad2(d.getMinutes())}00`;
@@ -880,8 +1052,8 @@
   };
   function calendarFile(v, link) {
     const start = nextAlarm(v);
-    const now = new Date();
-    const stamp = `${now.getUTCFullYear()}${pad2(now.getUTCMonth() + 1)}${pad2(now.getUTCDate())}T${pad2(now.getUTCHours())}${pad2(now.getUTCMinutes())}00Z`;
+    const made = new Date(); // the real moment the file is made, even in a preview
+    const stamp = `${made.getUTCFullYear()}${pad2(made.getUTCMonth() + 1)}${pad2(made.getUTCDate())}T${pad2(made.getUTCHours())}${pad2(made.getUTCMinutes())}00Z`;
     return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Mornward//EN", "CALSCALE:GREGORIAN", "BEGIN:VEVENT",
       `UID:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}@mornward.app`,
       `DTSTAMP:${stamp}`, `DTSTART:${icsLocal(start)}`, "DURATION:PT5M", `RRULE:FREQ=DAILY;COUNT=${REMIND_DAYS}`,
@@ -897,38 +1069,47 @@
     try { q.set("ctz", Intl.DateTimeFormat().resolvedOptions().timeZone); } catch {}
     return "https://calendar.google.com/calendar/render?" + q.toString();
   }
+  // Google Calendar is a real link (it opens even where pages can't open windows); the calendar file is made on the phone.
+  // iPhones list the calendar file first (Apple Calendar), Android phones Google Calendar.
   function reminderSection() {
     const at = store.get("alarmAt", "", isAlarmTime) || "07:00";
-    return `<details class="section" id="remindSec"><summary>Calendar reminder</summary><div class="inner">
+    const google = `<a class="${isIOS ? "link start" : "button secondary"}" id="remGoogle" href="#" target="_blank" rel="noopener">${isIOS ? "Use Google Calendar instead" : "Add to Google Calendar"}</a>`;
+    const file = `<button class="${isIOS ? "secondary" : "link start"}" id="remIcs" type="button">${isIOS ? "Add to Calendar" : "Download a calendar file instead"}</button>`;
+    return `<details class="section" id="remindSec"><summary><span class="sl">${icon("cal")}Calendar reminder</span></summary><div class="inner">
         <p>Mornward doesn't send notifications. This adds an event to your own calendar for the next ${REMIND_DAYS} mornings.</p>
         <label class="flabel" for="remAt">Time</label>
         <input type="time" id="remAt" value="${esc(at)}">
-        <button class="secondary" id="remGo" type="button">${isIOS ? "Add to Calendar" : "Add to Google Calendar"}</button>
-        <button class="link start" id="remAlt" type="button">${isIOS ? "Use Google Calendar instead" : "Download a calendar file instead"}</button>
+        ${isIOS ? file + google : google + file}
         <p role="status" id="remMsg"></p>
       </div></details>`;
   }
   function wireReminder() {
-    if (!$("#remGo")) return;
-    const remind = (google) => {
-      const v = $("#remAt").value;
-      if (!isAlarmTime(v)) { $("#remMsg").textContent = "Pick a time first."; $("#remAt").focus(); return; }
-      store.set("alarmAt", v);
-      const link = carryLink();
-      if (google) window.open(googleCalendarLink(v, link), "_blank", "noopener");
-      else {
-        const a = document.createElement("a");
-        a.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(calendarFile(v, link));
-        a.download = "mornward.ics";
-        document.body.appendChild(a); a.click(); a.remove();
-      }
+    const g = $("#remGoogle");
+    if (!g) return;
+    const time = () => $("#remAt").value;
+    const point = () => { if (isAlarmTime(time())) g.href = googleCalendarLink(time(), carryLink()); };
+    point();
+    $("#remAt").addEventListener("input", point);
+    $("#remAt").addEventListener("change", point);
+    const check = () => {
+      if (isAlarmTime(time())) { store.set("alarmAt", time()); return true; }
+      $("#remMsg").textContent = "Pick a time first."; $("#remAt").focus(); return false;
+    };
+    g.onclick = (e) => {
+      if (!check()) { e.preventDefault(); return; }
+      point();
       // We can only hand it over, not confirm it was saved
-      $("#remMsg").textContent = google ? "Google Calendar opened. Save the event there to keep it."
-        : isIOS ? "Tap Add to Calendar on the next screen. If a file downloaded instead, open it from Downloads."
+      $("#remMsg").textContent = "Google Calendar opened. Save the event there to keep it.";
+    };
+    $("#remIcs").onclick = () => {
+      if (!check()) return;
+      const a = document.createElement("a");
+      a.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(calendarFile(time(), carryLink()));
+      a.download = "mornward.ics";
+      document.body.appendChild(a); a.click(); a.remove();
+      $("#remMsg").textContent = isIOS ? "Tap Add to Calendar on the next screen. If a file downloaded instead, open it from Downloads."
         : "Open the downloaded file to add it to your calendar.";
     };
-    $("#remGo").onclick = () => remind(!isIOS);
-    $("#remAlt").onclick = () => remind(isIOS);
   }
 
   // ---------- privacy and your data ----------
@@ -936,7 +1117,7 @@
     const id = store.get("deviceId", null, (v) => typeof v === "string" && /^[0-9a-f-]{36}$/.test(v));
     const ask = id ? `mailto:${CONTACT}?subject=${encodeURIComponent("Delete my Mornward data")}&body=${
       encodeURIComponent("Please delete the stats for this ID: " + id)}` : "";
-    return `<details class="section" id="privSec"><summary>Privacy and your data</summary><div class="inner">
+    return `<details class="section" id="privSec"><summary><span class="sl">${icon("lock")}Privacy and your data</span></summary><div class="inner">
         <p>Your intentions are saved only in this browser on this phone. Clearing browser data deletes them.</p>
         <p id="statsLine"></p>
         <h3>What's counted</h3>${COUNTED}
@@ -946,7 +1127,12 @@
         ${id ? `<p>Your anonymous ID:</p><code class="myid" id="myId">${esc(id)}</code>
           <p>To see or delete the stats sent with it, email it to <a href="${ask}">${CONTACT}</a>. Handled within 30 days.</p>`
         : `<p>No stats have been sent from this phone.</p>`}
-        <button class="link start" type="button" id="wipeLocal">Delete everything on this phone</button>
+        <button class="link start" type="button" id="wipeLocal" aria-expanded="false" aria-controls="wipeAsk">Delete everything on this phone</button>
+        <div class="ask" id="wipeAsk" hidden>
+          <p><b>Delete your intentions and settings on this phone?</b> This can't be undone.${id ? " If you also want your stats deleted, email your ID first." : ""}</p>
+          <div class="btnrow"><button class="danger" type="button" id="wipeYes">Delete everything</button>
+            <button class="secondary" type="button" id="wipeNo">Cancel</button></div>
+        </div>
       </div></details>`;
   }
   function wirePrivacy() {
@@ -961,11 +1147,11 @@
       };
     };
     draw();
-    $("#wipeLocal").onclick = () => {
-      const id = store.get("deviceId", null);
-      const msg = "This deletes your intentions and settings on this phone. It can't be undone." +
-        (id ? "\n\nIf you also want your stats deleted, email your ID first." : "");
-      if (!confirm(msg)) return;
+    // Asked on the page itself, not in a browser dialog (some app views never show those)
+    const ask = (open) => { $("#wipeAsk").hidden = !open; $("#wipeLocal").setAttribute("aria-expanded", String(open)); };
+    $("#wipeLocal").onclick = () => { ask(true); $("#wipeNo").focus(); };
+    $("#wipeNo").onclick = () => { ask(false); $("#wipeLocal").focus(); };
+    $("#wipeYes").onclick = () => {
       store.keys().forEach((k) => store.del(k));
       location.reload();
     };
@@ -1032,7 +1218,7 @@
     routine = store.get("routine", null, isRoutine);
     const r = routine;
     const current = r && (r.day === today ||
-      (r.phase !== "done" && r.day === addDays(today, -1) && Date.now() - r.startedAt < CARRY_OVER_MS));
+      (r.phase !== "done" && r.day === addDays(today, -1) && nowMs() - r.startedAt < CARRY_OVER_MS));
     if (!current) renderBegin();
     else if (r.phase === "breathe") renderBreathe(true);
     else if (r.phase === "choose") renderChoose();
@@ -1057,7 +1243,43 @@
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
   }
+  // ---------- preview tools (preview build only) ----------
+  // Try every state without waiting: move the pretend date forward a day, go back to today, or start fresh.
+  function previewBar() {
+    if (!PREVIEW) return;
+    const bar = document.createElement("div");
+    bar.className = "preview";
+    bar.setAttribute("role", "region");
+    bar.setAttribute("aria-label", "Preview tools");
+    document.querySelector(".app").appendChild(bar);
+    const draw = () => {
+      const shifted = shiftMs() !== 0;
+      bar.innerHTML = `<p><b>Preview</b> · nothing is sent${shifted ? ` · pretending it's ${esc(fmtDay(dayKey()))}` : ""}</p>
+        <div class="btnrow">
+          <button type="button" class="secondary" id="pvNext">Next day</button>
+          ${shifted ? `<button type="button" class="secondary" id="pvToday">Back to today</button>` : ""}
+          <button type="button" class="secondary" id="pvTheme">Theme: ${esc(store.get("theme", "auto", (v) => THEMES.includes(v)))}</button>
+          <button type="button" class="secondary" id="pvReset">Start fresh</button>
+        </div>`;
+      // Tomorrow at 7:00, so the morning always looks like a morning
+      $("#pvNext").onclick = () => {
+        const t = now(); t.setDate(t.getDate() + 1); t.setHours(7, 0, 0, 0);
+        store.set("previewShift", t.getTime() - Date.now()); draw(); home();
+      };
+      if ($("#pvToday")) $("#pvToday").onclick = () => { store.del("previewShift"); draw(); home(); };
+      $("#pvTheme").onclick = () => {
+        const t = store.get("theme", "auto", (v) => THEMES.includes(v));
+        store.set("theme", THEMES[(THEMES.indexOf(t) + 1) % THEMES.length]); applyTheme(); draw();
+        card.querySelectorAll("[data-theme-pick]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.themePick === store.get("theme", "auto"))));
+      };
+      $("#pvReset").onclick = () => { store.keys().forEach((k) => store.del(k)); location.reload(); };
+    };
+    draw();
+  }
+
+  applyTheme();
   flushStats();
   home();
+  previewBar();
 })();
 </script>
