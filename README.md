@@ -13,7 +13,7 @@ Three breaths, then up to three small things for this morning. Then get on with 
 | --- | --- |
 | Begin | One button: 3 breaths → mini tasks → ready. About one minute. |
 | Breathe | Three slow breaths (4 seconds in, 6 out), with Pause and Skip |
-| Choose | "What matters this morning?" Two of twelve mini tasks come ticked: keep them in one tap, or change them, or add your own (up to three) |
+| Choose | "What matters this morning?" Ten mini tasks (a fresh ten each routine day), two ticked: keep them in one tap, change them, or add your own (up to three) |
 | Finish | "You're ready." The sun rises; your mini task, with Edit |
 
 Open it again the same day and you see today's mini task. The next day it offers the routine again;

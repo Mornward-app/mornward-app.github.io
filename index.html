@@ -796,25 +796,62 @@
   document.addEventListener("visibilitychange", () => { if (document.hidden) pauseBreathing(); });
 
   // ---------- 3. Choose ----------
-  // Mini tasks: chips you tap. Two of the twelve starters come ticked (a different pair each day); people keep them
-  // or change them. Their own recent tasks appear as extra chips (marked "again"), never ticked for them.
-  // Up to three tasks, saved together as one entry: "Make my bed · Drink a glass of water".
-  const STARTERS = ["Water first", "Make my bed", "No phone till dressed", "Stretch", "Step outside", "Real breakfast",
-    "Plan my top 3", "One focused hour", "Reply to one message", "Tidy one spot", "Text someone", "Short walk"];
+  // Mini tasks: chips you tap (ten at most). Two come ticked; people keep them or change them. Their own recent
+  // tasks appear as extra chips (marked "again"), never ticked for them. Up to three tasks, saved together as one
+  // entry: "Make my bed · Water first".
+  //
+  // The chips come from a curated bank, in themes. Each routine day shows ten, mixed across themes; the next routine
+  // day shows the next ten, so the choices don't repeat day after day. It moves on only with days someone actually
+  // did the routine, and stays the same all day. Each phone has its own shuffle (a random number kept on the phone,
+  // never sent), reshuffled each time the bank comes round again. Nothing on screen mentions the bank.
+  const BANK = {
+    body: ["Stretch", "Ten squats", "Shoulder rolls", "Touch my toes", "Five push-ups", "Dance to one song"],
+    food: ["Water first", "Healthy breakfast", "Fruit with breakfast", "Pack a lunch", "Protein breakfast", "Herbal tea"],
+    outside: ["Step outside", "Short walk", "Morning light", "Open a window", "Walk the block"],
+    focus: ["Plan my top 3", "One focused hour", "Hardest task first", "Set one goal", "Read 10 pages", "Write a to-do list"],
+    home: ["Make my bed", "Tidy one spot", "Clear the sink", "Water a plant", "Empty the dishwasher"],
+    people: ["Text someone", "Call family", "Thank someone", "Compliment a friend", "Check on a friend"],
+    calm: ["No phone till dressed", "Phone in another room", "One quiet minute", "Write one line", "One thing I'm grateful for", "Cold water on my face"]
+  };
+  const POOL = new Set(Object.values(BANK).flat());
+  const CHIP_MAX = 10; // chips on screen, your own included
   const PICK_MAX = 3;
   const SEP = " · ";
   const tasksOf = (text) => text.split(SEP).map((x) => x.trim()).filter(Boolean);
-  const dayNumber = (key) => { const [y, m, d] = key.split("-").map(Number); return Math.floor(Date.UTC(y, m - 1, d) / 864e5); };
-  function dailyPair(day) {
-    const n = dayNumber(day), a = n % STARTERS.length;
-    let b = (n * 5 + 3) % STARTERS.length;
-    if (b === a) b = (b + 1) % STARTERS.length;
-    return [STARTERS[a], STARTERS[b]];
+  // A small seeded random generator (mulberry32), so a phone's shuffle is the same every time it's worked out
+  const seeded = (a) => () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  function taskSeed() {
+    let v = store.get("taskSeed", null, Number.isInteger);
+    if (v === null) { v = Math.floor(Math.random() * 2 ** 31); store.set("taskSeed", v); }
+    return v;
+  }
+  const orders = new Map();
+  // One full pass through the bank: themes taken in turn, so neighbours are from different themes
+  function bankOrder(cycle) {
+    if (orders.has(cycle)) return orders.get(cycle);
+    const r = seeded(taskSeed() + cycle * 7919);
+    const shuffle = (list) => { const x = list.slice(); for (let i = x.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [x[i], x[j]] = [x[j], x[i]]; } return x; };
+    const themes = shuffle(Object.keys(BANK)).map((k) => shuffle(BANK[k]));
+    const seq = [];
+    for (let i = 0; seq.length < POOL.size; i++) for (const t of themes) if (t[i]) seq.push(t[i]);
+    orders.set(cycle, seq);
+    return seq;
+  }
+  // Today's ten: set number = routine days done before today
+  function todaysSet(day) {
+    const n = [...doneDays()].filter((d) => d < day).length;
+    const len = POOL.size, out = [];
+    for (let k = n * CHIP_MAX; out.length < CHIP_MAX; k++) {
+      const x = bankOrder(Math.floor(k / len))[k % len];
+      if (!out.includes(x)) out.push(x);
+    }
+    return out;
   }
   function ownRecent(day) {
     const own = [];
     for (const [, t] of earlierEntries(day)) for (const x of tasksOf(t)) {
-      if (!own.includes(x) && !STARTERS.includes(x)) own.push(x);
+      if (!own.includes(x) && !POOL.has(x)) own.push(x);
       if (own.length === 3) return own;
     }
     return own;
@@ -829,14 +866,19 @@
     const savedTasks = tasksOf(saved);
     const draft = store.get(draftKey(day), null, isText);
     const keptPicks = store.get(picksKey(day), null, isPicks);
-    const defaults = saved ? savedTasks : dailyPair(day);
+    const set = todaysSet(day);
+    const defaults = saved ? savedTasks : set.slice(0, 2);
     let sel = keptPicks ? keptPicks.sel.slice(0, PICK_MAX) : defaults.slice();
     let touched = keptPicks ? keptPicks.touched : false;
     // Every chip: your own recent ones, today's saved custom ones, then the starters
     const own = ownRecent(day).filter((x) => !savedTasks.includes(x));
-    const custom = savedTasks.filter((x) => !STARTERS.includes(x));
-    const options = [...custom, ...own, ...STARTERS];
+    const custom = savedTasks.filter((x) => !set.includes(x));
+    let options = [...custom, ...own, ...set];
     for (const x of sel) if (!options.includes(x)) options.unshift(x);
+    // Ten at most: your own come first, so drop unticked bank chips from the end
+    for (let i = options.length - 1; options.length > CHIP_MAX && i >= 0; i--) {
+      if (set.includes(options[i]) && !sel.includes(options[i])) options.splice(i, 1);
+    }
     const label = () => (touched ? "Save my tasks" : "Keep these");
     show(`
       <h1>What matters<br>this morning?</h1>
@@ -906,7 +948,7 @@
       saveRoutine();
       if (firstSave) {
         // Counts only: how many, whether the suggested pair was kept as it was, whether they wrote their own
-        emit("intention_saved", { count: tasks.length, kept_defaults: !touched && !saved, own: !!typed || tasks.some((x) => !STARTERS.includes(x)) });
+        emit("intention_saved", { count: tasks.length, kept_defaults: !touched && !saved, own: !!typed || tasks.some((x) => !POOL.has(x)) });
         if (routine.breathing === "completed") emit("core_routine_completed");
       }
       if (editing && back) back(touched ? "Saved." : "");

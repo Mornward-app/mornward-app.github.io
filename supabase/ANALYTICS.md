@@ -75,7 +75,7 @@ Leave your own phones out (your ID is under **Privacy and your data** in the app
 insert into public.excluded_devices (device_id, note) values ('YOUR-ID-HERE', 'my phone');
 ```
 
-**Pre-ticked tasks.** Two of the twelve starters come ticked (a different pair each day), so many people will keep them. `kept_defaults` shows how often; read any "which task" interest with that in mind. (Which tasks were picked is not sent at all.)
+**Pre-ticked tasks.** Two of the day's ten mini tasks come ticked (the ten change each routine day, from a bank of 39), so many people will keep them. `kept_defaults` shows how often; read any "which task" interest with that in mind. (Which tasks were picked is not sent at all.)
 
 **Reading the numbers honestly.** With tens of devices, one person moves a percentage by several points: read the
 counts first. `routine_metrics` covers only the beta-4 routine. **Don't compare it with `testers` / `pass_rules`,**
@@ -86,7 +86,7 @@ can't say whether reminders cause returns; `via: "calendar"` only shows that a r
 
 Everything lives in the browser's `localStorage` under keys starting `fl.`: `routine` (today's progress),
 `intent:YYYY-MM-DD` (one intention per local date, the same key the earlier version used), `draft:YYYY-MM-DD`,
-`agreed`, `deviceId`, `noStats`, `outbox`, `sent`. Nothing is fingerprinted; the device id is a random UUID.
+`agreed`, `deviceId`, `noStats`, `outbox`, `sent`, and `taskSeed` (a random number that orders the mini-task bank for this phone; never sent). Nothing is fingerprinted; the device id is a random UUID.
 
 - **Android (Chrome):** an installed home-screen app shares Chrome's storage, so the intention, history and device
   id are the same in both.

@@ -91,8 +91,8 @@ after. Two earlier decisions change because of it, and the reasons are recorded 
 
 ### Pass 5: pick a few mini tasks (chips, two pre-ticked)
 
-- **Chips instead of a list**, like a tag picker: twelve short labels ("Water first", "Make my bed", "Plan my top 3"…),
-  two or three per row. Ticked chips show a check and an amber outline.
+- **Chips instead of a list**, like a tag picker: ten short labels ("Water first", "Make my bed", "Plan my top 3"…),
+  two or three per row. Never more than ten on screen: your own past tasks take the place of starters. Ticked chips show a check and an amber outline.
 - **Two come pre-ticked**, a different pair each day. The button reads **Keep these** while they're untouched (one tap
   to finish) and **Save my tasks** once anything changes. Up to three in total, including "Add your own".
 - **Your own past tasks** appear as extra chips marked ↺, never ticked for you, so yesterday's choice isn't presented
@@ -103,6 +103,19 @@ after. Two earlier decisions change because of it, and the reasons are recorded 
   choice. Which tasks were picked is not sent.
 - **Uncertainty:** defaults may make the routine feel less personal, or more effortless. Compare `kept_defaults`
   with next-day return once there's data.
+
+### Pass 6: mini tasks that don't repeat
+
+- **A curated bank of 39 mini tasks in seven themes** (body, food, outside, focus, home, people, calm), kept in the app
+  and never mentioned on screen. Each routine day shows ten, with the themes mixed, so two neighbouring chips are
+  from different themes and the two pre-ticked ones are too.
+- **The set moves on per routine day**, not per calendar day: day 2's ten share nothing with day 1's, a reopen the same
+  day shows the same ten, and a skipped week doesn't skip choices. Four routine days cover the whole bank; the next
+  pass is reshuffled.
+- **Each phone has its own shuffle** from a random number kept on the phone (`fl.taskSeed`), never sent.
+- **"Healthy breakfast"** and other food tasks are in the bank (the founder asked for a meal option).
+- Checked by `qa/redesign/rotate.js` (no overlap day 1→2 and 2→3, all 39 seen in four days, stable within a day,
+  nothing sent).
 
 ## What was removed from the core flow, and what was kept
 
