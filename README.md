@@ -1,41 +1,36 @@
 # Mornward
 
-**Your first 5 minutes go to someone. Make it you.**
+**Before the scroll, one clear intention.**
 
-Mornward is a free 5-minute morning routine you open right after your alarm, before the feed gets there first.
-Breathe, read one short quote, get out of bed, and plan your day. Then it ends.
+Mornward is a free one-minute routine for the moment your alarm goes off, before the feed gets there first.
+Three breaths, then choose one small thing that matters this morning. Then get on with your morning.
 
-No lock. No lecture. Just a better first move.
-
-**Try it: [mornward.app](https://mornward.app)**. Free, no account, lives on your home screen. Currently in beta.
+**Try it: [mornward.app](https://mornward.app)**. Free, no account. Currently in beta.
 
 ## How it works
 
-**First visit (about a minute):** try a 1-minute reset (three breaths, one line, one thing for today). Then, if you like, add Mornward to your home screen, answer one question, and leave a note for tomorrow with a calendar reminder at your alarm time.
-
-**Every morning (about 5 minutes):**
-
-| Step | What happens |
+| Screen | What happens |
 | --- | --- |
-| Wake | A short greeting, your streak, and the note you left yourself last night |
-| Breathe | Five slow breaths, about 50 seconds (skippable) |
-| Read | One short quote from someone who's been there |
-| Move | Pick 2 of 3 small moves that get you out of bed |
-| Plan | One thing that would make today count |
-| Done | "The sun is up." Your streak, 0 posts seen, and a note for tomorrow |
+| Begin | One button. About one minute. |
+| Breathe | Three slow breaths (4 seconds in, 6 out), with Pause and Skip |
+| Choose | "What matters this morning?" One small intention, or skip for today |
+| Finish | "You're ready." Your intention, with Edit |
 
-It doesn't block any apps. If you need one for something useful, like messages, maps or email,
-the last screen opens it straight to that part, after a short wait.
+Open it again the same day and you see today's intention. The next day it offers the routine again;
+earlier intentions stay on your phone, listed by date. Adding it to your home screen and a calendar reminder
+are optional, on the screen after you finish. It never asks for notification permission.
+
+Design reasoning: [`docs/mornward-ui-ux-rationale.md`](docs/mornward-ui-ux-rationale.md).
 
 ## Privacy
 
 - No account, no sign-up.
 - Everything you write stays on your phone.
-- During the beta it sends a few anonymous counts (like whether you finished your morning) so we can tell whether it's working. You can turn this off at the end of any morning.
+- During the beta it sends a few anonymous counts (like whether you finished the routine, never what you wrote) so we can tell whether it's working. You can turn this off under "Privacy and your data" after any routine.
 
 Details: [terms and privacy](https://mornward.app/terms.html). Questions: mornward@proton.me
 
 ## For developers
 
 One self-contained `index.html`, with no framework and no build step, hosted on GitHub Pages.
-Your routine is stored in `localStorage`. The optional anonymous stats go to Supabase; see `supabase/ANALYTICS.md`.
+Your intentions are stored in `localStorage`. The optional anonymous stats go to Supabase; see `supabase/ANALYTICS.md`.

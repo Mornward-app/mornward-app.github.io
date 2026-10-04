@@ -2,7 +2,7 @@
 // one, and it also lets the morning open without a connection.
 // Always asks the network first, so updates show up straight away; the saved copy is only used offline.
 // It only touches this site's own GET requests: the anonymous stats (POSTs to Supabase) pass straight through.
-const CACHE = "mornward-v1";
+const CACHE = "mornward-v2";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png"];
 
 self.addEventListener("install", (e) => {

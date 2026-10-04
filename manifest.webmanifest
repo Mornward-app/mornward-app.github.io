@@ -2,12 +2,12 @@
   "id": "./",
   "name": "Mornward",
   "short_name": "Mornward",
-  "description": "A five-minute morning routine to open instead of the feed. Then it ends.",
+  "description": "Before the scroll, one clear intention. Three breaths, then one thing that matters. About one minute.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#10143a",
-  "theme_color": "#0a0d22",
+  "background_color": "#EDF5FC",
+  "theme_color": "#EDF5FC",
   "icons": [
     {
       "src": "icons/icon-192.png",

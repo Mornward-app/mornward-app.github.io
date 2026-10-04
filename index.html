@@ -2,485 +2,244 @@
 <html lang="en">
 <meta charset="utf-8">
 <title>Mornward</title>
-<meta name="description" content="A 5-minute morning routine for the moment your alarm goes off: breathe, read one line, get up, plan your day. Then it ends. Free, no account.">
+<meta name="description" content="Before the scroll, one clear intention. Three breaths, then choose what matters this morning. About one minute. Free, no account.">
 <!-- Link previews (Reddit, iMessage, WhatsApp, Discord, X) -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://mornward.app/">
 <meta property="og:site_name" content="Mornward">
-<meta property="og:title" content="Mornward: win the first 5 minutes">
-<meta property="og:description" content="A 5-minute morning routine for the moment your alarm goes off: breathe, read one line, get up, plan your day. Then it ends. Free, no account.">
+<meta property="og:title" content="Mornward: before the scroll, one clear intention">
+<meta property="og:description" content="Three breaths. Choose what matters. Then get on with your morning. About one minute. Free, no account.">
 <meta property="og:image" content="https://mornward.app/icons/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Mornward: Your first 5 minutes go to someone. Make it you.">
+<meta property="og:image:alt" content="Mornward: a sunrise over a horizon">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Mornward: win the first 5 minutes">
-<meta name="twitter:description" content="A 5-minute morning routine for the moment your alarm goes off. Then it ends. Free, no account.">
+<meta name="twitter:title" content="Mornward: before the scroll, one clear intention">
+<meta name="twitter:description" content="Three breaths. Choose what matters. About one minute. Free, no account.">
 <meta name="twitter:image" content="https://mornward.app/icons/og-image.png">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0a0d22">
+<!-- resizes-content: on Android Chrome the keyboard shrinks the layout, so the field and its button stay above it -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#EDF5FC">
+<meta name="color-scheme" content="light">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Mornward">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
+  /* Sizes are in rem (1rem = 16px by default) so the phone's own text-size setting scales everything */
   :root {
-    --ground: #eef0f6;
-    --surface: #ffffff;
-    --ink: #1a1f36;
-    --ink-soft: #545b78;
-    --line: #d7dbe8;
-    --sun: #f0a045;
-    --sun-deep: #d9772b;
-    --ok: #3f8f6b;
-    --focus: #4b63d6;
-    /* Text-sized versions of the accent and green, dark enough to read on the light background */
-    --accent-text: #b0521a;
-    --ok-text: #2c6e51;
-    --field-line: #7f86a3;
-    --placeholder: #6b7190;
-    --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
-    --read: "Newsreader", Georgia, "Times New Roman", serif;
-    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    color-scheme: light;
+    --bg: #EDF5FC;
+    --text: #20344C;
+    --text-2: #4B6075;
+    --button: #25374D;
+    --button-text: #FFFFFF;
+    --sun: #F2D77A;
+    --field: #FFFFFF;
+    /* Field edge and placeholder: at least 3:1 and 4.5:1 against white */
+    --field-line: #6B7F94;
+    --placeholder: #5F7388;
+    --rule: #C9D7E5;
+    --error: #9A2A1F;
+    --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --gutter: 24px;
+    --radius: 16px;
   }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      color-scheme: dark;
-      --ground: #11152a;
-      --surface: #1a1f38;
-      --ink: #eceaf4;
-      --ink-soft: #a3a7c2;
-      --line: #2e3456;
-      --sun: #f5b25c;
-      --sun-deep: #f08c3c;
-      --ok: #6cc59b;
-      --focus: #8fa2ff;
-      --accent-text: #f08c3c;
-      --ok-text: #6cc59b;
-      --field-line: #6a72a0;
-      --placeholder: #a3a7c2;
-    }
-  }
-  :root[data-theme="dark"] {
-    color-scheme: dark;
-    --ground: #11152a;
-    --surface: #1a1f38;
-    --ink: #eceaf4;
-    --ink-soft: #a3a7c2;
-    --line: #2e3456;
-    --sun: #f5b25c;
-    --sun-deep: #f08c3c;
-    --ok: #6cc59b;
-    --focus: #8fa2ff;
-    --accent-text: #f08c3c;
-    --ok-text: #6cc59b;
-    --field-line: #6a72a0;
-    --placeholder: #a3a7c2;
-  }
+  @media (max-width: 374px) { :root { --gutter: 20px; } }
 
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   [tabindex="-1"]:focus { outline: none; }
-  [hidden] { display: none !important; }
-  html, body { height: 100%; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   body {
     margin: 0;
-    background: var(--ground);
-    color: var(--ink);
-    font-family: var(--display);
-    font-size: 16px;
-    line-height: 1.5;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 1.0625rem;      /* 17px */
+    line-height: 1.5625rem;    /* 25px */
     -webkit-font-smoothing: antialiased;
   }
+  /* One column in normal document flow. It grows with its content and scrolls; nothing is pinned to the screen. */
   .app {
-    max-width: 560px;
+    max-width: 480px;
     margin: 0 auto;
-    min-height: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
-    padding-inline: 16px;
-    padding-block: 12px 24px;
-    gap: 16px;
+    padding-top: max(var(--gutter), env(safe-area-inset-top));
+    padding-bottom: max(var(--gutter), env(safe-area-inset-bottom));
+    padding-left: max(var(--gutter), env(safe-area-inset-left));
+    padding-right: max(var(--gutter), env(safe-area-inset-right));
   }
+  .screen { flex: 1; display: flex; flex-direction: column; gap: 16px; }
+  /* Pushes the main action down when there's room; with big text it simply follows the content */
+  .push { margin-top: auto; padding-top: 16px; display: flex; flex-direction: column; gap: 12px; }
+  /* On Choose the actions sit right under the field, not at the bottom: an iPhone keyboard doesn't resize
+     the page, so anything at the bottom would end up behind it */
+  .actions { display: flex; flex-direction: column; gap: 4px; }
 
-  /* Horizon: a pre-dawn sky in both themes. The sun travels an arc,
-     one stop per finished step; the axis shows real clock times. */
-  .horizon {
-    position: relative;
-    border-radius: 18px;
-    overflow: hidden;
-    aspect-ratio: 16 / 7;
-    max-width: 100%;
-    background: #0a0d22;
+  h1 {
+    font-size: 2rem;           /* 32px */
+    line-height: 2.375rem;     /* 38px */
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: -0.01em;
+    overflow-wrap: break-word;
   }
-  .horizon svg { display: block; width: 100%; height: 100%; }
-  .horizon .arc-rest { fill: none; stroke: #8d93c9; stroke-opacity: .35; stroke-width: .8; stroke-dasharray: 2 3; }
-  .horizon .arc-done { fill: none; stroke: #f5b25c; stroke-width: 1.4; stroke-linecap: round; }
-  .horizon .stop { fill: #3a3f6e; }
-  .horizon .stop.passed { fill: #f5b25c; }
-  .horizon .ground { fill: #070918; }
-  .horizon .line { stroke: #ffffff; stroke-opacity: .18; stroke-width: .6; fill: none; }
-  .horizon .tick { font-family: var(--mono); font-size: 7.5px; fill: #9aa0c8; letter-spacing: .04em; }
-  .horizon .meta {
-    position: absolute; inset: 12px 14px auto 14px;
-    display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
-    font-family: var(--mono); font-size: 12px; letter-spacing: .04em;
-    color: #e6e4f2;
-  }
-  .horizon .meta .stage { color: #f5b25c; }
-  .horizon .meta > span { white-space: nowrap; }
-  @media (max-width: 380px) { .horizon .meta { font-size: 11px; inset: 10px 12px auto 12px; } }
-
-  .steps {
-    display: flex; gap: 6px; list-style: none; padding: 0; margin: 0;
-  }
-  .steps li {
-    flex: 1; height: 4px; border-radius: 2px; background: var(--line);
-    transition: background .4s;
-  }
-  .steps li.done { background: var(--sun-deep); }
-  .steps li.now { background: var(--sun); }
-
-  .card {
-    flex: 1;
-    display: flex; flex-direction: column; gap: 14px;
-  }
-  .eyebrow {
-    font-family: var(--mono); font-size: 12px; text-transform: uppercase;
-    letter-spacing: .12em; color: var(--ink-soft); margin: 0;
-  }
-  h1, h2 {
-    font-weight: 700; margin: 0; text-wrap: balance; line-height: 1.12;
-    letter-spacing: -.01em;
-  }
-  h1 { font-size: clamp(30px, 8vw, 40px); }
-  h2 { font-size: clamp(24px, 6vw, 30px); }
+  /* Very narrow (a phone at 200% zoom, or very large text): the heading eases down a little so a word like
+     "intention." still fits on one line instead of breaking before its full stop. It still grows with zoom. */
+  h1 { font-size: min(2rem, 9vw + 0.75rem); line-height: 1.19; }
+  @media (max-width: 260px) { h1 { font-size: 1.5rem; } }
   p { margin: 0; }
-  .hl { font-style: normal; color: var(--accent-text); }
-  .lede { color: var(--ink-soft); font-size: 17px; max-width: 60ch; overflow-wrap: anywhere; }
-  h1, h2, .passage, .card p { overflow-wrap: anywhere; }
+  .body { color: var(--text-2); }
+  .support { font-size: 0.875rem; line-height: 1.25rem; color: var(--text-2); }
+  .center { text-align: center; }
+  .wordmark { font-size: 1.0625rem; font-weight: 600; letter-spacing: 0.01em; margin: 0; }
+  a { color: var(--text); text-underline-offset: 2px; }
 
-  .btnrow { display: flex; gap: 10px; flex-wrap: wrap; margin-top: auto; padding-top: 8px; }
-  button, .door {
-    font: inherit; font-weight: 600; font-size: 16px;
-    border-radius: 999px; padding: 14px 22px; cursor: pointer;
-    border: 1px solid var(--line); background: var(--surface); color: var(--ink);
-    text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  button {
+    font: inherit;
+    font-size: 1.0625rem;
+    font-weight: 600;
+    min-height: 54px;
+    padding: 14px 20px;
+    border-radius: var(--radius);
+    border: 2px solid transparent;
+    cursor: pointer;
+    touch-action: manipulation;
+    width: 100%;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text);
+    background: transparent;
   }
-  button.primary { background: var(--ink); color: var(--ground); border-color: var(--ink); flex: 1; }
-  button.quiet { background: transparent; border-color: transparent; color: var(--ink-soft); padding-inline: 12px; }
-  button:disabled { opacity: .45; cursor: not-allowed; }
-  button:focus-visible, .door:focus-visible, input:focus-visible, textarea:focus-visible {
-    outline: 3px solid var(--focus); outline-offset: 2px;
+  .primary { background: var(--button); color: var(--button-text); }
+  .secondary { border-color: var(--button); }
+  /* Text-style buttons still get a 44px+ tap area */
+  .link {
+    width: auto; min-height: 44px; padding: 10px 12px;
+    text-decoration: underline; text-underline-offset: 3px; align-self: center;
   }
+  .link.start { align-self: flex-start; margin-left: -12px; }
+  .link.inline { display: inline-flex; min-height: 44px; padding: 0 4px; margin: 0; vertical-align: middle; }
+  button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visible, summary:focus-visible {
+    outline: 3px solid var(--button);
+    outline-offset: 3px;
+  }
+  button:disabled { opacity: .55; cursor: default; }
 
-  /* Breathe */
-  .breath {
-    display: grid; place-items: center; padding-block: 12px;
-  }
-  .breath .orb {
-    width: min(58vw, 220px); aspect-ratio: 1; max-width: 100%;
+  /* ---------- sunrise ---------- */
+  .sunrise { display: block; width: min(200px, 56%); height: auto; margin: 4px 0; }
+  .sunrise .disc { fill: var(--sun); }
+  .sunrise .ray { stroke: var(--sun); stroke-width: 6; stroke-linecap: round; }
+  .sunrise .horizon { stroke: var(--text); stroke-opacity: .28; stroke-width: 2; }
+
+  /* ---------- breathe ---------- */
+  .orbwrap { display: grid; place-items: center; padding: 8px 0; min-height: min(220px, 32vh); }
+  .orb {
+    width: min(200px, 30vh, 60vw);
+    aspect-ratio: 1;
     border-radius: 50%;
-    background: radial-gradient(circle at 50% 45%, var(--sun), var(--sun-deep));
+    background: radial-gradient(circle at 45% 40%, #FBEFC4 0%, var(--sun) 62%, #E9C65A 100%);
     transform: scale(.55);
-    transition: transform 4s ease-in-out;
-    display: grid; place-items: center;
-    color: #1a1f36; font-weight: 700; font-size: 20px;
+    transition-property: transform;
+    transition-timing-function: ease-in-out;
   }
-  .breath .count { font-family: var(--mono); color: var(--ink-soft); font-size: 13px; margin-top: 14px; }
-
-  /* Read */
-  .passage {
-    font-family: var(--read); font-size: 20px; line-height: 1.6;
-    max-width: 62ch;
-    display: flex; flex-direction: column; gap: 14px;
-  }
-  .source { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); letter-spacing: .03em; }
-  .prompt {
-    font-family: var(--read); font-style: italic; font-size: 18px;
-    border-top: 1px solid var(--line); padding-top: 14px; color: var(--ink-soft);
-  }
-
-  /* Checklist */
-  .checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-  .checks label {
-    display: flex; align-items: center; gap: 14px;
-    padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px;
-    background: var(--surface); cursor: pointer; font-size: 17px;
-  }
-  .checks input { width: 22px; height: 22px; accent-color: var(--ok); flex: none; }
-  .checks label span { min-width: 0; overflow-wrap: anywhere; }
-  .checks label:has(input:checked) { border-color: var(--ok); }
-  .checks label:has(input:checked) span { text-decoration: line-through; color: var(--ink-soft); }
-
-  .note {
-    font-family: var(--read); font-size: 19px; line-height: 1.55;
-    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
-    padding: 16px 18px; white-space: pre-wrap; overflow-wrap: anywhere;
-  }
-  .note.empty { color: var(--ink-soft); font-style: italic; }
-  label.field { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
-  input[type="text"], textarea {
-    font: inherit; font-weight: 400; font-size: 17px;
-    border: 1px solid var(--field-line); border-radius: 12px; padding: 12px 14px;
-    background: var(--surface); color: var(--ink); width: 100%;
-  }
-  ::placeholder { color: var(--placeholder); opacity: 1; }
-  textarea { font-family: var(--read); font-size: 18px; min-height: 96px; resize: vertical; }
-
-  /* Done */
-  .tally {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
-  }
-  .tally div {
-    border: 1px solid var(--line); border-radius: 14px; padding: 12px;
-    background: var(--surface); display: flex; flex-direction: column; gap: 2px;
-  }
-  .tally b { font-family: var(--mono); font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; }
-  .tally span { font-size: 12px; color: var(--ink-soft); }
-
-  details.doors {
-    border: 1px dashed var(--line); border-radius: 14px; padding: 12px 16px;
-  }
-  details.doors summary { cursor: pointer; font-weight: 600; color: var(--ink-soft); }
-  .doors .inner { display: flex; flex-direction: column; gap: 12px; padding-top: 12px; }
-  .doors .gate { font-family: var(--mono); font-size: 13px; color: var(--ink-soft); }
-  .doorgrid { display: flex; flex-direction: column; gap: 10px; }
-  .doorline { display: flex; flex-direction: column; gap: 8px; }
-  .doorline input { min-width: 0; }
-  .door[aria-disabled="true"] { opacity: .4; pointer-events: none; }
-  .small { font-size: 13px; color: var(--ink-soft); }
-  /* On its own line under the button, so it never wraps half beside it */
-  .saved { display: block; margin-top: 8px; font-family: var(--mono); font-size: 13px; color: var(--ok-text); }
-
-  /* Setup */
-  .choices { display: flex; flex-direction: column; gap: 10px; }
-  .choices button { justify-content: space-between; text-align: left; gap: 12px; border-radius: 14px; padding: 16px 18px; font-size: 17px; }
-  .choices button strong { white-space: nowrap; }
-  .choices button span { color: var(--ink-soft); font-weight: 400; font-size: 14px; text-align: right; }
-  /* One-tap rating on the done screen */
-  .rating { display: flex; flex-direction: column; gap: 8px; }
-  .rating .row { display: flex; gap: 8px; }
-  .rating .row button { flex: 1; font-size: 22px; padding: 10px; }
-  .rating .row button[aria-pressed="true"] { background: var(--ink); color: var(--ground); border-color: var(--ink); }
-  .statsline { font-size: 13px; color: var(--ink-soft); }
-  /* First-open agreement */
-  .terms { display: flex; flex-direction: column; gap: 12px; }
-  .terms section { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
-  .terms h3 { margin: 0 0 8px; font-size: 16px; display: flex; gap: 8px; align-items: center; }
-  .terms ul { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; font-size: 15px; }
-  .terms .yes h3 span { color: var(--ok-text); }
-  .terms .no h3 span { color: var(--accent-text); }
-  .terms a { color: var(--accent-text); font-weight: 600; }
-  .agree { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border: 1px solid var(--field-line);
-    border-radius: 14px; background: var(--surface); cursor: pointer; font-size: 16px; font-weight: 600; }
-  .agree input { width: 22px; height: 22px; margin-top: 2px; flex: none; accent-color: var(--ok); }
-  .agree:has(input:checked) { border-color: var(--ok); }
-
-  /* "See exactly what's sent" */
-  details.privacy { font-size: 14px; color: var(--ink-soft); }
-  details.privacy summary { cursor: pointer; color: var(--accent-text); font-weight: 600; text-decoration: underline; }
-  details.privacy h3 { font-size: 15px; color: var(--ink); margin: 14px 0 6px; }
-  details.privacy ul { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
-  details.privacy a { color: var(--accent-text); }
-  details.privacy .myid { display: block; margin: 8px 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px;
-    font-family: var(--mono); font-size: 13px; color: var(--ink); overflow-wrap: anywhere; user-select: all; }
-  details.privacy .btnrow { margin-top: 10px; }
-  .statsline button { font-size: 13px; padding: 4px 6px; text-decoration: underline; }
-
-  /* App picker chips */
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chips button { border-radius: 999px; padding: 10px 14px; font-size: 15px; font-weight: 600; }
-  .chips button[aria-pressed="true"] { background: var(--ink); color: var(--ground); border-color: var(--ink); }
-  .chips button[aria-pressed="true"]::before { content: "✓ "; }
-  /* Setup: main button full width, the quiet way out underneath */
-  .btnrow.stack { flex-direction: column; align-items: stretch; }
-  .howto { margin: 0; padding: 0 0 0 1.4em; display: flex; flex-direction: column; gap: 10px; font-size: 17px; max-width: 60ch; }
-  .howto li::marker { color: var(--sun-deep); font-weight: 700; }
-  .howto b { font-weight: 700; }
-  .check { color: var(--ok-text); font-weight: 600; }
-  .instbox { display: flex; flex-direction: column; gap: 10px; }
-  .instbox .istatus { margin: 0; }
-  .instbox .isteps { margin: 0; padding-left: 1.4em; display: flex; flex-direction: column; gap: 8px; font-size: 16.5px; }
-  .instbox .isteps b { font-weight: 700; }
-  .instbox .ic { display: inline-grid; place-items: center; width: 24px; height: 24px; vertical-align: -6px; border-radius: 6px;
-    color: var(--sun-deep); background: color-mix(in srgb, var(--sun-deep) 12%, transparent); }
-  .instbox .ic svg { width: 15px; height: 15px; }
-  .instbox details.cantfind { margin-top: 4px; }
-  .instbox details.cantfind summary { cursor: pointer; font-weight: 600; color: var(--accent-text); }
-  .instbox details.cantfind p { margin: 8px 0; font-size: 15px; }
-  .instbox input[data-link-field] { width: 100%; margin-top: 6px; font: inherit; font-size: 14px; }
-  .okline { color: var(--ok-text); font-weight: 700; }
-  .remind { display: flex; flex-direction: column; gap: 12px; margin: 8px 0; padding: 18px; border-radius: 16px;
-    border: 1px solid color-mix(in srgb, var(--sun-deep) 45%, transparent); background: color-mix(in srgb, var(--sun-deep) 8%, transparent); }
-  .remind h2 { margin: 0; }
-  .addr { font-family: var(--mono); font-size: 14px; background: var(--surface); border: 1px solid var(--line);
-    border-radius: 10px; padding: 10px 12px; overflow-wrap: anywhere; user-select: all; }
-
-  .top { display: flex; justify-content: space-between; align-items: center; }
-  .brand { font-weight: 700; letter-spacing: -.01em; }
-  .brand i { font-style: normal; color: var(--accent-text); }
-
-  /* Welcome: the first screen a new visitor sees. Always the night-before-morning navy,
-     whatever the phone's theme, so it matches the icon and the sky in the app. */
-  body.welcoming { background: #10143a; }
-  body.welcoming .top, body.welcoming .horizon, body.welcoming .steps { display: none; }
-  .welcome {
-    --w-ink: #f4efe6; --w-soft: #b9bce0; --w-quiet: #9aa0c8; --w-amber: #f5b25c; --w-navy: #10143a;
-    color: var(--w-ink); gap: 0; min-height: calc(100svh - 36px);
-  }
-  .welcome .wbrand { display: flex; align-items: center; gap: 10px; margin: 4px 0 0; }
-  .welcome .wbrand svg { width: 28px; height: 28px; border-radius: 7px; }
-  .welcome .wbrand span { font-family: var(--mono); font-size: 13px; letter-spacing: .22em; color: var(--w-ink); }
-  .welcome .wart { width: 100%; max-width: 360px; margin: 0 auto 6px; display: block; }
-  .welcome h1 {
-    font-family: var(--read); font-weight: 400; font-size: clamp(34px, 9.4vw, 46px);
-    line-height: 1.08; letter-spacing: -.015em; margin: 18px 0 0; text-wrap: balance;
-  }
-  .welcome h1 em { font-style: italic; color: var(--w-amber); }
-  .welcome .wlede { color: var(--w-soft); font-size: 17px; line-height: 1.6; margin-top: 18px; max-width: 34ch; }
-  .welcome .wedge { color: var(--w-ink); font-size: 16px; font-weight: 600; margin-top: 14px; }
-  /* The middle block floats in the free space, so tall phones don't get one big gap above the button */
-  .welcome .wmid { margin-block: auto; padding-block: 12px; }
-  .welcome .wlede, .welcome .wedge { text-wrap: pretty; }
-  .welcome .wbottom { padding-top: 28px; display: flex; flex-direction: column; gap: 14px; }
-  .welcome .wtrust {
-    font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
-    color: var(--w-quiet); text-align: center;
-  }
-  .welcome .wtrust span { white-space: nowrap; }
-  .welcome .wlede b { color: var(--w-ink); font-weight: 600; }
-  .welcome .whint { color: var(--w-soft); font-size: 13px; text-align: center; margin-top: -6px; }
-  .welcome .qrbox { margin: 24px auto 0; width: 200px; padding: 12px; border-radius: 18px; background: #f4efe6; }
-  .welcome .qrbox svg { display: block; width: 100%; height: auto; }
-  .welcome .qrcap { text-align: center; color: var(--w-soft); font-size: 15px; margin-top: 12px; }
-  .welcome .qrcap b { color: var(--w-ink); font-family: var(--mono); font-weight: 400; }
-  .welcome button.wgo {
-    background: var(--w-amber); color: var(--w-navy); border-color: var(--w-amber);
-    font-size: 17px; font-weight: 700; padding: 16px 22px; width: 100%;
-  }
-  .welcome button.wgo:focus-visible { outline-color: var(--w-ink); }
-  /* Shorter phones (iPhone SE and similar): keep the button on screen without scrolling */
-  @media (max-height: 760px) {
-    .welcome .wart { max-width: 250px; margin: 0 auto; }
-    .welcome h1 { font-size: clamp(30px, 8.6vw, 40px); margin-top: 10px; }
-    .welcome .wlede { font-size: 16px; line-height: 1.5; margin-top: 12px; }
-    .welcome .wedge { margin-top: 10px; }
-    .welcome .wbottom { padding-top: 18px; gap: 10px; }
-  }
-  @media (max-height: 600px) {
-    .welcome .wart { display: none; }
-  }
-  .welcome .wsteps { margin: 18px 0 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 12px;
-    color: var(--w-soft); font-size: 17px; line-height: 1.5; }
-  .welcome .wsteps b { color: var(--w-ink); }
-  .welcome .wrows { list-style: none; margin: 22px 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
-  .welcome .wrows li { display: flex; align-items: center; gap: 14px; font-size: 18px; color: var(--w-ink); line-height: 1.3; }
-  .welcome .wrows .ic {
-    flex: none; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center;
-    background: rgba(245, 178, 92, .12); border: 1px solid rgba(245, 178, 92, .35); color: var(--w-amber);
-  }
-  .welcome .wrows .ic svg { width: 22px; height: 22px; }
-  .welcome .wrows .ic.logo { background: none; border: none; }
-  .welcome .wrows .ic.logo svg { width: 44px; height: 44px; border-radius: 12px; }
-  .welcome .wrows small { display: block; font-size: 14px; color: var(--w-quiet); margin-top: 2px; }
-  .welcome .wnote { color: var(--w-quiet); font-size: 15px; line-height: 1.5; margin-top: 16px; text-wrap: pretty; }
-  .welcome .wdone { color: var(--w-amber); font-weight: 700; font-size: 17px; margin-top: 18px; }
-  .welcome .wpin { display: flex; flex-direction: column; gap: 6px; margin-top: 2px; padding: 12px 14px; border-radius: 14px;
-    background: rgba(245, 178, 92, .08); border: 1px solid rgba(245, 178, 92, .3); text-align: center; }
-  .welcome .wpin .wpinhead { margin: 0; color: var(--w-ink); font-size: 16px; }
-  .welcome .wpin .wpinhead b { font-weight: 700; }
-  .welcome .wpin .wpinhow { margin: 0; color: var(--w-soft); font-size: 15.5px; line-height: 1.4; }
-  .welcome .wpin .wpinhow b { color: var(--w-ink); }
-  .welcome .wpin .wpinhow.small { font-size: 13.5px; color: var(--w-quiet); }
-  .welcome .wpin .ic { display: inline-grid; place-items: center; width: 24px; height: 24px; vertical-align: -6px;
-    border-radius: 6px; color: var(--w-amber); background: rgba(245, 178, 92, .14); }
-  .welcome .wpin .ic svg { width: 15px; height: 15px; }
-  .welcome .instbox { margin-top: 2px; padding: 12px 14px; border-radius: 14px; gap: 8px;
-    background: rgba(245, 178, 92, .08); border: 1px solid rgba(245, 178, 92, .3); color: var(--w-soft); text-align: left; }
-  .welcome .instbox .istatus { color: var(--w-ink); font-size: 15.5px; }
-  .welcome .instbox .isteps { font-size: 15px; color: var(--w-soft); }
-  .welcome .instbox .isteps b { color: var(--w-ink); }
-  .welcome .instbox .ic { color: var(--w-amber); background: rgba(245, 178, 92, .14); }
-  .welcome .instbox details.cantfind summary { color: var(--w-amber); font-size: 14.5px; }
-  .welcome .instbox details.cantfind p { color: var(--w-soft); font-size: 14px; }
-  .welcome .instbox details.cantfind button { background: transparent; color: var(--w-ink); border-color: rgba(245, 178, 92, .5); }
-  .welcome .instbox .saved { color: var(--w-amber); }
-  .welcome button.wpingo { background: transparent; color: var(--w-amber); border-color: var(--w-amber); font-weight: 700; width: 100%; }
-  .welcome button.wpingo:focus-visible { outline-color: var(--w-ink); }
-  .welcome button.wlater { background: transparent; border-color: transparent; color: var(--w-soft); width: 100%; }
-  .welcome button.wlater:focus-visible { outline-color: var(--w-ink); }
-  .terms .tldr { display: flex; flex-direction: column; gap: 8px; margin: 0; padding-left: 1.2em; font-size: 16px; }
-  details.more summary { cursor: pointer; font-weight: 600; color: var(--accent-text); }
-  details.more[open] summary { margin-bottom: 12px; }
-  details.more .terms { gap: 12px; }
-
+  .orb[data-phase="in"] { transform: scale(1); }
+  .orb[data-phase="out"] { transform: scale(.55); }
+  .breathcount { font-weight: 600; }
+  /* Reduced motion: no growing circle; the words carry the rhythm */
   @media (prefers-reduced-motion: reduce) {
-    .breath .orb { transition: none; }
+    .orb, .orb[data-phase] { transform: none !important; transition: none !important; width: min(120px, 22vh, 40vw); }
+    .orb[data-phase="out"] { opacity: .7; }
   }
+
+  /* ---------- choose ---------- */
+  .field { display: flex; flex-direction: column; gap: 8px; }
+  .field label { font-weight: 600; }
+  textarea {
+    font: inherit;
+    color: var(--text);
+    background: var(--field);
+    border: 2px solid var(--field-line);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    min-height: 3.5rem;
+    width: 100%;
+    resize: none;
+    overflow: hidden;
+  }
+  textarea::placeholder { color: var(--placeholder); opacity: 1; }
+  .msg { font-size: 0.875rem; line-height: 1.25rem; color: var(--text-2); }
+  .msg:empty { display: none; }
+  .msg.err { color: var(--error); font-weight: 600; }
+  .msg.ok { color: var(--text); font-weight: 600; }
+
+  /* ---------- finish / today ---------- */
+  .intention {
+    background: var(--field);
+    border-radius: var(--radius);
+    padding: 12px 18px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border-left: 6px solid var(--sun);
+  }
+  .intention .text { font-size: 1.25rem; line-height: 1.75rem; font-weight: 600; overflow-wrap: break-word; hyphens: auto; }
+  @media (max-width: 260px) { .intention { padding-inline: 14px; } .intention .text { font-size: 1.125rem; line-height: 1.5rem; } }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .row .link { margin-right: -12px; }
+
+  /* Secondary sections on the completed screen: closed by default */
+  .more { display: flex; flex-direction: column; margin-top: 8px; border-top: 1px solid var(--rule); }
+  .push .more { margin-top: 0; }
+  details.section { border-bottom: 1px solid var(--rule); }
+  details.section > summary {
+    cursor: pointer; list-style: none; min-height: 52px; display: flex; align-items: center; justify-content: space-between;
+    font-weight: 600; padding: 12px 0; gap: 12px;
+  }
+  details.section > summary::-webkit-details-marker { display: none; }
+  details.section > summary::after { content: "+"; font-size: 1.4rem; color: var(--text-2); }
+  details.section[open] > summary::after { content: "–"; }
+  details.section .inner { padding: 0 0 16px; display: flex; flex-direction: column; gap: 12px; font-size: 0.9375rem; line-height: 1.375rem; color: var(--text-2); }
+  details.section .inner h3 { font-size: 0.9375rem; color: var(--text); margin: 4px 0 -6px; }
+  details.section .inner ul { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
+  .history { list-style: none; padding: 0 !important; gap: 12px !important; }
+  .history li { display: flex; flex-direction: column; gap: 2px; }
+  .history .when { font-size: 0.875rem; color: var(--text-2); }
+  .history .what { color: var(--text); overflow-wrap: break-word; }
+  .myid { display: block; padding: 10px 12px; border: 1px solid var(--field-line); border-radius: 10px; background: var(--field);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.8125rem; overflow-wrap: anywhere; color: var(--text); }
+  input[type="time"], input[type="text"] {
+    font: inherit; color: var(--text); background: var(--field); border: 2px solid var(--field-line);
+    border-radius: 12px; min-height: 48px; padding: 8px 12px; width: 100%;
+  }
+  .flabel { font-weight: 600; color: var(--text); margin-bottom: -6px; }
+  .isteps { margin: 0; padding-left: 1.4em; display: flex; flex-direction: column; gap: 6px; color: var(--text); }
+  .ic { display: inline-grid; place-items: center; width: 22px; height: 22px; vertical-align: -5px; }
+  .ic svg { width: 16px; height: 16px; }
+  .consent { font-size: 0.875rem; line-height: 1.25rem; color: var(--text-2); }
+  .consent summary { cursor: pointer; text-decoration: underline; font-weight: 600; color: var(--text); min-height: 44px; display: flex; align-items: center; }
+  .consent ul { margin: 0 0 8px; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
 </style>
 
 <div class="app">
-  <div class="top">
-    <span class="brand">Morn<i>ward</i></span>
-    <button class="quiet" id="restart" type="button" hidden>Start over</button>
-  </div>
-
-  <div class="horizon" aria-hidden="true">
-    <svg viewBox="0 0 320 140" preserveAspectRatio="xMidYMid slice">
-      <defs>
-        <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#0a0d22"></stop>
-          <stop offset="1" stop-color="#1b1d48"></stop>
-        </linearGradient>
-        <linearGradient id="dawnGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#2a3170" stop-opacity="0"></stop>
-          <stop offset=".7" stop-color="#6b4a78" stop-opacity=".55"></stop>
-          <stop offset="1" stop-color="#f0a045" stop-opacity=".75"></stop>
-        </linearGradient>
-        <radialGradient id="glowGrad">
-          <stop offset="0" stop-color="#ffd48a" stop-opacity=".9"></stop>
-          <stop offset=".35" stop-color="#f5a04a" stop-opacity=".45"></stop>
-          <stop offset="1" stop-color="#f5a04a" stop-opacity="0"></stop>
-        </radialGradient>
-      </defs>
-      <rect width="320" height="140" fill="url(#skyGrad)"></rect>
-      <rect id="dawn" width="320" height="140" fill="url(#dawnGrad)" opacity="0"></rect>
-      <g id="stars" fill="#dfe3ff">
-        <circle cx="38" cy="30" r=".7"></circle><circle cx="72" cy="52" r=".5"></circle>
-        <circle cx="118" cy="22" r=".6"></circle><circle cx="176" cy="44" r=".5"></circle>
-        <circle cx="214" cy="18" r=".8"></circle><circle cx="262" cy="58" r=".5"></circle>
-        <circle cx="296" cy="26" r=".6"></circle><circle cx="140" cy="70" r=".4"></circle>
-      </g>
-      <path id="arc" class="arc-rest" pathLength="1" d="M22 112 C 80 40, 190 18, 298 30"></path>
-      <path id="arcDone" class="arc-done" pathLength="1" stroke-dasharray="0 1" d="M22 112 C 80 40, 190 18, 298 30"></path>
-      <g id="stops"></g>
-      <g id="sun">
-        <circle r="30" fill="url(#glowGrad)"></circle>
-        <circle r="5" fill="#fff6e2" stroke="#f5b25c" stroke-width="1.6"></circle>
-      </g>
-      <path class="ground" d="M0 106 Q 160 100 320 106 L 320 140 L 0 140 Z"></path>
-      <path class="line" d="M0 106 Q 160 100 320 106"></path>
-      <text class="tick" x="16" y="124" id="tStart">06:42 start</text>
-      <text class="tick" x="304" y="124" text-anchor="end" id="tEnd">06:47 goal</text>
-    </svg>
-    <div class="meta"><span><span id="clock">06:42</span> · <span class="stage" id="stage">Pre-dawn</span></span><span id="date">Thu 24 Sep</span></div>
-  </div>
-
-  <ol class="steps" id="steps" aria-hidden="true"></ol>
-
-  <main class="card" id="card"></main>
+  <main id="card" class="screen"></main>
   <p class="sr-only" id="announce" aria-live="polite"></p>
 </div>
+<noscript><p style="padding:24px">Mornward needs JavaScript to run.</p></noscript>
 
 <script>
 (() => {
-  // ---------- storage (per-device, optional) ----------
+  // ---------- storage (on this phone only) ----------
   const store = {
     // `valid` guards against corrupted or hand-edited storage: anything that fails it reads as the fallback
     get(k, fallback, valid = () => true) {
@@ -491,633 +250,91 @@
         return v != null && valid(v) ? v : fallback;
       } catch { return fallback; }
     },
-    set(k, v) { try { localStorage.setItem("fl." + k, JSON.stringify(v)); } catch {} }
+    // Returns whether the write happened (storage can be full, blocked, or off in a private window)
+    set(k, v) { try { localStorage.setItem("fl." + k, JSON.stringify(v)); return true; } catch { return false; } },
+    del(k) { try { localStorage.removeItem("fl." + k); return true; } catch { return false; } },
+    keys() { try { return Object.keys(localStorage).filter((k) => k.startsWith("fl.")).map((k) => k.slice(3)); } catch { return []; } }
   };
 
+  // Days are the phone's local calendar date. A routine belongs to the date it started on.
   const dayKey = (d = new Date()) =>
     d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-  // Adds whole calendar days to a "YYYY-MM-DD" key (not 24-hour blocks, so daylight saving can't skip a day)
+  const isDay = (v) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+  // Adds whole calendar days (not 24-hour blocks, so daylight saving can't skip a day)
   const addDays = (key, n) => {
     const [y, m, d] = key.split("-").map(Number);
     return dayKey(new Date(y, m - 1, d + n));
   };
-  // Days since 1970 for a day key; used to rotate passages without repeating across New Year
-  const dayNumber = (key) => {
-    const [y, m, d] = key.split("-").map(Number);
-    return Math.floor(Date.UTC(y, m - 1, d) / 864e5);
-  };
   const fmtDay = (key) => {
     const [y, m, d] = key.split("-").map(Number);
-    return new Date(y, m - 1, d).toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
+    const opts = { weekday: "long", month: "long", day: "numeric" };
+    if (y !== new Date().getFullYear()) opts.year = "numeric";
+    return new Date(y, m - 1, d).toLocaleDateString([], opts);
   };
-
-  const isStreak = (v) => typeof v === "object" && Number.isInteger(v.count) && v.count >= 0 &&
-    (v.last === null || typeof v.last === "string");
-  const isLetter = (v) => typeof v === "object" && typeof v.text === "string" && typeof v.forDay === "string";
   const isText = (v) => typeof v === "string";
+  const isLetter = (v) => typeof v === "object" && typeof v.text === "string" && typeof v.forDay === "string";
 
-  // ---------- content ----------
-  // Public-domain translations and texts. One per day, cycling.
-  // Short quotes from real people, with a traceable source. Well-known misattributions are left out on purpose.
-  // Each person gets their own shuffled order, one new quote per morning.
-  const QUOTES = [
-    {"text": "In the morning when thou risest unwillingly, let this thought be present: I am rising to the work of a human being.", "who": "Marcus Aurelius", "source": "Meditations V.1, tr. George Long"},
-    {"text": "No longer talk at all about the kind of man that a good man ought to be, but be such.", "who": "Marcus Aurelius", "source": "Meditations X.16, tr. George Long"},
-    {"text": "Such as are thy habitual thoughts, such also will be the character of thy mind; for the soul is dyed by the thoughts.", "who": "Marcus Aurelius", "source": "Meditations V.16, tr. George Long"},
-    {"text": "Confine thyself to the present.", "who": "Marcus Aurelius", "source": "Meditations VII.29, tr. George Long"},
-    {"text": "The universe is transformation: life is opinion.", "who": "Marcus Aurelius", "source": "Meditations IV.3, tr. George Long"},
-    {"text": "Very little indeed is necessary for living a happy life.", "who": "Marcus Aurelius", "source": "Meditations VII.67, tr. George Long"},
-    {"text": "Nothing, Lucilius, is ours, except time.", "who": "Seneca", "source": "Letters to Lucilius I, tr. R. M. Gummere"},
-    {"text": "Hold every hour in your grasp.", "who": "Seneca", "source": "Letters to Lucilius I, tr. R. M. Gummere"},
-    {"text": "Lay hold of to-day's task, and you will not need to depend so much upon to-morrow's.", "who": "Seneca", "source": "Letters to Lucilius I, tr. R. M. Gummere"},
-    {"text": "While we are postponing, life speeds by.", "who": "Seneca", "source": "Letters to Lucilius I, tr. R. M. Gummere"},
-    {"text": "Begin at once to live, and count each separate day as a separate life.", "who": "Seneca", "source": "Letters to Lucilius CI, tr. R. M. Gummere"},
-    {"text": "No man was ever wise by chance.", "who": "Seneca", "source": "Letters to Lucilius LXXVI, tr. R. M. Gummere"},
-    {"text": "It is not that we have a short time to live, but that we waste a lot of it.", "who": "Seneca", "source": "On the Shortness of Life"},
-    {"text": "First say to yourself what you would be; and then do what you have to do.", "who": "Epictetus", "source": "Discourses III.23"},
-    {"text": "No great thing is created suddenly.", "who": "Epictetus", "source": "Discourses I.15"},
-    {"text": "If you want to improve, be content to be thought foolish and stupid.", "who": "Epictetus", "source": "Enchiridion 13"},
-    {"text": "Men are disturbed not by the things which happen, but by the opinions about the things.", "who": "Epictetus", "source": "Enchiridion 5"},
-    {"text": "Some things are in our control and others not.", "who": "Epictetus", "source": "Enchiridion 1"},
-    {"text": "Morning is when I am awake and there is a dawn in me.", "who": "Henry David Thoreau", "source": "Walden"},
-    {"text": "To be awake is to be alive.", "who": "Henry David Thoreau", "source": "Walden"},
-    {"text": "Only that day dawns to which we are awake.", "who": "Henry David Thoreau", "source": "Walden"},
-    {"text": "The morning, which is the most memorable season of the day, is the awakening hour.", "who": "Henry David Thoreau", "source": "Walden"},
-    {"text": "Our life is frittered away by detail. Simplify, simplify.", "who": "Henry David Thoreau", "source": "Walden"},
-    {"text": "Things do not change; we change.", "who": "Henry David Thoreau", "source": "Walden"},
-    {"text": "If one advances confidently in the direction of his dreams, he will meet with a success unexpected in common hours.", "who": "Henry David Thoreau", "source": "Walden"},
-    {"text": "Write it on your heart that every day is the best day in the year.", "who": "Ralph Waldo Emerson", "source": "Society and Solitude"},
-    {"text": "Finish each day and be done with it. You have done what you could.", "who": "Ralph Waldo Emerson", "source": "letter to his daughter"},
-    {"text": "The creation of a thousand forests is in one acorn.", "who": "Ralph Waldo Emerson", "source": "Essays, \"History\""},
-    {"text": "Nothing great was ever achieved without enthusiasm.", "who": "Ralph Waldo Emerson", "source": "Essays, \"Circles\""},
-    {"text": "Early to bed and early to rise, makes a man healthy, wealthy, and wise.", "who": "Benjamin Franklin", "source": "Poor Richard's Almanack"},
-    {"text": "Well done is better than well said.", "who": "Benjamin Franklin", "source": "Poor Richard's Almanack"},
-    {"text": "Lost time is never found again.", "who": "Benjamin Franklin", "source": "Poor Richard's Almanack"},
-    {"text": "Dost thou love life? Then do not squander time, for that's the stuff life is made of.", "who": "Benjamin Franklin", "source": "Poor Richard's Almanack"},
-    {"text": "You may delay, but time will not.", "who": "Benjamin Franklin", "source": "The Way to Wealth"},
-    {"text": "Diligence is the mother of good luck.", "who": "Benjamin Franklin", "source": "Poor Richard's Almanack"},
-    {"text": "Plough deep while sluggards sleep.", "who": "Benjamin Franklin", "source": "The Way to Wealth"},
-    {"text": "Sloth, like rust, consumes faster than labour wears.", "who": "Benjamin Franklin", "source": "The Way to Wealth"},
-    {"text": "The sleeping fox catches no poultry.", "who": "Benjamin Franklin", "source": "The Way to Wealth"},
-    {"text": "There will be sleeping enough in the grave.", "who": "Benjamin Franklin", "source": "Poor Richard's Almanack"},
-    {"text": "Never leave that till to-morrow, which you can do to-day.", "who": "Benjamin Franklin", "source": "Poor Richard's Almanack"},
-    {"text": "Lose an hour in the morning, and you will be all day hunting for it.", "who": "Richard Whately", "source": "Detached Thoughts and Apophthegms"},
-    {"text": "Well begun is half done.", "who": "Aristotle", "source": "Politics, quoting a proverb"},
-    {"text": "One swallow does not make a summer, nor does one day.", "who": "Aristotle", "source": "Nicomachean Ethics, tr. W. D. Ross"},
-    {"text": "We become just by doing just acts, temperate by doing temperate acts, brave by doing brave acts.", "who": "Aristotle", "source": "Nicomachean Ethics, tr. W. D. Ross"},
-    {"text": "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", "who": "Will Durant", "source": "The Story of Philosophy, summing up Aristotle"},
-    {"text": "The journey of a thousand miles begins with one step.", "who": "Lao Tzu", "source": "Tao Te Ching, ch. 64"},
-    {"text": "He who has begun has half done. Dare to be wise; begin!", "who": "Horace", "source": "Epistles I.2"},
-    {"text": "Seize the day, put very little trust in tomorrow.", "who": "Horace", "source": "Odes I.11"},
-    {"text": "Dripping water hollows out a stone.", "who": "Ovid", "source": "Letters from Pontus"},
-    {"text": "They can because they think they can.", "who": "Virgil", "source": "Aeneid V"},
-    {"text": "We know what we are, but know not what we may be.", "who": "William Shakespeare", "source": "Hamlet"},
-    {"text": "Our doubts are traitors, and make us lose the good we oft might win, by fearing to attempt.", "who": "William Shakespeare", "source": "Measure for Measure"},
-    {"text": "To strive, to seek, to find, and not to yield.", "who": "Alfred, Lord Tennyson", "source": "Ulysses"},
-    {"text": "I'll tell you how the Sun rose – a ribbon at a time.", "who": "Emily Dickinson", "source": "poem 318"},
-    {"text": "Think in the morning. Act in the noon. Eat in the evening. Sleep in the night.", "who": "William Blake", "source": "The Marriage of Heaven and Hell"},
-    {"text": "The busy bee has no time for sorrow.", "who": "William Blake", "source": "The Marriage of Heaven and Hell"},
-    {"text": "The childhood shows the man, as morning shows the day.", "who": "John Milton", "source": "Paradise Regained"},
-    {"text": "Why, sometimes I've believed as many as six impossible things before breakfast.", "who": "Lewis Carroll", "source": "Through the Looking-Glass"},
-    {"text": "Isn't it nice to think that tomorrow is a new day with no mistakes in it yet?", "who": "L. M. Montgomery", "source": "Anne of Green Gables"},
-    {"text": "All we have to decide is what to do with the time that is given us.", "who": "J. R. R. Tolkien", "source": "The Fellowship of the Ring"},
-    {"text": "It does not do to dwell on dreams and forget to live.", "who": "J. K. Rowling", "source": "Harry Potter and the Philosopher's Stone"},
-    {"text": "In the depth of winter, I finally learned that within me there lay an invincible summer.", "who": "Albert Camus", "source": "Return to Tipasa"},
-    {"text": "He who has a why to live can bear almost any how.", "who": "Friedrich Nietzsche", "source": "Twilight of the Idols"},
-    {"text": "A man who dares to waste one hour of time has not discovered the value of life.", "who": "Charles Darwin", "source": "letter to his sister, 1836"},
-    {"text": "Nothing is so fatiguing as the eternal hanging on of an uncompleted task.", "who": "William James", "source": "letter"},
-    {"text": "Ever tried. Ever failed. No matter. Try again. Fail again. Fail better.", "who": "Samuel Beckett", "source": "Worstward Ho"},
-    {"text": "How we spend our days is, of course, how we spend our lives.", "who": "Annie Dillard", "source": "The Writing Life"},
-    {"text": "Tell me, what is it you plan to do with your one wild and precious life?", "who": "Mary Oliver", "source": "The Summer Day"},
-    {"text": "How wonderful it is that nobody need wait a single moment before starting to improve the world.", "who": "Anne Frank", "source": "her diary"},
-    {"text": "Do what you can, with what you have, where you are.", "who": "Theodore Roosevelt", "source": "his autobiography, quoting Squire Bill Widener"},
-    {"text": "If you can't fly then run, if you can't run then walk, if you can't walk then crawl, but whatever you do you have to keep moving forward.", "who": "Martin Luther King Jr.", "source": "Spelman College, 1960"},
-    {"text": "If there is no struggle, there is no progress.", "who": "Frederick Douglass", "source": "speech, 1857"},
-    {"text": "Although the world is full of suffering, it is full also of the overcoming of it.", "who": "Helen Keller", "source": "Optimism"},
-    {"text": "Alone we can do so little; together we can do so much.", "who": "Helen Keller", "source": ""},
-    {"text": "However difficult life may seem, there is always something you can do and succeed at.", "who": "Stephen Hawking", "source": ""},
-    {"text": "Nothing in life is to be feared, it is only to be understood.", "who": "Marie Curie", "source": ""},
-    {"text": "Waking up this morning, I smile. Twenty-four brand new hours are before me.", "who": "Thich Nhat Hanh", "source": "Present Moment Wonderful Moment"},
-    {"text": "Inspiration is for amateurs. The rest of us just show up and get to work.", "who": "Chuck Close", "source": ""},
-    {"text": "The best way to predict the future is to invent it.", "who": "Alan Kay", "source": ""},
-    {"text": "You miss 100% of the shots you don't take.", "who": "Wayne Gretzky", "source": ""},
-    {"text": "Hard work beats talent when talent doesn't work hard.", "who": "Tim Notke", "source": "high-school basketball coach"},
-    {"text": "The only way to do great work is to love what you do.", "who": "Steve Jobs", "source": "Stanford commencement, 2005"},
-    {"text": "Stay hungry. Stay foolish.", "who": "Steve Jobs", "source": "Stanford commencement, 2005, quoting the Whole Earth Catalog"},
-    {"text": "Discipline equals freedom.", "who": "Jocko Willink", "source": ""},
-    {"text": "If you want to change the world, start off by making your bed.", "who": "Admiral William H. McRaven", "source": "University of Texas commencement, 2014"},
-    {"text": "If you make your bed every morning you will have accomplished the first task of the day.", "who": "Admiral William H. McRaven", "source": "University of Texas commencement, 2014"},
-    {"text": "You do not rise to the level of your goals. You fall to the level of your systems.", "who": "James Clear", "source": "Atomic Habits"},
-    {"text": "Every action you take is a vote for the type of person you wish to become.", "who": "James Clear", "source": "Atomic Habits"},
-    {"text": "Habits are the compound interest of self-improvement.", "who": "James Clear", "source": "Atomic Habits"},
-    {"text": "What you do every day matters more than what you do once in a while.", "who": "Gretchen Rubin", "source": "The Happiness Project"},
-    {"text": "Life is what happens to you while you're busy making other plans.", "who": "John Lennon", "source": "\"Beautiful Boy\""},
-    {"text": "The early bird catches the worm.", "who": "English proverb", "source": ""},
-    {"text": "Fall seven times, stand up eight.", "who": "Japanese proverb", "source": ""},
-    {"text": "The morning hour has gold in its mouth.", "who": "German proverb", "source": ""},
-    {"text": "Slow and steady wins the race.", "who": "Aesop", "source": "The Tortoise and the Hare"},
-    {"text": "Rome was not built in a day.", "who": "Proverb", "source": ""},
-    {"text": "Little by little, one goes far.", "who": "Spanish proverb", "source": ""},
-    {"text": "The best time to plant a tree was twenty years ago. The second best time is now.", "who": "Proverb", "source": ""},
-    {"text": "Be not afraid of going slowly; be afraid only of standing still.", "who": "Chinese proverb", "source": ""},
-    {"text": "Bird by bird, buddy. Just take it bird by bird.", "who": "Anne Lamott", "source": "Bird by Bird"},
-    {"text": "The superior man is modest in his speech, but exceeds in his actions.", "who": "Confucius", "source": "Analects XIV.29, tr. James Legge"}
-  ];
+  // ---------- the routine ----------
+  // Breathing pace: one breath is a full in and out. No holds.
+  const BREATH = { inMs: 4000, outMs: 6000, count: 3 };
+  const MAX_INTENTION = 200;
+  // A routine started shortly before midnight can still be finished after it
+  const CARRY_OVER_MS = 3 * 3600e3;
 
-  // A question to sit under the quote; rotates by day
-  const PROMPTS = [
-    "What are you rising to today?",
-    "What would the disciplined version of you do first?",
-    "What's the smallest step you can take in the next hour?",
-    "What will tomorrow-you thank you for doing today?",
-    "What can you leave off today's list?",
-    "Where will your time go today, on purpose?",
-    "Who could use the best of you today?",
-    "What's one thing you won't do today?",
-    "What would make today good, even if nothing else goes right?",
-    "What are you avoiding that would take ten minutes?",
-    "Which line of this do you need most today?",
-    "If only one thing gets done today, what should it be?"
-  ];
+  // { day, run, phase: breathe|choose|finish|done, breaths, breathing, intention, startedAt }
+  const PHASES = ["breathe", "choose", "finish", "done"];
+  const isRoutine = (v) => typeof v === "object" && isDay(v.day) && PHASES.includes(v.phase) && Number.isInteger(v.run);
+  let routine = store.get("routine", null, isRoutine);
+  const saveRoutine = () => store.set("routine", routine);
 
-  // Ways to get going in the morning. Many work from a bed or a chair, so everyone can do some.
-  // Each morning shows three of them, and any two count.
-  const MOVES = [
-    "Open the curtains or blinds",
-    "Turn on the brightest light in the room",
-    "Let daylight hit your face for a minute",
-    "Open a window, even just a crack",
-    "Take three deep breaths of fresh air",
-    "Step outside for sixty seconds",
-    "Look at the sky for a moment",
-    "Sit by a window",
-    "Find one thing outside that's moving",
-    "Open the door to your room",
-    "Notice what the weather is doing",
-    "Look at something far away for ten breaths",
-    "Name one colour you can see outside",
-    "Take a photo of the morning sky",
-    "Get five minutes of sunlight outside",
-    "Step onto a balcony, porch or doorway",
-    "Drink a full glass of water",
-    "Refill your water bottle",
-    "Drink water before anything else",
-    "Make tea or coffee, slowly",
-    "Eat something small",
-    "Take your morning medication or vitamins",
-    "Put the kettle on",
-    "Make yourself breakfast",
-    "Wash one cup or dish",
-    "Grab a piece of fruit",
-    "Rinse your mouth with cold water",
-    "Pack a snack for later",
-    "Eat breakfast away from your bed",
-    "Have your drink by a window",
-    "Pour a glass of water for someone else too",
-    "Sit up and put your feet on the floor",
-    "Sit on the edge of the bed for ten breaths",
-    "Stretch your arms above your head",
-    "Roll your shoulders five times",
-    "Turn your neck slowly left and right",
-    "Stretch your fingers wide, then make fists",
-    "Point and flex your toes ten times",
-    "Twist gently to each side",
-    "Circle your wrists and ankles",
-    "Shrug your shoulders to your ears, then drop them",
-    "Stretch like a cat",
-    "Give yourself one big yawn and stretch",
-    "Tap your arms and legs to wake them up",
-    "Massage your hands for thirty seconds",
-    "Rub your face and ears to wake them up",
-    "Take ten slow breaths, hand on your belly",
-    "Sit tall for one full minute",
-    "Move from your bed to a chair, sofa or floor",
-    "Move to a different room",
-    "Do ten arm circles",
-    "Do ten squats or ten sit-to-stands",
-    "Do ten wall push-ups",
-    "Hold a plank for twenty seconds",
-    "Do twenty jumping jacks",
-    "March in place for one minute",
-    "Dance to one song",
-    "Do a one-minute stretch",
-    "Go to the kitchen and back",
-    "Do one lap around your home",
-    "Go outside to the end of the street",
-    "Do five minutes of yoga",
-    "Stretch your legs for thirty seconds",
-    "Balance on one foot for twenty seconds",
-    "Squeeze your shoulder blades together ten times",
-    "Press your palms together hard for ten seconds",
-    "Lift your knees one at a time, ten each",
-    "Roll your ankles in slow circles",
-    "Stretch your back over the back of a chair",
-    "Take the stairs once",
-    "Go around the block",
-    "Stretch in a doorway",
-    "Leave your bedroom",
-    "Sit somewhere that isn't your bed",
-    "Brush your teeth",
-    "Splash cold water on your face",
-    "Wash your face",
-    "Take a shower",
-    "End your shower with ten seconds of cold",
-    "Brush or tie back your hair",
-    "Get dressed for the day",
-    "Change out of what you slept in",
-    "Put on deodorant",
-    "Put on something you like wearing",
-    "Moisturise your face and hands",
-    "Put on sunscreen",
-    "Put on your glasses or put in your contacts",
-    "Put on your shoes",
-    "Look in the mirror and say good morning",
-    "Comb your hair",
-    "Put on your watch or jewellery",
-    "Do your skincare or shave",
-    "Floss",
-    "Put on socks",
-    "Pick out your outfit",
-    "Put your pyjamas away",
-    "Put on lip balm",
-    "Clean your glasses",
-    "Put on a scent you like",
-    "Put on anything you use every day: glasses, hearing aids, a brace",
-    "Set up any mobility aid you use for the day",
-    "Hang up your towel",
-    "Make your bed",
-    "Straighten your pillows and blanket",
-    "Put one thing back where it belongs",
-    "Clear your nightstand",
-    "Check your bag has what you need today",
-    "Put dirty clothes in the laundry basket",
-    "Take one cup or plate back to the kitchen",
-    "Throw away one piece of rubbish",
-    "Clear one surface for thirty seconds",
-    "Put your phone on charge away from the bed",
-    "Fold one thing",
-    "Water a plant",
-    "Feed your pet",
-    "Let the dog out",
-    "Take out the rubbish",
-    "Wipe down the sink",
-    "Load or unload the dishwasher",
-    "Put your keys where you'll find them",
-    "Tidy your desk",
-    "Set your bag by the door",
-    "Put away one thing you've been ignoring",
-    "Start a load of laundry",
-    "Put your shoes by the door",
-    "Refill your pet's water",
-    "Charge anything you'll need today",
-    "Write down one thing you're grateful for",
-    "Write your top task for today",
-    "Read one page of a real book",
-    "Say your one thing for today out loud",
-    "Check your calendar, and only your calendar",
-    "Write three words about how you feel",
-    "Plan the first hour of your day",
-    "Think of one person you're glad exists",
-    "Sit in silence for one minute",
-    "Smile at yourself in the mirror, even if it feels silly",
-    "Hum or sing one song",
-    "Put on music you like",
-    "Say one kind thing about yourself",
-    "Remember one good thing from yesterday",
-    "Put the hardest task first on today's list",
-    "Write one sentence in a journal",
-    "Solve one crossword clue or puzzle",
-    "Learn one new word",
-    "Practise an instrument for five minutes",
-    "Pray or meditate for a minute, if that's your thing",
-    "Decide what you'll eat for lunch",
-    "Decide what would make today a good day",
-    "Set one small goal for the morning",
-    "Look at a photo that makes you happy",
-    "Stick a note with today's goal where you'll see it",
-    "Name three things you can hear",
-    "Name five things you can see",
-    "Read your plan for the day out loud",
-    "Work on one thing for five minutes with a timer",
-    "Draw, knit or fix something for five minutes",
-    "Check the weather and dress for it",
-    "Say good morning to someone at home",
-    "Text someone good morning, then close the chat",
-    "Hug someone, or your pet",
-    "Call a family member for two minutes",
-    "Make breakfast for someone else",
-    "Leave a kind note for someone",
-    "Tell someone your one thing for today",
-    "Check on someone you live with",
-    "Thank someone for something small",
-    "Send a friend a voice note",
-    "Give your pet some attention",
-    "Ask someone how they slept",
-    "Help someone with a morning task",
-    "Wave at a neighbour",
-    "Make a plan to see a friend this week",
-    "Take your pet for a short walk",
-    "Turn off your alarm from across the room",
-    "Put on your favourite song and get up before it ends",
-    "Open every curtain in your home",
-    "Stand up for one full minute, or sit up straight",
-    "Stretch your arms out wide and hold for ten breaths",
-    "Wiggle your fingers and toes for thirty seconds",
-    "Take five breaths in through your nose, out through your mouth",
-    "Drink a glass of water standing by the window",
-    "Put your feet on something cold: the floor, a tile, a window sill",
-    "Swap your bed for your desk",
-    "Sit in a chair by the window with your drink",
-    "Wash your hands with cold water",
-    "Brush your teeth with your other hand",
-    "Put your bedding back in place",
-    "Get your breakfast ready before you check anything",
-    "Say three things you're looking forward to",
-    "Set your intention before you touch another app",
-    "Write tomorrow-you a quick note now",
-    "Get your first task ready so it's easy to start",
-    "Prepare your water and snacks for the day",
-    "Put on real clothes, even if you're staying in",
-    "Get to the kitchen before your phone does",
-    "Take a lap of the room while you breathe slowly",
-    "Stretch your chest by clasping your hands behind you",
-    "Touch your toes, your knees or your shins",
-    "Open a window and take five slow breaths",
-    "Water a plant or check on something growing",
-    "Tidy your bed area for one minute",
-    "Put your phone in another room for ten minutes",
-    "Do something kind for yourself before anyone else",
-    "Clean one small thing",
-    "Look outside and guess the temperature",
-    "Stand in the sun for a minute",
-    "Put on a jacket and step outside",
-    "Sit on your doorstep for a minute",
-    "Make your drink and don't look at a screen until it's done"
-  ];
-
-  // Takes `n` items from a per-person shuffled deck stored under `key`, refilling it when it runs out
-  function drawFromDeck(key, size, n, avoid = []) {
-    let deck = store.get(key, [], Array.isArray).filter((i) => Number.isInteger(i) && i >= 0 && i < size);
-    const out = [];
-    while (out.length < n) {
-      if (!deck.length) {
-        deck = [...Array(size).keys()];
-        for (let i = deck.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [deck[i], deck[j]] = [deck[j], deck[i]];
-        }
-        deck = deck.filter((i) => !avoid.includes(i) && !out.includes(i)).concat(deck.filter((i) => avoid.includes(i) || out.includes(i)));
-      }
-      const i = deck.shift();
-      if (!out.includes(i)) out.push(i);
-    }
-    store.set(key, deck);
-    return out;
+  // Intentions keep the earlier version's key ("intent:YYYY-MM-DD"), so old ones show up, dated
+  const intentKey = (day) => "intent:" + day;
+  const draftKey = (day) => "draft:" + day;
+  const intentionFor = (day) => {
+    const t = store.get(intentKey(day), "", isText).trim();
+    return t || store.get("practice-intent:" + day, "", isText).trim();
+  };
+  // Counts as saved only if the phone confirms it: written, then read back
+  function saveIntention(day, text) {
+    if (!text) return false;
+    if (!store.set(intentKey(day), text)) return false;
+    return store.get(intentKey(day), null, isText) === text;
   }
-  const isIndexList = (size) => (v) => Array.isArray(v) && v.length > 0 && v.every((i) => Number.isInteger(i) && i >= 0 && i < size);
-
-  // Today's quote stays the same for the whole day, then the next one in this person's deck
-  function quoteFor(day) {
-    const saved = store.get("quoteDay", null, (v) => typeof v === "object" && v.day === day && isIndexList(QUOTES.length)([v.i]));
-    if (saved) return QUOTES[saved.i];
-    const [i] = drawFromDeck("quoteDeck", QUOTES.length, 1, [store.get("quoteDay", {}, (v) => typeof v === "object").i]);
-    store.set("quoteDay", { day, i });
-    return QUOTES[i];
-  }
-
-  // Today's three get-up options, or the person's own list if they wrote one
-  const isMyMoves = (v) => Array.isArray(v) && v.some((t) => typeof t === "string" && t.trim());
-  function movesFor(day, reshuffle = false) {
-    const mine = store.get("myMoves", null, isMyMoves);
-    if (mine) return { items: mine.filter((t) => typeof t === "string" && t.trim()).slice(0, 6), mine: true };
-    let picks = store.get("moves:" + day, null, isIndexList(MOVES.length));
-    if (!picks || reshuffle) {
-      picks = drawFromDeck("moveDeck", MOVES.length, 3, picks || []);
-      store.set("moves:" + day, picks);
-    }
-    return { items: picks.map((i) => MOVES[i]), mine: false };
-  }
-
-  // Opening lines for the wake screen. *word* is highlighted.
-  const WAKE_LINES = [
-    "You opened this instead of the *feed*.",
-    "Your thumb found this first. That's the whole *trick*.",
-    "The feed can wait. It always *does*.",
-    "Nothing happened overnight that needs you in the next five *minutes*.",
-    "You chose the quiet door this *morning*.",
-    "The algorithm didn't get your first *thought* today.",
-    "Good call. The scroll would have taken *forty* minutes.",
-    "Your first minutes belong to *you*.",
-    "The world kept turning without your *likes*.",
-    "Nobody posted anything that beats a slow *breath*.",
-    "Reels will still be there. So will you, just more *awake*.",
-    "You picked the app that *ends*.",
-    "The first screen of the day sets the *tone*.",
-    "Every morning you open this, the habit gets *weaker*.",
-    "You're awake. The feed doesn't get to know *yet*.",
-    "Hold the phone. Just don't hand it your *attention*.",
-    "The best post of the day is the one you *skip*.",
-    "This is a five-minute app. Then it *lets you go*.",
-    "Your brain is booting up. Give it *clean* data.",
-    "No red dots here. Just a *start*.",
-    "You came here on purpose. That *counts*.",
-    "There's no infinite scroll here, only a *finish* line.",
-    "The feed wants your morning. You kept *it*.",
-    "You didn't reach for the noise. You reached for the *light*.",
-    "One small choice, made before anything else. *Nice*.",
-    "Your eyes just opened. Let them see something *real*.",
-    "The internet is still asleep. Be the one who's *up*.",
-    "You're not behind. Nothing important moved while you *slept*.",
-    "Today starts with you, not with *strangers*.",
-    "A calm first minute is a quiet *superpower*.",
-    "You opened a door with a *wall* behind it. Good.",
-    "The feed is loud. This is the *pause*.",
-    "Before the news, before the noise, *you*.",
-    "You chose five minutes over five *hours*.",
-    "The scroll never ends. Your morning *can*.",
-    "Yesterday's you would be *proud*.",
-    "This is the part of the day nobody can *sell*.",
-    "Your attention is worth more than an ad *slot*.",
-    "No one's watching this. Which makes it *honest*.",
-    "The best feeds have a last *page*.",
-    "Your brain on scroll is borrowed. This one is *yours*.",
-    "The feed would have picked your mood. You get to pick *instead*.",
-    "Sunrise doesn't need a *caption*.",
-    "Start slow. The day speeds up on its *own*.",
-    "You broke the loop again. That's how loops *break*.",
-    "The first tap of the day was a good *one*.",
-    "This moment doesn't need to be *shared*.",
-    "Something is different about today: you *started* it.",
-    "Muscle memory reached for the phone. You pointed it *here*.",
-    "You're awake before the *algorithm* is.",
-    "Five quiet minutes beat fifty loud *ones*.",
-    "There's nothing to catch up on. You're *already* here.",
-    "You can be the kind of person who starts *slowly*.",
-    "Your morning is not a *content* stream.",
-    "The group chat can wait for you to be *human*.",
-    "You're not missing out. You're *opting* in.",
-    "Every open here is a vote for the person you want to *be*.",
-    "Your phone is a tool this morning, not a *trap*.",
-    "Morning, unfiltered and *unsponsored*.",
-    "The feed learns what you like. This learns what you *need*.",
-    "You're here. That's already the hard *part*.",
-    "Start with a breath, not a *headline*.",
-    "The best notification today is your own *heartbeat*.",
-    "The day hasn't asked anything of you *yet*.",
-    "Your thumb is here. Your mind can *follow*.",
-    "You opened the one app that wants you to *leave*.",
-    "The world can wait. The *window* can't.",
-    "You're up before your *worries*.",
-    "The internet had all night. You get the *morning*.",
-    "Your first thought today is *free* of ads.",
-    "You already beat the scroll *once* today.",
-    "You didn't doomscroll. You *dawn*-scrolled.",
-    "The shortest path out of bed runs through *here*.",
-    "This isn't a feed. It's a *runway*.",
-    "You showed up for yourself *again*.",
-    "No trends. No takes. Just *today*.",
-    "You're allowed to have a *boring*, peaceful morning.",
-    "The bed is warm. The day is *warmer*.",
-    "Scrolling fills time. This *uses* it.",
-    "The feed can't give you back the *morning*. You kept it.",
-    "Today gets the *first* draft of you.",
-    "This app has a last screen. Your feed *doesn't*.",
-    "You're not the product this *morning*.",
-    "You picked the slower, *better* start.",
-    "Nothing here will make you *angry*.",
-    "Nobody here wants you to scroll *further*.",
-    "Waking up is enough of an *event*.",
-    "The feed will not miss you. Your day *will* notice.",
-    "Mornings are rare. Don't trade them for *reruns*.",
-    "The news of the day is that you're *awake*.",
-    "Look up soon. The *ceiling* has better lighting than Reels.",
-    "You don't have to earn the morning. Just *meet* it.",
-    "You turned the autopilot *off*.",
-    "Small habit, big *mornings*.",
-    "You took the phone out of the *loop*.",
-    "One screen. One job. Then *done*.",
-    "Today, you're the one *posting* the plan.",
-    "Your morning just got its *edges* back.",
-    "You opened this with your eyes half shut. *Respect*.",
-    "Scroll less, *live* more. Starting now.",
-    "The feed can refresh. So can *you*.",
-    "The first choice of the day was a *wise* one.",
-    "There's no algorithm here. Just a *sunrise*.",
-    "You pulled the handbrake on the *scroll*.",
-    "This is how good days quietly *begin*.",
-    "Consider this your morning *armour*.",
-    "Your brain wanted a hit. It's getting a *breath*.",
-    "No one online knows you're awake. *Enjoy* that.",
-    "Stay here five minutes. The *feed* stays there.",
-    "You're writing today's first *line*, not reading someone else's.",
-    "You chose the opening move. Well *played*.",
-    "You didn't wake up to the world. You woke up to *yourself*.",
-    "Here's to a morning with no *spoilers*.",
-    "You beat the reflex. Now let's beat the *bed*.",
-    "The day is a blank *page*. Let's keep it that way a moment longer.",
-    "The feed has no morning. *You* do.",
-    "Quiet first, loud *later*.",
-    "This minute is already *better* than a scroll.",
-    "You're early for your own *life*.",
-    "Welcome back. The sun kept your *seat*."
-  ];
-
-  // A new line every time the app opens, with no repeats until all of them have been shown.
-  function pickWakeLine() {
-    let bag = store.get("lineBag", []);
-    const last = store.get("lastLine", -1);
-    bag = Array.isArray(bag) ? bag.filter((i) => Number.isInteger(i) && i >= 0 && i < WAKE_LINES.length) : [];
-    if (!bag.length) {
-      bag = WAKE_LINES.map((_, i) => i);
-      for (let i = bag.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [bag[i], bag[j]] = [bag[j], bag[i]];
-      }
-      if (bag[0] === last && bag.length > 1) [bag[0], bag[1]] = [bag[1], bag[0]];
-    }
-    const pick = bag.shift();
-    store.set("lineBag", bag);
-    store.set("lastLine", pick);
-    return WAKE_LINES[pick];
-  }
+  const cleanIntention = (raw) => raw.replace(/\s+/g, " ").trim().slice(0, MAX_INTENTION);
 
   // ---------- anonymous stats (Supabase) ----------
-  // What's sent: a random device id, the day, and counts/choices such as which steps were done.
-  // Never sent: notes, intentions, or the names/addresses of anyone's own apps.
+  // What's sent: a random device id, the day, which steps of the routine happened, and the app version.
+  // Never sent: the intention, or anything else anyone writes.
   // The publishable key is meant to be public; the database only lets it ADD rows to one table.
   const STATS = {
     url: "https://cnwwyucolebrcbydbfej.supabase.co/rest/v1/events",
     key: "sb_publishable_XpdHaGbjKX5CC0LRYiWBxQ_O8xO2oCs",
-    version: "beta-3"
+    version: "beta-4"
   };
-  // Where questions and data requests go (shown in the agreement, on the done screen and on terms.html)
+  // Where questions and data requests go (also on terms.html)
   const CONTACT = "mornward@proton.me";
-  // Bump TERMS_VERSION when the wording changes in a way people should re-read; everyone is asked again.
+  // Bump TERMS_VERSION when the wording changes in a way people should see again.
   // beta-2: contact, US storage consent, retention and data rights (Thailand PDPA)
-  // beta-3: also counts which onboarding screens a new person reached (screen_view)
-  const TERMS_VERSION = "beta-3";
+  // beta-3: also counted which onboarding screens a new person reached
+  // beta-4: the one-minute routine; counts its steps instead (see supabase/ANALYTICS.md)
+  const TERMS_VERSION = "beta-4";
   const hasAgreed = () => {
     const a = store.get("agreed", null, (v) => typeof v === "object");
     return !!a && a.version === TERMS_VERSION;
   };
   const statsOn = () => hasAgreed() && store.get("noStats", false) !== true;
-  // Keep in sync with terms.html (the shareable version of this)
-  const PRIVACY_DETAILS = `<details class="privacy">
-      <summary>See exactly what's sent</summary>
-      <h3>What Mornward sends</h3>
-      <ul>
-        <li>A random device ID made on your phone. It isn't linked to your name, email or any account.</li>
-        <li>The date, and the time the record arrived.</li>
-        <li>What you usually open in bed (social, games, videos, news or other), and which apps you picked from the list.</li>
-        <li>How your morning went: minutes, streak, breathing done or skipped, how many get-up boxes you ticked, whether you wrote an intention, and whether it was a practice run.</li>
-        <li>Your 👎 / 👌 / 👍, if you tap one.</li>
-        <li>Which app you opened from the one-job list, if any.</li>
-        <li>Which link you came from (like "reddit"), if the link says so.</li>
-      </ul>
-      <h3>What it never sends</h3>
-      <ul>
-        <li>Your name, email, phone number or any account. There's no sign-up.</li>
-        <li>Your notes, your intention, or your own get-up steps. Not a single word.</li>
-        <li>The names or addresses of apps you added yourself, or anything you search for.</li>
-        <li>Your location, contacts, photos or other apps. Mornward can't see them.</li>
-        <li>Anything at all once you tap "Turn off".</li>
-      </ul>
-      <h3>Where it goes, and for how long</h3>
-      <ul>
-        <li>It's stored on Supabase servers in the United States, only to learn whether the beta helps. It's never sold or used for ads.</li>
-        <li>It's deleted within 90 days after the beta ends, or sooner if you ask.</li>
-        <li>Questions or requests: <a href="mailto:${CONTACT}">${CONTACT}</a></li>
-      </ul>
-      <p><a href="terms.html" target="_blank" rel="noopener">Full terms and privacy page</a></p>
-    </details>`;
-  // "Your data" panel on the done screen: see your ID, ask for your stats to be deleted, or wipe this phone
-  function myDataSection() {
-    const id = store.get("deviceId", null, (v) => typeof v === "string" && /^[0-9a-f-]{36}$/.test(v));
-    const ask = id ? `mailto:${CONTACT}?subject=${encodeURIComponent("Delete my Mornward data")}&body=${
-      encodeURIComponent("Please delete the stats for this ID: " + id)}` : "";
-    return `<details class="privacy" id="myData">
-      <summary>Show my ID / delete my data</summary>
-      ${id ? `<p>Your anonymous ID:</p>
-      <code class="myid" id="myId">${esc(id)}</code>
-      <p>To see or delete the stats sent with this ID, email it to <a href="${ask}">${CONTACT}</a>.
-        It's handled within 30 days, usually much sooner.</p>`
-      : `<p>No stats have been sent from this phone, so there's nothing to delete on our side.</p>`}
-      <div class="btnrow stack">
-        ${id ? `<a class="door" href="${ask}">Email a delete request</a>` : ""}
-        <button class="quiet" type="button" id="wipeLocal">Delete everything on this phone</button>
-      </div>
-    </details>`;
-  }
-  function wipeLocal() {
-    const id = store.get("deviceId", null);
-    const msg = "This deletes your streak, notes, steps and settings on this phone. It can't be undone." +
-      (id ? "\n\nIf you also want your stats deleted, email your ID first." : "");
-    if (!confirm(msg)) return;
-    try {
-      Object.keys(localStorage).filter((k) => k.startsWith("fl.")).forEach((k) => localStorage.removeItem(k));
-    } catch {}
-    location.reload();
-  }
+  // Keep in sync with terms.html
+  const COUNTED = `<ul>
+      <li>A random ID made on this phone, not linked to your name, email or any account.</li>
+      <li>The date, and which steps happened: started, breathing finished or skipped, intention saved or skipped, finished.</li>
+      <li>Whether you opened it from the home screen, and which link you came from (like "reddit"), if the link says so.</li>
+    </ul>`;
+  const NOT_SENT = `<ul>
+      <li>Your intention, or anything else you write. Not a single word.</li>
+      <li>Your name, email, phone number, location, contacts or other apps.</li>
+      <li>Anything at all once you turn the counts off.</li>
+    </ul>`;
+
   function deviceId() {
     let id = store.get("deviceId", null, (v) => typeof v === "string" && /^[0-9a-f-]{36}$/.test(v));
     if (!id) {
@@ -1129,8 +346,7 @@
     return id;
   }
   let flushing = false;
-  // Two queues, each sent in its own request: if the database doesn't accept screen views yet
-  // (setup.sql not re-run), only those are dropped, never a morning or a setup.
+  // "viewbox" held screen views from the previous version; anything still waiting there is sent once
   const QUEUES = ["outbox", "viewbox"];
   async function flushStats() {
     if (flushing || !statsOn() || !navigator.onLine) return;
@@ -1150,7 +366,7 @@
         if (res.ok || (res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429)) {
           const now = store.get(q, [], Array.isArray).slice(rows.length);
           store.set(q, now);
-          // Rows queued while this request was out (two events close together) go now, not on the next visit
+          // Rows queued while this request was out go now, not on the next visit
           if (now.length) again = true;
         }
       } catch { /* offline or blocked: keep them for next time */ }
@@ -1158,890 +374,372 @@
     flushing = false;
     if (again) flushStats();
   }
-  function track(kind, data = {}) {
-    if (!statsOn()) return;
-    const onHome = navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
-    const row = { device_id: deviceId(), day: (typeof run !== "undefined" && run) ? run.today : dayKey(),
-      kind, data: { ...data, home_screen: onHome, ...(typeof run !== "undefined" && run && run.practice && kind !== "setup_done" && kind !== "screen_view" ? { practice: true } : {}) },
+  const onHomeScreen = navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
+  // Your own test devices: open mornward.app/?test=1 once on each (?test=0 undoes it). Their rows say test: true.
+  (() => {
+    const t = new URLSearchParams(location.search).get("test");
+    if (t === "1") store.set("test", true);
+    if (t === "0") store.del("test");
+  })();
+  // Each step is counted once per routine, however often the screen redraws, the page reloads or a send retries.
+  // The key is the routine's day and run number, so a second routine on the same day is its own run.
+  function emit(kind, data = {}) {
+    if (!statsOn() || !routine) return;
+    const key = `${routine.day}#${routine.run}#${kind}`;
+    const sent = store.get("sent", [], Array.isArray);
+    if (sent.includes(key)) return;
+    store.set("sent", sent.concat([key]).slice(-60));
+    const row = { device_id: deviceId(), day: routine.day, kind,
+      data: { run: routine.run, home_screen: onHomeScreen, ...(store.get("test", false) === true ? { test: true } : {}), ...data },
       app_version: STATS.version };
-    const q = kind === "screen_view" ? "viewbox" : "outbox";
-    store.set(q, store.get(q, [], Array.isArray).concat([row]).slice(-50));
+    store.set("outbox", store.get("outbox", [], Array.isArray).concat([row]).slice(-50));
     flushStats();
   }
   window.addEventListener("online", flushStats);
 
-  // ---------- state ----------
-  const STEPS = ["wake", "breathe", "read", "move", "plan", "done"];
-  let step = 0;
-  // Everything a run records belongs to the day it started, even if it finishes after midnight
-  const newRun = () => {
-    const today = dayKey();
-    return { today, startedAt: Date.now(), quote: quoteFor(today), prompt: PROMPTS[dayNumber(today) % PROMPTS.length],
-      stats: { breathe: "skipped", ticked: 0, reshuffles: 0, own_moves: false, intention: false, note: false, sent: false } };
-  };
-  let run = newRun();
-  let wakeLine = pickWakeLine();
-
+  // ---------- helpers ----------
   const $ = (s, r = document) => r.querySelector(s);
   const card = $("#card");
-  const stepsEl = $("#steps");
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-
-  // ---------- horizon ----------
-  function tickClock() {
-    const d = new Date();
-    $("#clock").textContent = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    $("#date").textContent = d.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
-  }
-  // Where the sun sits on the arc for each step: just under the horizon at "wake", near the top at "done"
-  const STOPS = STEPS.map((_, i) => 0.04 + (i / (STEPS.length - 1)) * 0.92);
-  const STAGES = ["Pre-dawn", "Twilight", "First light", "Sunrise", "Morning", "Full morning"];
-  const arc = $("#arc");
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let sunAt = STOPS[0];
-  let sunAnim = 0;
-  const fmtTime = (ms) => new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
-  $("#stops").innerHTML = STOPS.map((f) => {
-    const pt = arc.getPointAtLength(f * arc.getTotalLength());
-    return `<circle class="stop" r="1.6" cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}"></circle>`;
-  }).join("");
-
-  function drawSun(f) {
-    const pt = arc.getPointAtLength(f * arc.getTotalLength());
-    const t = (f - STOPS[0]) / (STOPS[STOPS.length - 1] - STOPS[0]);
-    $("#sun").setAttribute("transform", `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
-    $("#arcDone").setAttribute("stroke-dasharray", `${f.toFixed(4)} 1`);
-    $("#dawn").setAttribute("opacity", (0.15 + 0.85 * t).toFixed(3));
-    $("#stars").setAttribute("opacity", (1 - t).toFixed(3));
-  }
-  function placeSun(setupLabel = null) {
-    const at = setupLabel ? 0 : step;
-    const target = STOPS[at];
-    [...$("#stops").children].forEach((c, i) => c.classList.toggle("passed", !setupLabel && i <= step));
-    $("#stage").textContent = setupLabel || STAGES[step];
-    $("#tStart").textContent = setupLabel ? "now" : `${fmtTime(run.startedAt)} start`;
-    $("#tEnd").textContent = setupLabel ? "tomorrow, 5 min"
-      : step === STEPS.length - 1
-        ? `${fmtTime(Date.now())} done`
-        : `${fmtTime(run.startedAt + 5 * 60000)} goal`;
-    cancelAnimationFrame(sunAnim);
-    if (reduceMotion) { sunAt = target; drawSun(sunAt); return; }
-    const from = sunAt, t0 = performance.now(), dur = 1400;
-    const ease = (x) => 1 - Math.pow(1 - x, 3);
-    const frame = (now) => {
-      const k = Math.min(1, (now - t0) / dur);
-      sunAt = from + (target - from) * ease(k);
-      drawSun(sunAt);
-      if (k < 1) sunAnim = requestAnimationFrame(frame);
-    };
-    sunAnim = requestAnimationFrame(frame);
-  }
-  function renderSteps() {
-    stepsEl.innerHTML = STEPS.map((_, i) =>
-      `<li class="${i < step ? "done" : i === step ? "now" : ""}"></li>`).join("");
-    $("#restart").hidden = step === 0;
-  }
-
-  // ---------- screens ----------
-  // Slow breaths, 4 seconds in and 6 out, on the #orb in the current card. When they're done, the start
-  // button turns into "Continue".
-  const breathBox = (cycles) => `<div class="breath"><div class="orb" id="orb">Ready</div><div class="count" id="bcount">0 of ${cycles}</div></div>`;
-  function runBreaths(cycles, onDone, onContinue) {
-    const IN = 4, OUT = 6;
-    const orb = $("#orb");
-    $("#bstart").disabled = true;
-    let cycle = 0, phase = "in", left = IN;
-    const setPhase = () => {
-      orb.style.transitionDuration = (phase === "in" ? IN : OUT) + "s";
-      orb.style.transform = phase === "in" ? "scale(1)" : "scale(.55)";
-      orb.textContent = phase === "in" ? "In" : "Out";
-    };
-    setPhase();
-    breathTimer = setInterval(() => {
-      left--;
-      if (left > 0) return;
-      if (phase === "in") { phase = "out"; left = OUT; }
-      else {
-        cycle++;
-        $("#bcount").textContent = `${cycle} of ${cycles}`;
-        if (cycle >= cycles) {
-          clearInterval(breathTimer); breathTimer = null;
-          orb.textContent = "Done";
-          $("#bstart").textContent = "Continue";
-          $("#bstart").disabled = false;
-          onDone();
-          $("#bstart").onclick = onContinue;
-          return;
-        }
-        phase = "in"; left = IN;
-      }
-      setPhase();
-    }, 1000);
-  }
-  let breathTimer = null;
-  let gateTimer = null;
-  function clearTimers() {
-    clearInterval(breathTimer); breathTimer = null;
-    clearInterval(gateTimer); gateTimer = null;
-  }
-
-  // The "one specific job" section: only the apps this person picked, behind a 10-second wait
-  function doorsSection() {
-    const picked = chosenDoors();
-    if (picked === null) {
-      return `<button class="quiet" id="pickDoors" type="button">Need an app for one job sometimes? Pick which ones</button>`;
-    }
-    const own = customDoors();
-    if (!picked.length && !own.length) return "";
-    const link = (key, label, url) => {
-      const web = /^https?:/.test(url);
-      return `<a class="door" data-door="${key}" aria-disabled="true" tabindex="-1" href="${esc(url)}"${web ? ' target="_blank" rel="noopener"' : ""}>${esc(label)}</a>`;
-    };
-    const items = picked.map((k) => {
-      const d = DOORS[k];
-      if (d.url) return link(k, d.label, d.url);
-      return `<form class="doorline" data-door="${k}">
-          <input type="text" id="q-${k}" aria-label="${esc(d.label)}" placeholder="${esc(d.hint)}">
-          <button type="submit" disabled>${esc(d.label)}</button>
-        </form>`;
-    }).join("") + own.map((d, i) => link("custom-" + i, d.label, d.url)).join("");
-    return `<details class="doors" id="doors">
-          <summary>I need an app for one specific job</summary>
-          <div class="inner">
-            <p class="small">These skip the home feed and open straight to the useful part. The feed is still one tap away inside, so go in, do the job, come back.</p>
-            <p class="gate" id="gate">Opening in 10 s</p>
-            <div class="doorgrid">${items}</div>
-          </div>
-        </details>`;
-  }
-  function wireDoors() {
-    const doors = $("#doors");
-    if (!doors) return;
-    const links = [...doors.querySelectorAll("a.door")];
-    const buttons = [...doors.querySelectorAll(".doorline button")];
-    links.forEach((a) => a.addEventListener("click", (e) => {
-      if (a.getAttribute("aria-disabled") === "true") { e.preventDefault(); return; }
-      track("door_open", { app: a.dataset.door.startsWith("custom") ? "own" : a.dataset.door });
-    }));
-    doors.addEventListener("toggle", () => {
-      if (!doors.open || gateTimer) return;
-      let left = 10;
-      gateTimer = setInterval(() => {
-        left--;
-        if (left > 0) { $("#gate").textContent = `Opening in ${left} s`; return; }
-        clearInterval(gateTimer);
-        $("#gate").textContent = "Open. Go in for the one job.";
-        links.forEach((a) => { a.removeAttribute("aria-disabled"); a.removeAttribute("tabindex"); });
-        buttons.forEach((b) => (b.disabled = false));
-      }, 1000);
-    });
-    doors.querySelectorAll(".doorline").forEach((f) => (f.onsubmit = (e) => {
-      e.preventDefault();
-      const input = f.querySelector("input");
-      const q = input.value.trim();
-      if (!q) { input.focus(); return; }
-      const a = document.createElement("a");
-      a.href = DOORS[f.dataset.door].search + encodeURIComponent(q);
-      track("door_open", { app: f.dataset.door });
-      a.target = "_blank"; a.rel = "noopener";
-      document.body.appendChild(a); a.click(); a.remove();
-    }));
-  }
-
-  // A note written for this morning (or earlier) that hasn't been read yet
-  const pendingNote = () => {
-    const l = store.get("letter", null, isLetter);
-    return !!l && l.text.trim() !== "" && l.forDay <= run.today && !l.readOn;
-  };
-  const screens = {
-    wake() {
-      const streak = store.get("streak", { last: null, count: 0 }, isStreak);
-      const already = streak.last === run.today;
-      const alive = already || streak.last === addDays(run.today, -1);
-      const streakLine = streak.count > 0 && alive
-        ? `Current streak: ${streak.count} ${streak.count === 1 ? "morning" : "mornings"}.`
-        : streak.count > 0
-          ? `Your last streak was ${streak.count} ${streak.count === 1 ? "morning" : "mornings"}. Today starts a new one.`
-          : "Day one. Nothing to live up to yet.";
-      const h = new Date().getHours();
-      const hello = h < 5 ? "Still night out there" : h < 12 ? "Good morning" : "Hello again";
-      const line = esc(wakeLine).replace(/\*(.+?)\*/, '<em class="hl">$1</em>');
-      card.innerHTML = `
-        <p class="eyebrow">${hello} · ${already ? "already done today" : "five minutes, then you're free"}</p>
-        <h1>${line}</h1>
-        <p class="lede">Your thumb wanted something to hold on to. This gives it a short, finished job:
-          breathe, read one line, get up, plan your day. Then it ends.</p>
-        <p class="small">${streakLine}</p>
-        ${pendingNote() ? `<p class="small notewait">You left yourself a note. It's waiting near the end.</p>` : ""}
-        <div class="btnrow stack">
-          ${already ? `<button class="primary" id="noteOnly" type="button">Leave a note for tomorrow</button>` : ""}
-          <button class="${already ? "quiet" : "primary"}" id="go" type="button">${already ? "Do it again anyway" : "Begin"}</button>
-        </div>`;
-      $("#go").onclick = next;
-      if (already) $("#noteOnly").onclick = renderNoteOnly;
-    },
-
-    breathe() {
-      card.innerHTML = `
-        <p class="eyebrow">Breathe · about 50 seconds</p>
-        <h2>Five slow breaths before anything else.</h2>
-        ${breathBox(5)}
-        <div class="btnrow">
-          <button class="primary" id="bstart" type="button">Start breathing</button>
-          <button class="quiet" id="bskip" type="button">Skip</button>
-        </div>`;
-      $("#bskip").onclick = next;
-      $("#bstart").onclick = () => runBreaths(5, () => { run.stats.breathe = "done"; }, next);
-    },
-
-    read() {
-      card.innerHTML = `
-        <p class="eyebrow">Read · one line from someone who's been there</p>
-        <div class="passage">
-          <p>“${esc(run.quote.text)}”</p>
-          <span class="source">${esc(run.quote.who)}${run.quote.source ? `, ${esc(run.quote.source)}` : ""}</span>
-          <p class="prompt">${esc(run.prompt)}</p>
-        </div>
-        <div class="btnrow"><button class="primary" id="go" type="button">Carry it with me</button></div>`;
-      $("#go").onclick = next;
-    },
-
-    move(keepChecked = new Set(), reshuffle = false) {
-      const { items, mine } = movesFor(run.today, reshuffle);
-      const need = Math.min(2, items.length);
-      card.innerHTML = `
-        <p class="eyebrow">Move · get vertical</p>
-        <h2>Do any ${need === 2 ? "two" : need} of these. Wake your body up before your thumb.</h2>
-        <ul class="checks">
-          ${items.map((t, i) => `<li><label><input type="checkbox" id="chk${i}"${keepChecked.has(t) ? " checked" : ""}><span>${esc(t)}</span></label></li>`).join("")}
-        </ul>
-        ${mine ? "" : `<button class="quiet" id="reshuffle" type="button">Show me different ones</button>`}
-        <details class="doors">
-          <summary>Change these steps</summary>
-          <div class="inner">
-            <label class="field" for="checkEdit">Your own steps, one per line (up to 6)
-              <textarea id="checkEdit">${esc(items.join("\n"))}</textarea></label>
-            <div class="btnrow">
-              <button type="button" id="checkSave">Use my steps</button>
-              ${mine ? `<button class="quiet" id="checkMix" type="button">Back to the daily mix</button>` : ""}
-            </div>
-            <span class="saved" id="checkSaved" hidden>Saved</span>
-          </div>
-        </details>
-        <div class="btnrow"><button class="primary" id="go" type="button" disabled>Tick ${need} to continue</button></div>`;
-      const boxes = [...card.querySelectorAll(".checks input")];
-      const go = $("#go");
-      const sync = () => {
-        const done = boxes.filter((b) => b.checked).length;
-        go.disabled = done < need;
-        go.textContent = done >= need ? "I'm up" : `${done} of ${need} done`;
-      };
-      boxes.forEach((b) => (b.onchange = sync));
-      sync();
-      go.onclick = () => {
-        run.stats.ticked = boxes.filter((b) => b.checked).length;
-        run.stats.own_moves = mine;
-        next();
-      };
-      const reshuffleBtn = $("#reshuffle");
-      if (reshuffleBtn) reshuffleBtn.onclick = () => { run.stats.reshuffles++; screens.move(new Set(), true); };
-      const ticked = () => new Set(boxes.filter((b) => b.checked).map((b) => items[boxes.indexOf(b)]));
-      $("#checkSave").onclick = () => {
-        const lines = $("#checkEdit").value.split("\n").map((s) => s.trim().slice(0, 80)).filter(Boolean).slice(0, 6);
-        store.set("myMoves", lines.length ? lines : null);
-        screens.move(ticked());
-        $("details.doors").open = true;
-        $("#checkSaved").hidden = false;
-      };
-      const mixBtn = $("#checkMix");
-      if (mixBtn) mixBtn.onclick = () => { store.set("myMoves", null); screens.move(); };
-    },
-
-    plan() {
-      // { text, forDay, writtenOn?, readOn? } — shown on the first morning it's due, then again only that same day
-      const letter = store.get("letter", null, isLetter);
-      const hasNote = !!letter && letter.text.trim() !== "" && letter.forDay <= run.today &&
-        (!letter.readOn || letter.readOn === run.today);
-      if (hasNote && !letter.readOn) store.set("letter", { ...letter, readOn: run.today });
-      run.stats.note = hasNote;
-      const writtenOn = hasNote && typeof letter.writtenOn === "string" ? letter.writtenOn : null;
-      const heading = !hasNote || !writtenOn || writtenOn === addDays(run.today, -1)
-        ? "A note from last night's you."
-        : `A note you wrote on ${esc(fmtDay(writtenOn))}.`;
-      const intention = store.get(dayItem("intent"), "", isText);
-      card.innerHTML = `
-        <p class="eyebrow">Plan · the only feed with an end</p>
-        <h2>${heading}</h2>
-        <div class="note ${hasNote ? "" : "empty"}">${hasNote ? esc(letter.text) :
-          "No note yet. At the end of today's run you can leave one for tomorrow morning. It shows up here, and nothing else does."}</div>
-        <label class="field" for="intent">The one thing that would make today count
-          <input type="text" id="intent" maxlength="120" placeholder="e.g. Send the draft to Priya before lunch" value="${esc(intention)}"></label>
-        <div class="btnrow"><button class="primary" id="go" type="button">That's my one thing</button></div>`;
-      $("#go").onclick = () => {
-        store.set(dayItem("intent"), $("#intent").value.trim());
-        run.stats.intention = $("#intent").value.trim() !== "";
-        next();
-      };
-    },
-
-    done() {
-      const mins = Math.max(1, Math.round((Date.now() - run.startedAt) / 60000));
-      const streak = run.practice ? store.get("streak", { last: null, count: 0 }, isStreak) : recordStreak();
-      if (!run.stats.sent) {
-        run.stats.sent = true;
-        const { sent, ...st } = run.stats;
-        track("morning_done", { ...st, minutes: mins, streak: streak.count, habit: store.get("setup", {}, isSetup).habit || null });
-      }
-      const rated = store.get(dayItem("rated"), null, isText);
-      const intention = store.get(dayItem("intent"), "", isText);
-      const letter = store.get("letter", null, isLetter);
-      const draft = letter && letter.forDay > run.today ? letter.text : "";
-      card.innerHTML = `
-        <p class="eyebrow">${run.practice ? "Practice run · the real one is tomorrow" : "Done · there is no more"}</p>
-        <h1>That's the whole thing. The sun is up.</h1>
-        ${intention ? `<p class="lede">Today: <strong>${esc(intention)}</strong></p>` : ""}
-        <div class="tally">
-          <div><b>${mins}</b><span>${mins === 1 ? "minute" : "minutes"}</span></div>
-          <div><b>${streak.count}</b><span>day streak</span></div>
-          <div><b>0</b><span>${esc(habit().tally)}</span></div>
-        </div>
-        ${run.practice ? tomorrowKit() : ""}
-        <label class="field" for="letter">Leave a note for tomorrow morning
-          <textarea id="letter" placeholder="Write it tonight, or now. It will be the first thing you read tomorrow.">${esc(draft)}</textarea></label>
-        <div><button type="button" id="saveLetter">Save for tomorrow</button> <span class="saved" id="letterSaved" hidden>Saved. See you in the morning.</span></div>
-
-        <div class="rating" role="group" aria-labelledby="rateQ">
-          <p class="small" id="rateQ">How was this morning?</p>
-          <div class="row">
-            ${[["bad", "👎", "Not great"], ["ok", "👌", "Okay"], ["good", "👍", "Good"]].map(([v, icon, name]) =>
-              `<button type="button" data-rate="${v}" aria-label="${name}" aria-pressed="${rated === v}">${icon}</button>`).join("")}
-          </div>
-          <span class="saved" id="rateThanks"${rated ? "" : " hidden"}>Thanks. That helps more than you'd think.</span>
-        </div>
-
-        ${doorsSection()}
-
-        <div class="btnrow stack">
-          <button class="primary" id="close" type="button">Put the phone down</button>
-          <button class="quiet" id="replay" type="button">Replay setup</button>
-        </div>
-        <p class="statsline" id="statsLine"></p>
-        ${PRIVACY_DETAILS}
-        ${myDataSection()}`;
-      // People can change their mind; only their latest rating for the day counts in the stats
-      card.querySelectorAll("[data-rate]").forEach((b) => (b.onclick = () => {
-        const before = store.get(dayItem("rated"), null, (v) => typeof v === "string");
-        if (before === b.dataset.rate) return;
-        store.set(dayItem("rated"), b.dataset.rate);
-        card.querySelectorAll("[data-rate]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
-        $("#rateThanks").hidden = false;
-        track("rating", before ? { value: b.dataset.rate, changed_from: before } : { value: b.dataset.rate });
-      }));
-      const drawStatsLine = () => {
-        $("#statsLine").innerHTML = statsOn()
-          ? `Anonymous stats are on: which steps you finish, never what you write. <button class="quiet" type="button" id="statsToggle">Turn off</button>`
-          : `Anonymous stats are off. <button class="quiet" type="button" id="statsToggle">Turn back on</button>`;
-        $("#statsToggle").onclick = () => {
-          if (statsOn()) { store.set("noStats", true); store.set("outbox", []); store.set("viewbox", []); } else { store.set("noStats", false); }
-          drawStatsLine();
-        };
-      };
-      drawStatsLine();
-      $("#replay").onclick = () => startSetup(0);
-      $("#wipeLocal").onclick = wipeLocal;
-
-      $("#saveLetter").onclick = () => {
-        const text = $("#letter").value.trim();
-        store.set("letter", text ? { text, forDay: addDays(run.today, 1), writtenOn: run.today } : null);
-        $("#letterSaved").textContent = text ? "Saved. See you in the morning." : "Note cleared.";
-        $("#letterSaved").hidden = false;
-      };
-
-      wireKit();
-      wireDoors();
-      const pick = $("#pickDoors");
-      if (pick) pick.onclick = () => startSetup(1);
-
-      $("#close").onclick = () => {
-        clearTimers();
-        guardTaps();
-        closedAt = Date.now();
-        card.innerHTML = `
-          <p class="eyebrow">See you tomorrow</p>
-          <h1>Go live the morning.</h1>
-          <p class="lede">This page has nothing else on it, on purpose.</p>`;
-      };
-    }
-  };
-
-  // Per-day keys for things a practice run shouldn't leave behind for the real morning
-  const dayItem = (k) => (run.practice ? "practice-" : "") + k + ":" + run.today;
-
-  function recordStreak() {
-    const s = store.get("streak", { last: null, count: 0 }, isStreak);
-    if (s.last === run.today) return s;
-    const out = { last: run.today, count: s.last === addDays(run.today, -1) ? s.count + 1 : 1 };
-    store.set("streak", out);
-    return out;
-  }
-
-  // ---------- setup: a one-time tour the first time someone opens the app ----------
-  const HABITS = {
-    social: { label: "Social media", tally: "posts seen" },
-    games: { label: "A game", tally: "matches played" },
-    video: { label: "YouTube or videos", tally: "videos watched" },
-    news: { label: "News or headlines", tally: "headlines read" },
-    other: { label: "Something else", tally: "feeds scrolled" }
-  };
-  // Apps people may still need for one specific job. Links go to messages or search where the app allows it,
-  // not the home feed. On a phone most of these open the real app.
-  const DOORS = {
-    // Shown first
-    instagram: { label: "Instagram messages", url: "https://www.instagram.com/direct/inbox/", top: true },
-    snapchat: { label: "Snapchat chat", url: "https://www.snapchat.com/web", top: true },
-    x: { label: "X messages", url: "https://x.com/messages", top: true },
-    messenger: { label: "Messenger", url: "https://www.messenger.com/", top: true },
-    whatsapp: { label: "WhatsApp", url: "https://wa.me/", top: true },
-    discord: { label: "Discord messages", url: "https://discord.com/channels/@me", top: true },
-    youtube: { label: "YouTube search", search: "https://www.youtube.com/results?search_query=", hint: "e.g. fix a leaky tap", top: true },
-    reddit: { label: "Reddit search", search: "https://www.reddit.com/search/?q=", hint: "e.g. r/cooking", top: true },
-    tiktok: { label: "TikTok search", search: "https://www.tiktok.com/search?q=", hint: "e.g. easy breakfast", top: true },
-    // Behind "Show more apps": messages and mail
-    texts: { label: "Messages (texts)", url: "sms:", group: "Messages and mail" },
-    telegram: { label: "Telegram", url: "https://web.telegram.org/", group: "Messages and mail" },
-    groupme: { label: "GroupMe", url: "https://web.groupme.com/chats", group: "Messages and mail" },
-    slack: { label: "Slack", url: "https://app.slack.com/client", group: "Messages and mail" },
-    teams: { label: "Microsoft Teams", url: "https://teams.microsoft.com/", group: "Messages and mail" },
-    linkedin: { label: "LinkedIn messages", url: "https://www.linkedin.com/messaging/", group: "Messages and mail" },
-    gmail: { label: "Gmail", url: "https://mail.google.com/", group: "Messages and mail" },
-    outlook: { label: "Outlook mail", url: "https://outlook.live.com/mail/", group: "Messages and mail" },
-    calendar: { label: "Google Calendar", url: "https://calendar.google.com/", group: "Messages and mail" },
-    // Behind "Show more apps": search, so you land on what you came for instead of a feed
-    google: { label: "Google search", search: "https://www.google.com/search?q=", hint: "e.g. bus times", group: "Search" },
-    maps: { label: "Google Maps", search: "https://www.google.com/maps/search/", hint: "e.g. coffee near me", group: "Search" },
-    xsearch: { label: "X search", search: "https://x.com/search?q=", hint: "e.g. a news topic", group: "Search" },
-    facebook: { label: "Facebook search", search: "https://www.facebook.com/search/top?q=", hint: "e.g. a friend or group", group: "Search" },
-    threads: { label: "Threads search", search: "https://www.threads.net/search?q=", hint: "e.g. a topic", group: "Search" },
-    pinterest: { label: "Pinterest search", search: "https://www.pinterest.com/search/pins/?q=", hint: "e.g. meal prep", group: "Search" },
-    tumblr: { label: "Tumblr search", search: "https://www.tumblr.com/search/", hint: "e.g. a fandom", group: "Search" },
-    twitch: { label: "Twitch search", search: "https://www.twitch.tv/search?term=", hint: "e.g. a streamer", group: "Search" },
-    spotify: { label: "Spotify search", search: "https://open.spotify.com/search/", hint: "e.g. a morning playlist", group: "Search" },
-    ytmusic: { label: "YouTube Music search", search: "https://music.youtube.com/search?q=", hint: "e.g. an artist", group: "Search" },
-    amazon: { label: "Amazon search", search: "https://www.amazon.com/s?k=", hint: "e.g. phone charger", group: "Search" },
-    wikipedia: { label: "Wikipedia search", search: "https://en.wikipedia.org/w/index.php?search=", hint: "e.g. a topic", group: "Search" }
-  };
-  // Your own apps: a name and an address, up to five. Only web addresses are allowed.
-  const MAX_CUSTOM = 5;
-  const cleanUrl = (raw) => {
-    const t = String(raw || "").trim();
-    if (!t || /\s/.test(t)) return null;
-    try {
-      const u = new URL(/^[a-z][a-z0-9+.-]*:/i.test(t) ? t : "https://" + t);
-      const realHost = /^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(u.hostname);
-      return (u.protocol === "https:" || u.protocol === "http:") && realHost ? u.href : null;
-    } catch { return null; }
-  };
-  const customDoors = () => {
-    const c = store.get("setup", {}, isSetup).custom;
-    return Array.isArray(c) ? c.filter((d) => d && typeof d.label === "string" && d.label.trim() && cleanUrl(d.url))
-      .slice(0, MAX_CUSTOM).map((d) => ({ label: d.label.trim().slice(0, 40), url: cleanUrl(d.url) })) : [];
-  };
-  // The apps this person picked, in the order above; null if they haven't been asked yet
-  const chosenDoors = () => {
-    const d = store.get("setup", {}, isSetup).doors;
-    return Array.isArray(d) ? Object.keys(DOORS).filter((k) => d.includes(k)) : null;
-  };
-  const isSetup = (v) => typeof v === "object" && typeof v.done === "boolean";
-  const habit = () => HABITS[store.get("setup", {}, isSetup).habit] || HABITS.other;
   const ua = navigator.userAgent;
   const isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   const isAndroid = /Android/.test(ua);
-  const onHomeScreen = navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
 
-  let setupStep = -1; // -1 = not in setup
-  const saveSetup = (patch) => store.set("setup", { ...store.get("setup", { done: false }, isSetup), ...patch });
-
-  // The alarm time is kept on this phone only, to turn "tomorrow" into a specific plan. It's never sent.
-  const isAlarmTime = (v) => typeof v === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
-  const alarmLabel = (v) => {
-    if (!isAlarmTime(v)) return "";
-    const [h, m] = v.split(":").map(Number);
-    return new Date(2000, 0, 1, h, m).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  };
-  // Setting up after midnight, the next morning is today, not tomorrow
-  const nextMorning = () => (new Date().getHours() < 5 ? "This morning" : "Tomorrow");
-
-  // ---------- tomorrow kit: a note for tomorrow-you, plus a calendar reminder ----------
-  // Most people never add Mornward to their home screen, so nothing reminds them it exists. A calendar event at
-  // their alarm time does, and it carries their note. It's made on the phone and handed to their own calendar.
-  const REMIND_DAYS = 7;
-  const partOfDay = () => { const h = new Date().getHours(); return h >= 4 && h < 12 ? "morning" : h >= 12 && h < 18 ? "afternoon" : "evening"; };
-  const pad2 = (n) => String(n).padStart(2, "0");
-  // The next time the alarm goes off: later today if it hasn't yet, otherwise tomorrow
-  function nextAlarm(v) {
-    const [h, m] = v.split(":").map(Number);
-    const d = new Date();
-    d.setHours(h, m, 0, 0);
-    if (d <= new Date()) d.setDate(d.getDate() + 1);
-    return d;
-  }
-  const icsLocal = (d) => `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}T${pad2(d.getHours())}${pad2(d.getMinutes())}00`;
-  const REMIND_TITLE = "Mornward: alarm off, tap the sun";
-  // The link in the reminder carries this phone's setup in the part after "#", which never leaves the phone.
-  // It matters because a page opened inside Reddit or Instagram keeps its own storage: without it, the
-  // morning would open in the real browser and start over from the welcome screen.
-  function carryState(note, forDay) {
-    const st = store.get("setup", {}, isSetup);
-    const r = { v: 1, i: deviceId(), h: st.habit || null, d: chosenDoors() || [], a: store.get("alarmAt", null, isAlarmTime),
-      f: store.get("from", null), t: TERMS_VERSION, s: store.get("noStats", false) === true ? 1 : 0 };
-    if (note) { r.n = note; r.nd = forDay; r.nw = dayKey(); }
-    return encodeURIComponent(JSON.stringify(r));
-  }
-  const carryLink = (note, forDay) => "https://mornward.app/?via=calendar#r=" + carryState(note, forDay);
-  const reminderText = (note, link) => (note ? `Your note: "${note}"\n\n` : "") + `Open this before anything else: ${link}\nA few minutes, then you're free.`;
-  const icsEsc = (t) => t.replace(/\\/g, "\\\\").replace(/;/g, "\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
-  // Calendar files want lines of at most 75 bytes; longer ones continue on the next line after a space
-  const icsFold = (line) => {
-    const out = []; let cur = "", bytes = 0;
-    for (const ch of line) {
-      const b = new TextEncoder().encode(ch).length;
-      if (bytes + b > (out.length ? 74 : 75)) { out.push(cur); cur = ""; bytes = 0; }
-      cur += ch; bytes += b;
-    }
-    out.push(cur);
-    return out.join("\r\n ");
-  };
-  function calendarFile(v, note, link) {
-    const start = nextAlarm(v);
-    const now = new Date();
-    const stamp = `${now.getUTCFullYear()}${pad2(now.getUTCMonth() + 1)}${pad2(now.getUTCDate())}T${pad2(now.getUTCHours())}${pad2(now.getUTCMinutes())}00Z`;
-    return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Mornward//EN", "CALSCALE:GREGORIAN", "BEGIN:VEVENT",
-      `UID:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}@mornward.app`,
-      `DTSTAMP:${stamp}`, `DTSTART:${icsLocal(start)}`, "DURATION:PT5M", `RRULE:FREQ=DAILY;COUNT=${REMIND_DAYS}`,
-      `SUMMARY:${icsEsc(REMIND_TITLE)}`, `DESCRIPTION:${icsEsc(reminderText(note, link))}`, `URL:${link}`,
-      "BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${icsEsc(note ? note : "Alarm off? Tap the sun.")}`, "TRIGGER:PT0M", "END:VALARM",
-      "END:VEVENT", "END:VCALENDAR"].map(icsFold).join("\r\n") + "\r\n";
-  }
-  function googleCalendarLink(v, note, link) {
-    const start = nextAlarm(v);
-    const end = new Date(start.getTime() + 5 * 60000);
-    const q = new URLSearchParams({ action: "TEMPLATE", text: REMIND_TITLE, details: reminderText(note, link),
-      dates: `${icsLocal(start)}/${icsLocal(end)}`, recur: `RRULE:FREQ=DAILY;COUNT=${REMIND_DAYS}` });
-    try { q.set("ctz", Intl.DateTimeFormat().resolvedOptions().timeZone); } catch {}
-    return "https://calendar.google.com/calendar/render?" + q.toString();
-  }
-  function tomorrowKit() {
-    const at = store.get("alarmAt", "", isAlarmTime) || "07:00";
-    const letter = store.get("letter", null, isLetter);
-    const draft = letter && letter.forDay > dayKey() ? letter.text : "";
-    // Android phones mostly use Google Calendar, which can't open a calendar file; iPhones use Apple's Calendar
-    const alt = isAndroid ? "Use a calendar file" : "Use Google Calendar";
-    return `
-      <div class="remind" id="kit">
-        <h2>A note for tomorrow-you</h2>
-        <label class="field" for="kitNote"><span class="sr-only">Your note</span>
-          <textarea id="kitNote" maxlength="200" placeholder="e.g. Don't open Instagram first. You promised.">${esc(draft)}</textarea></label>
-        <label class="field" for="kitAt">Alarm time
-          <input type="time" id="kitAt" value="${esc(at)}"></label>
-        <p class="small">Reminder for ${REMIND_DAYS} mornings. Only you see it.</p>
-        <div class="btnrow stack">
-          <button class="primary" id="kitGo" type="button">Add to my calendar</button>
-          <button class="quiet" id="kitAlt" type="button">${alt}</button>
-          <button class="quiet" id="kitNoteOnly" type="button">Save note only</button>
-        </div>
-        <p class="saved" id="kitMsg" hidden></p>
-      </div>`;
-  }
-  function wireKit() {
-    const kit = $("#kit");
-    if (!kit) return;
-    const msg = (t) => { $("#kitMsg").textContent = t; $("#kitMsg").hidden = !t; };
-    // Saves the note for the morning the alarm goes off next, and returns what the reminder needs
-    const save = () => {
-      const v = $("#kitAt").value;
-      const note = $("#kitNote").value.trim().slice(0, 200);
-      const forDay = isAlarmTime(v) ? dayKey(nextAlarm(v)) : (new Date().getHours() < 4 ? dayKey() : addDays(dayKey(), 1));
-      if (note) store.set("letter", { text: note, forDay, writtenOn: dayKey() });
-      if (isAlarmTime(v)) store.set("alarmAt", v);
-      return { v, note, forDay };
-    };
-    const remind = (google) => {
-      const { v, note, forDay } = save();
-      if (!isAlarmTime(v)) { msg("Pick your alarm time first."); $("#kitAt").focus(); return; }
-      const link = carryLink(note, forDay);
-      if (google) {
-        window.open(googleCalendarLink(v, note, link), "_blank", "noopener");
-      } else {
-        const a = document.createElement("a");
-        a.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(calendarFile(v, note, link));
-        a.download = "mornward.ics";
-        document.body.appendChild(a); a.click(); a.remove();
-      }
-      msg(google ? `Save the event in Google Calendar. See you at ${alarmLabel(v)}.`
-        : isIOS ? "Tap Add to Calendar on the next screen. If a file downloaded instead, open it from Downloads."
-        : "Open the file to add it to your calendar.");
-    };
-    $("#kitGo").onclick = () => remind(isAndroid);
-    $("#kitAlt").onclick = () => remind(!isAndroid);
-    $("#kitNoteOnly").onclick = () => {
-      const { note } = save();
-      msg(note ? "Saved. It'll be waiting tomorrow morning." : "Write a line first.");
-    };
-  }
-
-  // Setup is one question. The useful-apps picker is offered later, from the end of a morning.
-  const setupScreens = [
-    () => `
-      <p class="eyebrow">Optional · one question</p>
-      <h2>Alarm off. Your thumb goes straight to…</h2>
-      <div class="choices">
-        ${Object.entries(HABITS).map(([k, h]) => `<button type="button" data-habit="${k}"><strong>${esc(h.label)}</strong></button>`).join("")}
-      </div>
-      <div class="btnrow stack">
-        <button class="quiet" id="sSkip" type="button">Skip</button>
-      </div>`,
-    () => {
-      const picked = chosenDoors() || [];
-      const chip = ([k, d]) => `<button type="button" data-door="${k}" aria-pressed="${picked.includes(k)}">${esc(d.label)}</button>`;
-      const entries = Object.entries(DOORS);
-      const more = entries.filter(([, d]) => !d.top);
-      const groups = [...new Set(more.map(([, d]) => d.group))];
-      const openMore = more.some(([k]) => picked.includes(k));
-      return `
-      <p class="eyebrow">The useful parts</p>
-      <h2>Which apps do you still need for something useful?</h2>
-      <p class="small">Tap any, or none. They'll sit behind a 10-second wait at the end of your morning,
-        and open straight to messages or search, not the feed.</p>
-      <div class="chips" role="group" aria-label="Popular apps">${entries.filter(([, d]) => d.top).map(chip).join("")}</div>
-      <details class="doors" id="moreApps"${openMore ? " open" : ""}>
-        <summary>Show more apps</summary>
-        <div class="inner">
-          ${groups.map((g) => `<p class="eyebrow">${esc(g)}</p>
-          <div class="chips" role="group" aria-label="${esc(g)}">${more.filter(([, d]) => d.group === g).map(chip).join("")}</div>`).join("")}
-        </div>
-      </details>
-      <details class="doors" id="ownApps"${customDoors().length ? " open" : ""}>
-        <summary>Add your own</summary>
-        <div class="inner">
-          <p class="small">Anything with a web address: a school portal, a work tool, a group chat link.</p>
-          <div class="chips" id="customList" role="group" aria-label="Your own apps"></div>
-          <label class="field" for="customName">Name
-            <input type="text" id="customName" maxlength="40" placeholder="e.g. School email"></label>
-          <label class="field" for="customUrl">Web address
-            <input type="text" id="customUrl" inputmode="url" autocapitalize="off" placeholder="e.g. mail.myschool.edu"></label>
-          <div><button type="button" id="customAdd">Add it</button></div>
-          <span class="saved" id="customMsg" hidden></span>
-        </div>
-      </details>
-      <p class="small">On a phone, most of these open the app itself, so the feed is still in there. Go in for the one job.</p>
-      <div class="btnrow stack">
-        <button class="primary" id="sNext" type="button">${picked.length || customDoors().length ? "Save my picks" : "None for me"}</button>
-      </div>`;
-    }
-  ];
-
-  function renderSetup() {
-    clearTimers();
+  // The next screen's main button sits where the last one was, so the second half of a sleepy double-tap
+  // would press it. Swallow clicks for a short moment after every screen change.
+  let tapGuardUntil = 0;
+  const guardTaps = () => { tapGuardUntil = performance.now() + 500; };
+  document.addEventListener("click", (e) => {
+    if (performance.now() < tapGuardUntil) { e.preventDefault(); e.stopPropagation(); }
+  }, true);
+  // After a screen change, tell screen readers where they are and move focus to the new heading.
+  // Skipped on the very first screen, so opening the app doesn't jump focus.
+  let screensShown = 0;
+  function show(html, label) {
+    stopBreathing();
     guardTaps();
-    stepsEl.hidden = true;
-    $("#restart").hidden = true;
-    placeSun("Setting up");
-    card.innerHTML = setupScreens[setupStep]();
+    card.innerHTML = html;
     window.scrollTo(0, 0);
-    announceScreen(setupStep === 0 ? "Setup: one question" : "Pick your useful apps");
-    if (setupStep === 0) screenView("view_personalize");
-    // After the first reset, setup is already counted: answering here only personalizes tomorrow
-    const finish = (skipped = false) => {
-      const already = store.get("setup", { done: false }, isSetup).done;
-      saveSetup({ done: true });
-      const st = store.get("setup", {}, isSetup);
-      if (!already) track("setup_done", skipped ? { skipped: true, from: store.get("from", null) }
-        : { habit: st.habit || null, doors: chosenDoors() || [], own_apps: customDoors().length, skipped: false, from: store.get("from", null) });
-      prepareIconStart();
-      renderSeeYou(true);
+    if (screensShown++ === 0) return;
+    $("#announce").textContent = label;
+    const h = card.querySelector("h1");
+    if (h) { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); }
+  }
+
+  // A sun on the horizon (rising) or above it (risen). Decorative.
+  function SUN(risen) {
+    const cy = risen ? 60 : 96, r = risen ? 26 : 40;
+    const rays = [-60, -30, 0, 30, 60].map((a) => {
+      const t = (a - 90) * Math.PI / 180, p = (d) => `${(120 + Math.cos(t) * d).toFixed(1)},${(cy + Math.sin(t) * d).toFixed(1)}`;
+      const [x1, y1] = p(r + 10).split(","), [x2, y2] = p(r + 22).split(",");
+      return `<line class="ray" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+    }).join("");
+    return `<svg class="sunrise" viewBox="0 0 240 104" aria-hidden="true" focusable="false">
+      <defs><clipPath id="sky${risen ? 1 : 0}"><rect width="240" height="95"/></clipPath></defs>
+      <g clip-path="url(#sky${risen ? 1 : 0})"><circle class="disc" cx="120" cy="${cy}" r="${r}"/>${rays}</g>
+      <line class="horizon" x1="8" y1="96" x2="232" y2="96"/>
+    </svg>`;
+  }
+
+  // ---------- 1. Begin ----------
+  function renderBegin() {
+    const agreed = hasAgreed();
+    show(`
+      <p class="wordmark">mornward</p>
+      ${SUN(false)}
+      <h1>Before the scroll,<br>one clear intention.</h1>
+      <p class="body">Three breaths. Choose what matters.<br>Then get on with your morning.</p>
+      <div class="push">
+        <button class="primary" id="begin" type="button">Begin</button>
+        <p class="support center">About one minute</p>
+        ${agreed ? "" : `<div class="consent" id="consent">
+          <p>Free, no account. What you write stays on this phone. By tapping Begin you agree to the
+            <a href="terms.html" target="_blank" rel="noopener">beta terms</a>, including anonymous usage counts.</p>
+          <details><summary>What's counted</summary>${COUNTED}<p><b>Never sent:</b></p>${NOT_SENT}
+            <p>Stored on Supabase in the United States and deleted within 90 days after the beta. You can turn the counts
+            off after your first routine. Questions: <a href="mailto:${CONTACT}">${CONTACT}</a></p></details>
+        </div>`}
+        ${earlierSection(dayKey()) ? `<div class="more">${earlierSection(dayKey())}</div>` : ""}
+      </div>`, "Mornward. Before the scroll, one clear intention.");
+    $("#begin").onclick = begin;
+  }
+  function begin() {
+    if (!hasAgreed()) store.set("agreed", { version: TERMS_VERSION, on: dayKey(), how: "begin" });
+    const today = dayKey();
+    const first = store.get("everStarted", false) !== true;
+    const run = routine && routine.day === today ? routine.run + 1 : 1;
+    routine = { day: today, run, phase: "breathe", breaths: 0, breathing: null, intention: null, startedAt: Date.now() };
+    saveRoutine();
+    store.set("everStarted", true);
+    emit("routine_started", { ...(viaCalendar ? { via: "calendar" } : {}), ...(first ? { first: true, from: store.get("from", null) } : {}) });
+    renderBreathe(false);
+  }
+
+  // ---------- 2. Breathe ----------
+  // The timer keeps its remaining time, so Pause stops exactly where the breath was.
+  let br = null; // { phase: "in"|"out", left, at, timer, paused }
+  function stopBreathing() {
+    if (br && br.timer) clearTimeout(br.timer);
+    br = null;
+  }
+  const breathLabel = () => `Breath ${Math.min(routine.breaths + 1, BREATH.count)} of ${BREATH.count}`;
+  function renderBreathe(paused) {
+    show(`
+      <p class="breathcount" id="bcount">${breathLabel()}</p>
+      <h1 id="bword">${paused ? "Paused" : "Breathe in"}</h1>
+      <p class="body">At your own pace</p>
+      <div class="orbwrap"><div class="orb" id="orb" aria-hidden="true"></div></div>
+      <p class="sr-only" id="bstatus" role="status"></p>
+      <div class="push">
+        <button class="primary" id="bpause" type="button">${paused ? "Resume" : "Pause"}</button>
+        <button class="link" id="bskip" type="button">Skip breathing</button>
+      </div>`, `Breathing. ${breathLabel()}.`);
+    br = { phase: "in", left: BREATH.inMs, at: 0, timer: 0, paused: true };
+    $("#bpause").onclick = () => (br && br.paused ? resumeBreathing() : pauseBreathing());
+    $("#bskip").onclick = () => {
+      const breathsDone = routine.breaths;
+      routine.breathing = "skipped";
+      routine.phase = "choose";
+      saveRoutine();
+      emit("breathing_skipped", { breaths_done: breathsDone });
+      renderChoose();
     };
-    const on = (id, fn) => { const el = $("#" + id); if (el) el.onclick = fn; };
-    on("sSkip", () => finish(true));
-    card.querySelectorAll("[data-habit]").forEach((b) => (b.onclick = () => { saveSetup({ habit: b.dataset.habit }); finish(); }));
-    if (setupStep === 1) {
-      const chips = [...card.querySelectorAll("[data-door]")];
-      const picks = () => chips.filter((c) => c.getAttribute("aria-pressed") === "true").map((c) => c.dataset.door);
-      let custom = customDoors();
-      const label = () => { $("#sNext").textContent = picks().length || custom.length ? "Save my picks" : "None for me"; };
-      chips.forEach((c) => (c.onclick = () => {
-        c.setAttribute("aria-pressed", String(c.getAttribute("aria-pressed") !== "true"));
-        label();
-      }));
-      const msg = (t) => { $("#customMsg").textContent = t; $("#customMsg").hidden = !t; };
-      const drawCustom = () => {
-        $("#customList").innerHTML = custom.map((d, i) =>
-          `<button type="button" data-custom="${i}" aria-pressed="true" aria-label="Remove ${esc(d.label)}">${esc(d.label)} ✕</button>`).join("");
-        $("#customList").querySelectorAll("[data-custom]").forEach((b) => (b.onclick = () => {
-          custom.splice(Number(b.dataset.custom), 1); drawCustom(); label(); msg("");
-        }));
-        $("#customAdd").disabled = custom.length >= MAX_CUSTOM;
-      };
-      drawCustom();
-      $("#customAdd").onclick = () => {
-        const name = $("#customName").value.trim();
-        const url = cleanUrl($("#customUrl").value);
-        if (!name) { msg("Give it a name first."); $("#customName").focus(); return; }
-        if (!url) { msg("That address doesn't look right. Try something like mail.myschool.edu"); $("#customUrl").focus(); return; }
-        custom.push({ label: name.slice(0, 40), url });
-        $("#customName").value = ""; $("#customUrl").value = "";
-        drawCustom(); label(); msg(`Added ${name.slice(0, 40)}.`);
-      };
-      // Picked from the end of a morning: save, then back to that screen (setup itself is already done)
-      on("sNext", () => {
-        saveSetup({ doors: picks(), custom });
-        setupStep = -1;
-        stepsEl.hidden = false;
-        render();
-      });
+    if (paused) $("#bstatus").textContent = "Paused.";
+    else resumeBreathing();
+  }
+  function setPhase(phase, ms) {
+    const orb = $("#orb");
+    br.phase = phase; br.left = ms; br.at = performance.now();
+    $("#bword").textContent = phase === "in" ? "Breathe in" : "Breathe out";
+    if (orb) {
+      orb.style.transform = "";
+      orb.style.transitionDuration = ms + "ms";
+      orb.dataset.phase = phase;
+    }
+    br.timer = setTimeout(phaseDone, ms);
+  }
+  function phaseDone() {
+    if (!br) return;
+    if (br.phase === "in") { setPhase("out", BREATH.outMs); return; }
+    routine.breaths += 1;
+    saveRoutine();
+    if (routine.breaths >= BREATH.count) {
+      routine.breathing = "completed";
+      routine.phase = "choose";
+      saveRoutine();
+      emit("breathing_completed");
+      renderChoose();
+      return;
+    }
+    // Screen readers hear the breath number once per breath, not every in and out
+    $("#bcount").textContent = breathLabel();
+    $("#bstatus").textContent = breathLabel();
+    setPhase("in", BREATH.inMs);
+  }
+  function pauseBreathing() {
+    if (!br || br.paused) return;
+    clearTimeout(br.timer);
+    br.left = Math.max(0, br.left - (performance.now() - br.at));
+    br.paused = true;
+    const orb = $("#orb");
+    if (orb) { orb.style.transform = getComputedStyle(orb).transform; orb.style.transitionDuration = "0ms"; }
+    $("#bword").textContent = "Paused";
+    $("#bpause").textContent = "Resume";
+    $("#bstatus").textContent = "Paused.";
+  }
+  function resumeBreathing() {
+    if (!br || !br.paused) return;
+    br.paused = false;
+    $("#bpause").textContent = "Pause";
+    $("#bstatus").textContent = "";
+    const orb = $("#orb");
+    if (orb && orb.dataset.phase) {
+      // Carry on with the same breath from where it stopped
+      $("#bword").textContent = br.phase === "in" ? "Breathe in" : "Breathe out";
+      void orb.offsetWidth;
+      orb.style.transitionDuration = br.left + "ms";
+      orb.style.transform = "";
+      br.at = performance.now();
+      br.timer = setTimeout(phaseDone, br.left);
+    } else {
+      // First start: draw the circle small, then let it grow
+      if (orb) void orb.offsetWidth;
+      setPhase("in", BREATH.inMs);
     }
   }
-  function startSetup(at = 0) { setupStep = at; renderSetup(); }
+  // Pause when the phone locks or another app comes to the front
+  document.addEventListener("visibilitychange", () => { if (document.hidden) pauseBreathing(); });
 
-  // ---------- welcome ----------
-  // What a new visitor sees first: what Mornward is, before any terms. Nothing is stored or sent here.
-  const LOGO = `<svg viewBox="0 0 1024 1024" aria-hidden="true"><rect width="1024" height="1024" fill="#1b1f4a"/>
-    <defs><radialGradient id="wsun" cx=".45" cy=".4"><stop offset="0" stop-color="#fff6e2"/><stop offset=".55" stop-color="#ffc56e"/><stop offset="1" stop-color="#f08c3c"/></radialGradient>
-    <clipPath id="wcut"><rect width="1024" height="560"/></clipPath></defs>
-    <circle cx="512" cy="512" r="300" fill="url(#wsun)" clip-path="url(#wcut)"/>
-    ${[[252, 610, 520, .9], [312, 680, 400, .7], [372, 750, 280, .5], [432, 820, 160, .3]].map(([x, y, w, o]) =>
-      `<rect x="${x}" y="${y}" width="${w}" height="26" rx="13" fill="#f5b25c" opacity="${o}"/>`).join("")}</svg>`;
-  // A sunrise with the alarm just switched off at 7:02
-  const WELCOME_ART = `<svg class="wart" viewBox="0 0 360 150" aria-hidden="true">
-    <defs>
-      <radialGradient id="wglow"><stop offset="0" stop-color="#ffd48a" stop-opacity=".5"/><stop offset="1" stop-color="#f5a04a" stop-opacity="0"/></radialGradient>
-      <radialGradient id="wsun2" cx=".45" cy=".4"><stop offset="0" stop-color="#fff6e2"/><stop offset=".55" stop-color="#ffc56e"/><stop offset="1" stop-color="#f08c3c"/></radialGradient>
-      <clipPath id="wsky"><rect width="360" height="96"/></clipPath>
-    </defs>
-    <g clip-path="url(#wsky)"><circle cx="180" cy="96" r="120" fill="url(#wglow)"/><circle cx="180" cy="96" r="46" fill="url(#wsun2)"/></g>
-    <line x1="0" y1="96.5" x2="360" y2="96.5" stroke="#f5b25c" stroke-opacity=".35"/>
-    <g fill="#f5b25c"><rect x="124" y="108" width="112" height="6" rx="3" opacity=".8"/><rect x="142" y="122" width="76" height="6" rx="3" opacity=".55"/><rect x="160" y="136" width="40" height="6" rx="3" opacity=".3"/></g>
-    <g fill="#dfe3ff"><circle cx="38" cy="22" r="1.6" opacity=".7"/><circle cx="92" cy="48" r="1.2" opacity=".5"/><circle cx="300" cy="18" r="1.4" opacity=".6"/><circle cx="330" cy="58" r="1.1" opacity=".45"/><circle cx="262" cy="40" r="1" opacity=".4"/></g>
-    <text x="180" y="30" text-anchor="middle" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="11" letter-spacing="2" fill="#9aa0c8">7:02 · ALARM OFF</text>
-  </svg>`;
-  let welcomed = false;
-  // ---------- adding Mornward to the home screen: state ----------
+  // ---------- 3. Choose ----------
+  // editing: changing (or adding) an intention after the routine; `back` draws the screen to return to
+  function renderChoose(editing = false, back = null) {
+    const day = routine.day;
+    const saved = intentionFor(day);
+    const draft = store.get(draftKey(day), null, isText);
+    const value = draft !== null && draft.trim() ? draft : saved;
+    show(`
+      <h1>What matters<br>this morning?</h1>
+      <p class="body">Choose one small thing.</p>
+      <div class="field">
+        <label for="intent">My intention</label>
+        <textarea id="intent" rows="1" maxlength="${MAX_INTENTION}" enterkeyhint="done" autocomplete="off"
+          autocapitalize="sentences" placeholder="Something small is enough" aria-describedby="imsg">${esc(value)}</textarea>
+        <p class="msg" id="imsg" role="status"></p>
+      </div>
+      <div class="actions">
+        <button class="primary" id="isave" type="button">Save my intention</button>
+        <button class="link" id="iskip" type="button">${editing ? "Keep it as it was" : "Skip for today"}</button>
+      </div>`, editing ? "Edit your intention" : "What matters this morning?");
+    const field = $("#intent");
+    const msg = (t, err = false) => { $("#imsg").textContent = t; $("#imsg").className = "msg" + (err ? " err" : ""); };
+    const grow = () => { field.style.height = "auto"; field.style.height = field.scrollHeight + 4 + "px"; };
+    grow();
+    field.addEventListener("input", () => {
+      grow();
+      // Drafts are kept as you type, so a reload, a call or a closed tab doesn't lose them
+      const kept = store.set(draftKey(day), field.value);
+      if (!kept) msg("This phone isn't saving drafts right now. Keep this page open.", true);
+      else if ($("#imsg").classList.contains("err")) msg("");
+    });
+    field.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); save(); } });
+    // Keep the field and its button above the keyboard once it opens
+    field.addEventListener("focus", () => setTimeout(() => { const b = $("#isave"); if (b) b.scrollIntoView({ block: "nearest" }); }, 350));
+    if (window.visualViewport) {
+      const keep = () => { if (document.activeElement === field) { const b = $("#isave"); if (b) b.scrollIntoView({ block: "nearest" }); } };
+      window.visualViewport.addEventListener("resize", keep);
+    }
+    const save = () => {
+      const text = cleanIntention(field.value);
+      if (!text) { msg("Write a few words first, or skip for today.", true); field.focus(); return; }
+      if (!saveIntention(day, text)) {
+        store.set(draftKey(day), field.value);
+        msg("Couldn't save it on this phone. Your words are still here. Try again.", true);
+        return;
+      }
+      store.del(draftKey(day));
+      const firstSave = routine.intention !== "saved";
+      routine.intention = "saved";
+      if (routine.phase === "choose") routine.phase = "finish";
+      saveRoutine();
+      if (firstSave) {
+        emit("intention_saved");
+        if (routine.breathing === "completed") emit("core_routine_completed");
+      }
+      if (editing && back) back("Saved.");
+      else renderFinish();
+    };
+    $("#isave").onclick = save;
+    $("#iskip").onclick = () => {
+      if (editing && back) { store.del(draftKey(day)); back(""); return; }
+      // Skipping never removes something already written today
+      if (routine.intention !== "saved") routine.intention = saved ? "saved" : "skipped";
+      routine.phase = "finish";
+      saveRoutine();
+      if (!saved) emit("intention_skipped");
+      renderFinish();
+    };
+  }
+
+  // ---------- 4. Finish ----------
+  function intentionBlock(text, label) {
+    return `<div class="intention">
+        <div class="row"><span class="support">${label}</span>
+          <button class="link" id="iedit" type="button" aria-label="Edit your intention">Edit</button></div>
+        <p class="text" id="itext">${esc(text)}</p>
+      </div>`;
+  }
+  function renderFinish(note = "") {
+    const text = intentionFor(routine.day);
+    show(`
+      ${SUN(true)}
+      <h1>You're ready.</h1>
+      ${text ? `${intentionBlock(text, "Your intention")}
+        <p class="body">Take it into your day.</p>`
+      : `<p class="body">No intention today. You can still add one later.</p>
+        <button class="link start" id="iadd" type="button">Add an intention</button>`}
+      <p class="msg ok" role="status">${esc(note)}</p>
+      <div class="push">
+        <button class="primary" id="finish" type="button">Finish</button>
+      </div>`, "You're ready.");
+    emit("routine_finished", { breathing: routine.breathing || "skipped", intention: text ? "saved" : "skipped",
+      seconds: Math.round((Date.now() - routine.startedAt) / 1000) });
+    ($("#iedit") || $("#iadd")).onclick = () => renderChoose(true, renderFinish);
+    $("#finish").onclick = () => {
+      routine.phase = "done";
+      saveRoutine();
+      renderToday();
+    };
+  }
+
+  // ---------- completed for today (also what a same-day reopen shows) ----------
+  function renderToday(note = "") {
+    if (!routine || routine.day !== dayKey()) { renderBegin(); return; }
+    const text = intentionFor(routine.day);
+    show(`
+      <p class="wordmark">mornward</p>
+      <p class="support">${esc(fmtDay(routine.day))}</p>
+      <h1>${text ? "Today's intention" : "Done for today"}</h1>
+      ${text ? `${intentionBlock(text, "Today")}<p class="body">Take it into your day.</p>`
+      : `<p class="body">You did the routine without an intention today.</p>
+        <button class="link start" id="iadd" type="button">Add an intention</button>`}
+      <p class="msg ok" role="status">${esc(note)}</p>
+      <button class="link start" id="again" type="button">Do the routine again</button>
+      <div class="more">
+        ${earlierSection(routine.day)}
+        ${homeSection()}
+        ${reminderSection()}
+        ${privacySection()}
+      </div>`, text ? "Today's intention" : "Done for today");
+    ($("#iedit") || $("#iadd")).onclick = () => renderChoose(true, renderToday);
+    $("#again").onclick = begin;
+    wireHome();
+    wireReminder();
+    wirePrivacy();
+  }
+
+  // ---------- earlier intentions: always dated, never shown as today's ----------
+  function earlierEntries(today) {
+    const byDay = new Map();
+    // Real ones first, so a practice entry never replaces one from the same day
+    const keys = store.keys().sort((a, b) => a.startsWith("practice-") - b.startsWith("practice-"));
+    for (const k of keys) {
+      const m = k.match(/^(practice-)?intent:(\d{4}-\d{2}-\d{2})$/);
+      if (!m || m[2] === today || byDay.has(m[2])) continue;
+      const t = store.get(k, "", isText).trim();
+      if (t) byDay.set(m[2], t);
+    }
+    return [...byDay].sort((a, b) => (a[0] < b[0] ? 1 : -1)).slice(0, 60);
+  }
+  function earlierSection(today) {
+    const items = earlierEntries(today);
+    const letter = store.get("letter", null, isLetter);
+    const note = letter && letter.text.trim() ? letter : null;
+    if (!items.length && !note) return "";
+    return `<details class="section" id="earlier">
+        <summary>Earlier intentions</summary>
+        <div class="inner"><ul class="history">
+          ${items.map(([d, t]) => `<li><span class="when">${esc(fmtDay(d))}</span><span class="what">${esc(t)}</span></li>`).join("")}
+          ${note ? `<li><span class="when">A note you wrote${isDay(note.writtenOn) ? " on " + esc(fmtDay(note.writtenOn)) : ""}</span><span class="what">${esc(note.text)}</span></li>` : ""}
+        </ul></div>
+      </details>`;
+  }
+
+  // ---------- adding Mornward to the home screen (on the completed screen only, never on Finish) ----------
   // Browsers that support it (Chrome on Android, mostly) fire beforeinstallprompt, sometimes seconds after load.
   // The saved event can be shown once, only from a tap. "Accepted" means the person said yes to the prompt;
   // only appinstalled (or opening from the icon) confirms it's actually on the home screen.
-  let installPrompt = null;     // the saved, unused prompt
-  let installBusy = false;      // a prompt is open: ignore more taps
-  let installAccepted = false;  // said yes; waiting for the browser to confirm
-  let installNote = "";         // what happened last time (dismissed, failed), shown next to the steps
-  let installed = false;        // confirmed by the browser
+  let installPrompt = null, installBusy = false, installAccepted = false, installNote = "", installed = false, installOpen = false;
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     if (installed) return;
     installPrompt = e;
-    refreshInstallPanels();
+    refreshHome();
   });
   window.addEventListener("appinstalled", () => {
     installed = true; installPrompt = null; installAccepted = false; installNote = "";
-    refreshInstallPanels();
+    refreshHome();
   });
-  // Opened from the calendar reminder. If this browser has never seen Mornward (the setup happened inside
-  // another app's browser), take the setup the link carries, so the morning starts instead of the welcome.
-  const viaCalendar = new URLSearchParams(location.search).get("via") === "calendar";
-  (() => {
-    const m = location.hash.match(/^#r=(.+)$/);
-    if (!m) return;
-    try { history.replaceState(null, "", location.pathname + location.search); } catch {}
-    if (store.get("setup", { done: false }, isSetup).done) return;
-    let r;
-    try { r = JSON.parse(decodeURIComponent(m[1])); } catch { return; }
-    if (!r || r.v !== 1 || typeof r !== "object") return;
-    if (typeof r.i === "string" && /^[0-9a-f-]{36}$/.test(r.i)) store.set("deviceId", r.i);
-    if (r.t === TERMS_VERSION) store.set("agreed", { version: TERMS_VERSION, on: dayKey() });
-    if (r.s === 1) store.set("noStats", true);
-    const doors = Array.isArray(r.d) ? r.d.filter((k) => typeof k === "string" && DOORS[k]) : [];
-    store.set("setup", { done: true, habit: typeof r.h === "string" && HABITS[r.h] ? r.h : undefined, doors });
-    if (isAlarmTime(r.a)) store.set("alarmAt", r.a);
-    if (typeof r.f === "string" && /^[a-z0-9-]{1,20}$/.test(r.f)) store.set("from", r.f);
-    if (typeof r.n === "string" && r.n.trim() && /^\d{4}-\d{2}-\d{2}$/.test(r.nd || "") && !store.get("letter", null, isLetter))
-      store.set("letter", { text: r.n.slice(0, 200), forDay: r.nd, writtenOn: /^\d{4}-\d{2}-\d{2}$/.test(r.nw || "") ? r.nw : r.nd });
-  })();
-  // Which link someone came from (?from=reddit). Kept on the phone and sent once with setup, only if stats are on.
-  // iPhone home-screen apps don't share Safari's storage, so the icon's start address carries it across too.
-  const linkFrom = (() => {
-    const v = (new URLSearchParams(location.search).get("from") || "").toLowerCase();
-    return /^[a-z0-9-]{1,20}$/.test(v) ? v : null;
-  })();
-  if (linkFrom && store.get("from", null) === null) store.set("from", linkFrom);
-  // On iPhone the home-screen icon starts with empty storage. Point it at an address that carries the link
-  // source and, once set up, the setup itself (after "#", which never reaches a server), so the icon opens
-  // the morning instead of the welcome. Safari uses the manifest's start address if it reads it, otherwise
-  // the page's own address, so both are updated.
-  function prepareIconStart(updateAddress = false) {
-    if (!isIOS || onHomeScreen) return;
-    const from = store.get("from", null);
-    const setUp = hasAgreed() && store.get("setup", { done: false }, isSetup).done;
-    if (!from && !setUp) return;
-    const rel = "./" + (from ? "?from=" + encodeURIComponent(from) : "") + (setUp ? "#r=" + carryState() : "");
-    const abs = (u) => new URL(u, location.href).href;
-    const m = { name: "Mornward", short_name: "Mornward", start_url: abs(rel), scope: abs("./"),
-      display: "standalone", background_color: "#10143a", theme_color: "#0a0d22",
-      icons: [{ src: abs("icons/icon-192.png"), sizes: "192x192", type: "image/png" },
-              { src: abs("icons/icon-512.png"), sizes: "512x512", type: "image/png" }] };
-    const link = document.querySelector('link[rel="manifest"]');
-    if (link) link.href = "data:application/manifest+json," + encodeURIComponent(JSON.stringify(m));
-    if (setUp && updateAddress) { try { history.replaceState(null, "", rel); } catch {} }
-  }
-  prepareIconStart();
-
-  const IC_SHARE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg>`;
-
-  // On a computer: Mornward is for the phone in your hand at 7am, so point people there first
-  const QR_SVG = `<svg class="qr" viewBox="0 0 27 27" shape-rendering="crispEdges" aria-hidden="true"><rect width="27" height="27" fill="#f4efe6"/><path fill="#10143a" d="M1 1h7v1h-7zM10 1h3v1h-3zM15 1h2v1h-2zM19 1h7v1h-7zM1 2h1v1h-1zM7 2h1v1h-1zM9 2h6v1h-6zM16 2h1v1h-1zM19 2h1v1h-1zM25 2h1v1h-1zM1 3h1v1h-1zM3 3h3v1h-3zM7 3h1v1h-1zM10 3h3v1h-3zM16 3h1v1h-1zM19 3h1v1h-1zM21 3h3v1h-3zM25 3h1v1h-1zM1 4h1v1h-1zM3 4h3v1h-3zM7 4h1v1h-1zM13 4h1v1h-1zM15 4h1v1h-1zM19 4h1v1h-1zM21 4h3v1h-3zM25 4h1v1h-1zM1 5h1v1h-1zM3 5h3v1h-3zM7 5h1v1h-1zM9 5h2v1h-2zM12 5h1v1h-1zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h3v1h-3zM25 5h1v1h-1zM1 6h1v1h-1zM7 6h1v1h-1zM10 6h3v1h-3zM14 6h1v1h-1zM16 6h1v1h-1zM19 6h1v1h-1zM25 6h1v1h-1zM1 7h7v1h-7zM9 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM17 7h1v1h-1zM19 7h7v1h-7zM13 8h2v1h-2zM16 8h2v1h-2zM1 9h1v1h-1zM3 9h1v1h-1zM5 9h1v1h-1zM7 9h1v1h-1zM11 9h2v1h-2zM14 9h1v1h-1zM17 9h1v1h-1zM21 9h1v1h-1zM24 9h1v1h-1zM2 10h4v1h-4zM8 10h8v1h-8zM17 10h3v1h-3zM25 10h1v1h-1zM4 11h6v1h-6zM12 11h2v1h-2zM15 11h1v1h-1zM17 11h2v1h-2zM20 11h2v1h-2zM23 11h3v1h-3zM2 12h1v1h-1zM5 12h2v1h-2zM8 12h1v1h-1zM11 12h4v1h-4zM19 12h1v1h-1zM21 12h1v1h-1zM24 12h1v1h-1zM2 13h1v1h-1zM5 13h4v1h-4zM10 13h1v1h-1zM13 13h3v1h-3zM18 13h2v1h-2zM22 13h1v1h-1zM24 13h2v1h-2zM3 14h1v1h-1zM9 14h2v1h-2zM12 14h2v1h-2zM17 14h1v1h-1zM19 14h1v1h-1zM22 14h1v1h-1zM25 14h1v1h-1zM1 15h1v1h-1zM4 15h1v1h-1zM6 15h2v1h-2zM10 15h1v1h-1zM12 15h3v1h-3zM19 15h2v1h-2zM23 15h3v1h-3zM2 16h1v1h-1zM4 16h2v1h-2zM10 16h2v1h-2zM13 16h4v1h-4zM18 16h2v1h-2zM21 16h1v1h-1zM24 16h1v1h-1zM1 17h1v1h-1zM6 17h3v1h-3zM10 17h3v1h-3zM15 17h1v1h-1zM17 17h6v1h-6zM9 18h2v1h-2zM12 18h1v1h-1zM16 18h2v1h-2zM21 18h2v1h-2zM24 18h2v1h-2zM1 19h7v1h-7zM10 19h2v1h-2zM14 19h1v1h-1zM16 19h2v1h-2zM19 19h1v1h-1zM21 19h2v1h-2zM24 19h2v1h-2zM1 20h1v1h-1zM7 20h1v1h-1zM10 20h1v1h-1zM12 20h1v1h-1zM17 20h1v1h-1zM21 20h2v1h-2zM1 21h1v1h-1zM3 21h3v1h-3zM7 21h1v1h-1zM9 21h3v1h-3zM13 21h1v1h-1zM17 21h6v1h-6zM24 21h2v1h-2zM1 22h1v1h-1zM3 22h3v1h-3zM7 22h1v1h-1zM12 22h3v1h-3zM17 22h1v1h-1zM20 22h4v1h-4zM1 23h1v1h-1zM3 23h3v1h-3zM7 23h1v1h-1zM9 23h5v1h-5zM15 23h3v1h-3zM21 23h1v1h-1zM25 23h1v1h-1zM1 24h1v1h-1zM7 24h1v1h-1zM10 24h2v1h-2zM13 24h3v1h-3zM17 24h1v1h-1zM19 24h1v1h-1zM21 24h2v1h-2zM24 24h1v1h-1zM1 25h7v1h-7zM9 25h1v1h-1zM12 25h1v1h-1zM15 25h3v1h-3zM20 25h1v1h-1zM24 25h2v1h-2z"/></svg>`;
-  const onComputer = () => !isIOS && !isAndroid && !onHomeScreen;
-  function renderPhoneFirst() {
-    clearTimers();
-    document.body.classList.add("welcoming");
-    card.innerHTML = `
-      <div class="welcome card" id="phoneScreen">
-        <p class="wbrand">${LOGO}<span>MORNWARD</span></p>
-        <div class="wmid">
-          <h1>Mornward lives on your <em>phone</em>.</h1>
-          <p class="wlede">It's for the moment your alarm goes off, so it belongs on your home screen. Scan this with your phone's camera.</p>
-          <div class="qrbox">${QR_SVG}</div>
-          <p class="qrcap">or open <b>mornward.app</b> on your phone</p>
-        </div>
-        <div class="wbottom">
-          <button class="wlater" id="phoneLater" type="button">Continue on this computer anyway</button>
-        </div>
-      </div>`;
-    window.scrollTo(0, 0);
-    announceScreen("Open Mornward on your phone");
-    screenView("view_phone_first");
-    $("#phoneLater").onclick = () => { welcomed = true; boot(); };
-  }
-
-  // ---------- which onboarding screens a new person reaches (screen_view) ----------
-  // Only for people who weren't set up when the page opened, and each screen at most once per visit.
-  // Before the terms are agreed nothing is sent: those views wait here and go only if the person agrees.
-  const onboarding = !store.get("setup", { done: false }, isSetup).done;
-  const seenScreens = new Set();
-  let earlyViews = [];
-  function screenView(name) {
-    if (!onboarding || seenScreens.has(name)) return;
-    seenScreens.add(name);
-    if (hasAgreed()) track("screen_view", { screen: name });
-    else earlyViews.push(name);
-  }
-  function sendEarlyViews() {
-    const views = earlyViews;
-    earlyViews = [];
-    views.forEach((name) => track("screen_view", { screen: name }));
-  }
-
-  // ---------- adding Mornward to the home screen: one panel for every screen ----------
-  // What to show depends first on what the browser supports (a one-tap prompt), then on which browser this is.
-  // Browser detection is best effort: Instagram, Facebook, TikTok and others name themselves; Reddit often
-  // doesn't, so every panel also has a "Can't find this option?" fallback with a copy-link button.
+  // Browser detection is best effort: Instagram, Facebook, TikTok and others name themselves; Reddit often doesn't
   const inAppBrowser = /Instagram|FBAN|FBAV|FB_IAB|TikTok|musical_ly|Snapchat|Line\/|Twitter|LinkedInApp|reddit/i.test(ua);
   const iosVersion = (() => { const m = ua.match(/Version\/(\d+)/); return m ? Number(m[1]) : 0; })();
   function browserKind() {
@@ -2055,9 +753,9 @@
     }
     return "computer";
   }
+  const IC_SHARE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg>`;
   const share = `<span class="ic" role="img" aria-label="Share">${IC_SHARE}</span>`;
   function installStepsList() {
-    const k = browserKind();
     const main = isIOS ? "Safari" : "Chrome";
     const steps = {
       "inapp": [`Tap <b>⋯</b> or <b>⋮</b> in this app's corner`, `Choose <b>Open in browser</b> (or <b>Open in ${main}</b>)`, `Add it to your home screen from there`],
@@ -2071,49 +769,38 @@
       "android-firefox": [`Tap <b>⋮</b>`, `Look for <b>Add to Home screen</b> or <b>Install</b>`],
       "android-other": [`Open your browser's menu`, `Look for <b>Add to Home screen</b> or <b>Install</b>`],
       "computer": [`Open <b>mornward.app</b> on your phone`, `Add it to the home screen there`],
-    }[k];
+    }[browserKind()];
     return `<ol class="isteps">${steps.map((t) => `<li>${t}</li>`).join("")}</ol>`;
-  }
-  // The address to copy: set-up people get one that carries their setup, so another browser doesn't start over
-  function shareUrl() {
-    const from = store.get("from", null);
-    const setUp = hasAgreed() && store.get("setup", { done: false }, isSetup).done;
-    return "https://mornward.app/" + (from ? "?from=" + encodeURIComponent(from) : "") + (setUp ? "#r=" + carryState() : "");
   }
   const installState = () => (onHomeScreen ? "home" : installed ? "installed" : installAccepted ? "accepted"
     : installPrompt ? "prompt" : "manual");
-  // ctx: "welcome" (a small secondary box) or "done" (the main ask after the first reset)
-  let installOpen = {};
-  function installPanelBody(ctx) {
+  function homeBody() {
     const st = installState();
-    const status = (t) => `<p class="istatus" role="status">${t}</p>`;
-    if (st === "home" || st === "installed") return status(`<b>✓ Mornward is on your home screen.</b>${ctx === "done" ? " Open it from there tomorrow." : ""}`);
-    if (st === "accepted") return status(`<b>Adding it now…</b> Look for the Mornward sun on your home screen.`);
-    if (st === "prompt") {
-      return `<button class="${ctx === "done" ? "primary" : "wpingo"}" data-install-go type="button">Add to home screen</button>
-        ${installNote ? status(installNote) : ""}`;
-    }
-    const open = !!installOpen[ctx];
-    const pid = `isteps-${ctx}`;
-    return `${installNote ? status(installNote) : ""}
-      <button class="${ctx === "done" ? "primary" : "wpingo"}" data-install-how aria-expanded="${open}" aria-controls="${pid}" type="button">${ctx === "done" ? "Show me how to add it" : "Add to home screen first"}</button>
-      <div id="${pid}"${open ? "" : " hidden"}>
+    if (st === "home" || st === "installed") return `<p role="status">Mornward is on your home screen.</p>`;
+    if (st === "accepted") return `<p role="status">Adding it now. Look for the Mornward sun on your home screen.</p>`;
+    const note = installNote ? `<p role="status">${installNote}</p>` : "";
+    const intro = `<p>Open it from an icon tomorrow instead of looking for this page.</p>${note}`;
+    if (st === "prompt") return `${intro}<button class="secondary" data-install-go type="button">Add to home screen</button>`;
+    return `${intro}
+      <button class="secondary" data-install-how aria-expanded="${installOpen}" aria-controls="isteps" type="button">Show me how</button>
+      <div id="isteps"${installOpen ? "" : " hidden"}>
         ${installStepsList()}
-        <details class="cantfind">
-          <summary>Can't find this option?</summary>
-          <p>You may be inside another app's browser, like Reddit's or Instagram's. Open this page in your phone's main browser (Safari on iPhone, Chrome on Android), then try again.</p>
-          <button type="button" data-copy-link>Copy link</button>
-          <input type="text" readonly aria-label="Link to Mornward" data-link-field hidden>
-          <span class="saved" data-copy-msg role="status"></span>
-        </details>
+        <p style="margin-top:10px">Can't find it? You may be inside another app's browser. Open this page in Safari (iPhone) or Chrome (Android).</p>
+        <button class="link start" type="button" data-copy-link>Copy link</button>
+        <input type="text" readonly aria-label="Link to Mornward" data-link-field hidden>
+        <p role="status" data-copy-msg></p>
       </div>`;
   }
-  function installPanel(ctx) {
-    if (ctx === "welcome" && (onHomeScreen || onComputer())) return "";
-    return `<div class="instbox" data-install="${ctx}">${installPanelBody(ctx)}</div>`;
+  const homeSection = () => `<details class="section" id="homeSec"><summary>Add to home screen</summary><div class="inner" id="homeBox">${homeBody()}</div></details>`;
+  function refreshHome() {
+    const box = $("#homeBox");
+    if (!box) return;
+    box.innerHTML = homeBody();
+    wireHome();
   }
-  function wireInstallPanel(box) {
-    const ctx = box.dataset.install;
+  function wireHome() {
+    const box = $("#homeBox");
+    if (!box) return;
     const go = box.querySelector("[data-install-go]");
     if (go) go.onclick = async () => {
       if (installBusy || !installPrompt) return;
@@ -2121,25 +808,23 @@
       go.disabled = true;
       const ask = installPrompt;
       installPrompt = null; // a prompt can only be shown once
-      screenView(ctx === "done" ? "view_install_prompt" : "view_welcome_install_prompt");
       try {
         await ask.prompt();
         const choice = await ask.userChoice;
         if (choice && choice.outcome === "accepted") { installAccepted = true; installNote = ""; }
-        else installNote = "No problem. You can add it later from your browser's menu:";
+        else { installNote = "No problem. You can add it later from your browser's menu:"; installOpen = true; }
       } catch {
-        installNote = "That didn't open. You can add it from your browser's menu instead:";
+        installNote = "That didn't open. You can add it from your browser's menu instead:"; installOpen = true;
       }
       installBusy = false;
-      if (!installAccepted) installOpen[ctx] = true;
-      refreshInstallPanels();
+      refreshHome();
     };
     const how = box.querySelector("[data-install-how]");
     if (how) how.onclick = () => {
-      installOpen[ctx] = !installOpen[ctx];
-      if (installOpen[ctx]) { prepareIconStart(true); screenView(ctx === "done" ? "view_install_steps" : "view_welcome_install_steps"); }
-      refreshInstallPanels();
-      const again = document.querySelector(`[data-install="${ctx}"] [data-install-how]`);
+      installOpen = !installOpen;
+      if (installOpen) prepareIconStart(true);
+      refreshHome();
+      const again = $("#homeBox [data-install-how]");
       if (again) again.focus();
     };
     const copy = box.querySelector("[data-copy-link]");
@@ -2156,392 +841,223 @@
       }
     };
   }
-  function refreshInstallPanels() {
-    document.querySelectorAll("[data-install]").forEach((box) => {
-      const keep = box.querySelector("details.cantfind");
-      const wasOpen = keep && keep.open;
-      box.innerHTML = installPanelBody(box.dataset.install);
-      const d = box.querySelector("details.cantfind");
-      if (d && wasOpen) d.open = true;
-      wireInstallPanel(box);
-    });
-    // After the first reset: once it's added (or being added), "Maybe later" becomes "Continue"
-    const later = $("#firstLater");
-    if (later && ["accepted", "installed", "home"].includes(installState())) {
-      later.textContent = "Continue"; later.className = "primary";
+
+  // ---------- an optional calendar reminder ----------
+  // Mornward can't send notifications and never asks for permission. This hands a daily event to the person's
+  // own calendar. It can't tell whether they saved it, so it never says the reminder is set, and isn't counted.
+  const REMIND_DAYS = 7;
+  const pad2 = (n) => String(n).padStart(2, "0");
+  const isAlarmTime = (v) => typeof v === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
+  function nextAlarm(v) {
+    const [h, m] = v.split(":").map(Number);
+    const d = new Date();
+    d.setHours(h, m, 0, 0);
+    if (d <= new Date()) d.setDate(d.getDate() + 1);
+    return d;
+  }
+  const icsLocal = (d) => `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}T${pad2(d.getHours())}${pad2(d.getMinutes())}00`;
+  const REMIND_TITLE = "Mornward: three breaths, one intention";
+  // The link carries this phone's anonymous ID and choices after "#", which never reaches a server. A page opened
+  // inside Reddit or Instagram keeps its own storage; without this the reminder would open as a new person.
+  function carryState() {
+    const r = { v: 1, i: deviceId(), a: store.get("alarmAt", null, isAlarmTime), f: store.get("from", null),
+      t: hasAgreed() ? TERMS_VERSION : null, s: store.get("noStats", false) === true ? 1 : 0 };
+    return encodeURIComponent(JSON.stringify(r));
+  }
+  const carryLink = () => "https://mornward.app/?via=calendar#r=" + carryState();
+  const reminderText = (link) => `Before the scroll: ${link}\nThree breaths, one intention. About a minute.`;
+  const icsEsc = (t) => t.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+  // Calendar files want lines of at most 75 bytes; longer ones continue on the next line after a space
+  const icsFold = (line) => {
+    const out = []; let cur = "", bytes = 0;
+    for (const ch of line) {
+      const b = new TextEncoder().encode(ch).length;
+      if (bytes + b > (out.length ? 74 : 75)) { out.push(cur); cur = ""; bytes = 0; }
+      cur += ch; bytes += b;
     }
-  }
-
-  function renderWelcome() {
-    clearTimers();
-    guardTaps();
-    document.body.classList.add("welcoming");
-    card.innerHTML = `
-      <div class="welcome card">
-        <p class="wbrand">${LOGO}<span>MORNWARD</span></p>
-        <div class="wmid">
-          ${WELCOME_ART}
-          <h1>Your first 5 minutes go to someone.<br><em>Make it you.</em></h1>
-          <p class="wlede">After your alarm: <b>breathe, read one line, get up, plan your day.</b> Five&nbsp;minutes.</p>
-          <p class="wedge">No lock. No lecture. Just a better first move.</p>
-        </div>
-        <div class="wbottom">
-          <p class="wtrust"><span>Free ·</span> <span>No account</span></p>
-          <button class="wgo" id="welcomeGo" type="button">Try a 1-minute reset</button>
-          ${installPanel("welcome")}
-        </div>
-      </div>`;
-    window.scrollTo(0, 0);
-    announceScreen("Welcome to Mornward");
-    screenView("view_welcome");
-    document.querySelectorAll("[data-install]").forEach(wireInstallPanel);
-    // Straight to the short reset (after the terms): the home-screen ask comes after they've felt it work
-    $("#welcomeGo").onclick = () => {
-      if (onComputer()) { guardTaps(); renderPhoneFirst(); return; }
-      welcomed = true; boot();
-    };
-  }
-
-  // ---------- first-open agreement ----------
-  // Shown before anything else the first time someone opens Mornward (and once to anyone set up before it existed).
-  function renderAgreement() {
-    clearTimers();
-    guardTaps();
-    stepsEl.hidden = true;
-    $("#restart").hidden = true;
-    document.body.classList.remove("welcoming");
-    placeSun("Welcome");
-    card.innerHTML = `
-      <h1>The <em class="hl">short</em> version.</h1>
-      <div class="terms">
-        <ul class="tldr">
-          <li>No account. Your writing stays on your phone.</li>
-          <li>Anonymous counts, like which screens you finish, improve the beta.</li>
-          <li>Stored in the US. Turn off any time.</li>
-        </ul>
-        <details class="more">
-          <summary>What's tracked</summary>
-          <div class="terms">
-        <section class="yes">
-          <h3><span aria-hidden="true">✓</span> What Mornward keeps track of</h3>
-          <ul>
-            <li>A random ID made on your phone. It isn't linked to your name, email or any account.</li>
-            <li>The date and time of each morning.</li>
-            <li>Your setup answers: what you usually open in bed, and which apps you picked from the list.</li>
-            <li>How the morning went: minutes, streak, breathing done or skipped, how many get-up boxes you ticked, and whether it was a practice run.</li>
-            <li>Your 👎 / 👌 / 👍, and which app you opened from the one-job list, if any.</li>
-            <li>Which link you came from (like "reddit"), if the link says so.</li>
-            <li>Which first-visit screens you reached, like the welcome or the home-screen step.</li>
-          </ul>
-        </section>
-        <section class="no">
-          <h3><span aria-hidden="true">🔒</span> What stays private and personal</h3>
-          <ul>
-            <li>Your name, email and phone number. There's no sign-up.</li>
-            <li>Your notes, your intention and your own get-up steps. Not a single word is sent.</li>
-            <li>Apps you add yourself, and anything you search for.</li>
-            <li>Your location, contacts, photos and other apps. Mornward can't see them.</li>
-            <li>Everything, once you tap "Turn off" at the end of any morning.</li>
-          </ul>
-        </section>
-        <section>
-          <h3>The beta terms</h3>
-          <ul>
-            <li>Mornward is free and in beta. It's provided as it is, and things may change or break.</li>
-            <li>It's a habit tool, not medical or mental-health advice. If you're struggling, please talk to someone qualified.</li>
-            <li>What you write is saved only in this browser. Clearing your browser data deletes it, and it can't be recovered.</li>
-            <li>You're at least 13 years old.</li>
-            <li>If these terms change, you'll see this screen again.</li>
-          </ul>
-        </section>
-        <section>
-          <h3>Who, where and how long</h3>
-          <ul>
-            <li>Mornward is made by one independent developer in Thailand. Questions or requests: <a href="mailto:${CONTACT}">${CONTACT}</a></li>
-            <li>The anonymous stats are used only to learn whether the beta helps. They're never sold or used for ads.</li>
-            <li>They're stored on Supabase servers in the United States, which may not protect data to the same standard as Thai law.</li>
-            <li>They're deleted within 90 days after the beta ends.</li>
-            <li>You can turn them off, see your ID or ask for your data to be deleted at the end of any morning.</li>
-          </ul>
-        </section>
-          </div>
-        </details>
-        <p class="small"><a href="terms.html" target="_blank" rel="noopener">Full terms</a></p>
-      </div>
-      <div class="btnrow stack">
-        <button class="primary" id="agreeGo" type="button">Agree and continue</button>
-      </div>`;
-    window.scrollTo(0, 0);
-    announceScreen("Before you start: the beta terms");
-    screenView("view_terms");
-    $("#agreeGo").onclick = () => {
-      store.set("agreed", { version: TERMS_VERSION, on: dayKey() });
-      sendEarlyViews();
-      boot();
-    };
-  }
-  // Where the app starts: the welcome, then the agreement, then setup, then the morning
-  function boot() {
-    document.body.classList.remove("welcoming");
-    // The welcome is for people who have never agreed. Anyone opening the home-screen icon has already seen it,
-    // and after a terms update, people who agreed before go straight to the new terms.
-    const everAgreed = store.get("agreed", null, (v) => typeof v === "object") !== null;
-    if (!hasAgreed()) welcomed || everAgreed || onHomeScreen ? renderAgreement() : renderWelcome();
-    else if (store.get("setup", { done: false }, isSetup).done) { run = newRun(); step = 0; render(); }
-    else startReset(true);
-  }
-  // A practice run right after setup is marked as practice: it doesn't start the streak, and its stats say so.
-  function leaveSetup(practice = false) {
-    setupStep = -1;
-    stepsEl.hidden = false;
-    run = newRun();
-    if (practice) run.practice = true;
-    step = 0;
-    render();
-  }
-  // Set while the "See you tomorrow" screen is up, so reopening the app later lands on the morning.
-  let seeYouAt = 0;
-  // Set by "Put the phone down" on the done screen
-  let closedAt = 0;
-  function renderSeeYou(afterReset = false) {
-    clearTimers();
-    guardTaps();
-    setupStep = -1;
-    seeYouAt = Date.now();
-    const part = partOfDay();
-    placeSun("See you tomorrow");
-    // Something to do right now, whatever time it is: the real morning, a 1-minute taste, or a note for tomorrow
-    card.innerHTML = `
-      <h1>See you <em class="hl">${nextMorning().toLowerCase()}</em>.</h1>
-      <p class="lede">Alarm off → open Mornward.</p>
-      ${part === "morning" ? `<div class="btnrow stack"><button class="primary" id="startNow" type="button">It's morning. Start now</button></div>` : ""}
-      ${part === "afternoon" && !afterReset ? `<div class="btnrow stack"><button class="primary" id="resetGo" type="button">Try the 1-minute reset now</button></div>` : ""}
-      ${tomorrowKit()}
-      ${part === "evening" && !afterReset ? `<div class="btnrow stack"><button class="quiet" id="resetGo" type="button">Or try the 1-minute reset now</button></div>` : ""}`;
-    window.scrollTo(0, 0);
-    announceScreen("Setup finished. See you tomorrow.");
-    screenView("view_see_you");
-    wireKit();
-    if ($("#startNow")) $("#startNow").onclick = () => { seeYouAt = 0; leaveSetup(); };
-    if ($("#resetGo")) $("#resetGo").onclick = () => { seeYouAt = 0; startReset(); };
-  }
-
-  // ---------- the 1-minute version ----------
-  // For people who find Mornward in the afternoon or evening: a short taste now (three breaths, the quote,
-  // one thing for the rest of today), counted as a practice run, then the note and reminder for tomorrow.
-  // first: the very first visit (straight from the terms). Works before any setup answer: habit-specific
-  // wording falls back to "something else".
-  function startReset(first = false) {
-    setupStep = -1;
-    run = newRun();
-    run.practice = true;
-    run.mode = "reset";
-    run.first = first;
-    renderReset("breathe");
-  }
-  function renderReset(stage) {
-    clearTimers();
-    guardTaps();
-    stepsEl.hidden = true;
-    $("#restart").hidden = true;
-    placeSun("1-minute reset");
-    if (stage === "breathe") {
-      card.innerHTML = `
-        <p class="eyebrow">1 of 3 · about 30 seconds</p>
-        <h2>Three slow breaths. That's all.</h2>
-        ${breathBox(3)}
-        <div class="btnrow">
-          <button class="primary" id="bstart" type="button">Start breathing</button>
-          <button class="quiet" id="bskip" type="button">Skip</button>
-        </div>`;
-      $("#bskip").onclick = () => renderReset("read");
-      $("#bstart").onclick = () => runBreaths(3, () => { run.stats.breathe = "done"; }, () => renderReset("read"));
-    } else if (stage === "read") {
-      card.innerHTML = `
-        <p class="eyebrow">2 of 3 · one line</p>
-        <div class="passage">
-          <p>“${esc(run.quote.text)}”</p>
-          <span class="source">${esc(run.quote.who)}${run.quote.source ? `, ${esc(run.quote.source)}` : ""}</span>
-        </div>
-        <div class="btnrow"><button class="primary" id="go" type="button">Carry it with me</button></div>`;
-      $("#go").onclick = () => renderReset("one");
-    } else if (stage === "one") {
-      card.innerHTML = `
-        <p class="eyebrow">3 of 3 · the rest of today</p>
-        <h2>One thing for the rest of today?</h2>
-        <label class="field" for="resetOne">Just one
-          <input type="text" id="resetOne" maxlength="120" placeholder="e.g. Finish the reading before dinner"></label>
-        <div class="btnrow"><button class="primary" id="go" type="button">That's my one thing</button></div>`;
-      $("#go").onclick = () => {
-        const one = $("#resetOne").value.trim();
-        run.stats.intention = one !== "";
-        renderReset(one ? "done:" + one : "done");
-      };
-    } else {
-      const one = stage.startsWith("done:") ? stage.slice(5) : "";
-      if (!run.stats.sent) {
-        run.stats.sent = true;
-        track("morning_done", { mode: "reset", breathe: run.stats.breathe, intention: run.stats.intention,
-          minutes: Math.max(1, Math.round((Date.now() - run.startedAt) / 60000)) });
-      }
-      if (run.first) { renderFirstResetDone(one); return; }
-      card.innerHTML = `
-        <p class="eyebrow">That's the 1-minute reset</p>
-        <h1>Tomorrow, this is the <em class="hl">first</em> thing you do.</h1>
-        ${one ? `<p class="lede">For the rest of today: <strong>${esc(one)}</strong></p>` : ""}
-        <p class="lede">The full morning is about 5 minutes: breathe, read, get out of bed, plan your day. Then it ends.</p>
-        ${tomorrowKit()}
-        <div class="btnrow stack"><button class="quiet" id="resetClose" type="button">Done for today</button></div>`;
-      wireKit();
-      $("#resetClose").onclick = () => {
-        clearTimers();
-        guardTaps();
-        seeYouAt = Date.now();
-        card.innerHTML = `
-          <p class="eyebrow">See you tomorrow</p>
-          <h1>Go live the rest of today.</h1>
-          <p class="lede">Tomorrow: alarm off, then open Mornward.</p>`;
-      };
-    }
-    window.scrollTo(0, 0);
-    announceScreen(stage.startsWith("done") ? "That's the 1-minute reset" : `1-minute reset, step ${["breathe", "read", "one"].indexOf(stage) + 1} of 3`);
-    if (run.first && !stage.startsWith("done")) screenView("view_reset_" + stage);
-  }
-  // Only reached once the reset is actually finished. Setup counts as done here, so the next open is the
-  // morning itself; the habit question and the reminder stay optional.
-  function renderFirstResetDone(one) {
-    if (!store.get("setup", { done: false }, isSetup).done) {
-      saveSetup({ done: true });
-      track("setup_done", { habit: null, doors: [], own_apps: 0, skipped: false, flow: "reset", from: store.get("from", null) });
-    }
-    prepareIconStart(true);
-    const home = onHomeScreen || installed;
-    card.innerHTML = `
-      <p class="eyebrow okline">✓ First reset complete</p>
-      <h1>Make tomorrow's first step <em class="hl">easier</em></h1>
-      ${one ? `<p class="small">For the rest of today: <strong>${esc(one)}</strong></p>` : ""}
-      <p class="lede">${home ? "It's already on your home screen, so it's easy to find after your alarm." : "Add Mornward to your home screen so it's easy to find after your alarm."}</p>
-      ${home ? "" : installPanel("done")}
-      <div class="btnrow stack">
-        <button class="${home ? "primary" : "quiet"}" id="firstLater" type="button">${home ? "Continue" : "Maybe later"}</button>
-        <button class="quiet" id="firstPersonal" type="button">Personalize tomorrow</button>
-      </div>`;
-    document.querySelectorAll("[data-install]").forEach(wireInstallPanel);
-    $("#firstLater").onclick = () => renderSeeYou(true);
-    $("#firstPersonal").onclick = () => startSetup(0);
-    window.scrollTo(0, 0);
-    announceScreen("First reset complete");
-    screenView("view_homescreen_prompt");
-  }
-
-  // Evening, morning already done: just the note for tomorrow, without running the morning again
-  function renderNoteOnly() {
-    clearTimers();
-    guardTaps();
-    const letter = store.get("letter", null, isLetter);
-    const draft = letter && letter.forDay > run.today ? letter.text : "";
-    card.innerHTML = `
-      <p class="eyebrow">For tomorrow morning</p>
-      <h2>Tomorrow-you will be groggy. What do they need to hear?</h2>
-      <label class="field" for="letter">Your note
-        <textarea id="letter" placeholder="One line is plenty. It's the first thing you'll read tomorrow.">${esc(draft)}</textarea></label>
-      <div class="btnrow stack">
-        <button class="primary" id="saveLetter" type="button">Save for tomorrow</button>
-        <span class="saved" id="letterSaved" hidden>Saved. See you in the morning.</span>
-      </div>`;
-    window.scrollTo(0, 0);
-    announceScreen("Leave a note for tomorrow");
-    $("#saveLetter").onclick = () => {
-      const text = $("#letter").value.trim();
-      store.set("letter", text ? { text, forDay: addDays(dayKey(), 1), writtenOn: dayKey() } : null);
-      $("#letterSaved").textContent = text ? "Saved. See you in the morning." : "Note cleared.";
-      $("#letterSaved").hidden = false;
-    };
-  }
-
-  // The next screen's main button sits where the last one was, so the second half of a sleepy double-tap
-  // would press it. Swallow clicks for a short moment after every screen change.
-  let tapGuardUntil = 0;
-  const guardTaps = () => { tapGuardUntil = performance.now() + 500; };
-  document.addEventListener("click", (e) => {
-    if (performance.now() < tapGuardUntil) { e.preventDefault(); e.stopPropagation(); }
-  }, true);
-
-  // After a screen change, tell screen readers where they are and put keyboard focus at the top of the new screen.
-  // Skipped on the very first screen, so opening the app doesn't jump focus.
-  let screensShown = 0;
-  function announceScreen(label) {
-    if (screensShown++ === 0) return;
-    $("#announce").textContent = label;
-    const target = card.querySelector("h1, h2, .eyebrow");
-    if (target) { target.setAttribute("tabindex", "-1"); target.focus({ preventScroll: true }); }
-  }
-  const STEP_NAMES = ["Wake", "Breathe", "Read", "Move", "Plan", "Done"];
-
-  function render() {
-    clearTimers();
-    guardTaps();
-    stepsEl.hidden = false;
-    renderSteps();
-    placeSun();
-    screens[STEPS[step]]();
-    window.scrollTo(0, 0);
-    announceScreen(`Step ${step + 1} of ${STEPS.length}: ${STEP_NAMES[step]}`);
-  }
-  function next() {
-    if (step >= STEPS.length - 1) return;
-    if (step === 0) track("morning_start", { habit: store.get("setup", {}, isSetup).habit || null, ...(viaCalendar ? { via: "calendar" } : {}) });
-    step++;
-    render();
-  }
-  $("#restart").onclick = () => {
-    if (dayKey() !== run.today) wakeLine = pickWakeLine();
-    const practice = run.practice && dayKey() === run.today;
-    run = newRun();
-    if (practice) run.practice = true;
-    step = 0;
-    render();
+    out.push(cur);
+    return out.join("\r\n ");
   };
-
-  // Phones often keep the page alive overnight. When it comes back on a new day, start that day's run,
-  // unless someone is in the middle of a run that began shortly before midnight.
-  function freshRunIfNewDay() {
-    // Left on "See you tomorrow" and opened again at least an hour later (setting up after midnight
-    // means the morning is still the same date): start the morning.
-    if (seeYouAt && setupStep < 0 && Date.now() - seeYouAt > 3600e3) {
-      seeYouAt = 0;
-      run = newRun();
-      wakeLine = pickWakeLine();
-      step = 0;
-      render();
-      return;
-    }
-    // Put the phone down, opened again later the same day: back to the wake screen (it offers tomorrow's note)
-    if (closedAt && setupStep < 0 && dayKey() === run.today && Date.now() - closedAt > 3600e3) {
-      closedAt = 0;
-      step = 0;
-      render();
-      return;
-    }
-    if (setupStep >= 0 || !hasAgreed() || dayKey() === run.today) return;
-    closedAt = 0;
-    const idle = step === 0 || step === STEPS.length - 1;
-    const stale = Date.now() - run.startedAt > 3 * 3600e3;
-    if (!idle && !stale) return;
-    run = newRun();
-    wakeLine = pickWakeLine();
-    step = 0;
-    render();
+  function calendarFile(v, link) {
+    const start = nextAlarm(v);
+    const now = new Date();
+    const stamp = `${now.getUTCFullYear()}${pad2(now.getUTCMonth() + 1)}${pad2(now.getUTCDate())}T${pad2(now.getUTCHours())}${pad2(now.getUTCMinutes())}00Z`;
+    return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Mornward//EN", "CALSCALE:GREGORIAN", "BEGIN:VEVENT",
+      `UID:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}@mornward.app`,
+      `DTSTAMP:${stamp}`, `DTSTART:${icsLocal(start)}`, "DURATION:PT5M", `RRULE:FREQ=DAILY;COUNT=${REMIND_DAYS}`,
+      `SUMMARY:${icsEsc(REMIND_TITLE)}`, `DESCRIPTION:${icsEsc(reminderText(link))}`, `URL:${link}`,
+      "BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${icsEsc("Before the scroll: one clear intention")}`, "TRIGGER:PT0M", "END:VALARM",
+      "END:VEVENT", "END:VCALENDAR"].map(icsFold).join("\r\n") + "\r\n";
   }
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) freshRunIfNewDay(); });
-  window.addEventListener("pageshow", freshRunIfNewDay);
+  function googleCalendarLink(v, link) {
+    const start = nextAlarm(v);
+    const end = new Date(start.getTime() + 5 * 60000);
+    const q = new URLSearchParams({ action: "TEMPLATE", text: REMIND_TITLE, details: reminderText(link),
+      dates: `${icsLocal(start)}/${icsLocal(end)}`, recur: `RRULE:FREQ=DAILY;COUNT=${REMIND_DAYS}` });
+    try { q.set("ctz", Intl.DateTimeFormat().resolvedOptions().timeZone); } catch {}
+    return "https://calendar.google.com/calendar/render?" + q.toString();
+  }
+  function reminderSection() {
+    const at = store.get("alarmAt", "", isAlarmTime) || "07:00";
+    return `<details class="section" id="remindSec"><summary>Calendar reminder</summary><div class="inner">
+        <p>Mornward doesn't send notifications. This adds an event to your own calendar for the next ${REMIND_DAYS} mornings.</p>
+        <label class="flabel" for="remAt">Time</label>
+        <input type="time" id="remAt" value="${esc(at)}">
+        <button class="secondary" id="remGo" type="button">${isIOS ? "Add to Calendar" : "Add to Google Calendar"}</button>
+        <button class="link start" id="remAlt" type="button">${isIOS ? "Use Google Calendar instead" : "Download a calendar file instead"}</button>
+        <p role="status" id="remMsg"></p>
+      </div></details>`;
+  }
+  function wireReminder() {
+    if (!$("#remGo")) return;
+    const remind = (google) => {
+      const v = $("#remAt").value;
+      if (!isAlarmTime(v)) { $("#remMsg").textContent = "Pick a time first."; $("#remAt").focus(); return; }
+      store.set("alarmAt", v);
+      const link = carryLink();
+      if (google) window.open(googleCalendarLink(v, link), "_blank", "noopener");
+      else {
+        const a = document.createElement("a");
+        a.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(calendarFile(v, link));
+        a.download = "mornward.ics";
+        document.body.appendChild(a); a.click(); a.remove();
+      }
+      // We can only hand it over, not confirm it was saved
+      $("#remMsg").textContent = google ? "Google Calendar opened. Save the event there to keep it."
+        : isIOS ? "Tap Add to Calendar on the next screen. If a file downloaded instead, open it from Downloads."
+        : "Open the downloaded file to add it to your calendar.";
+    };
+    $("#remGo").onclick = () => remind(!isIOS);
+    $("#remAlt").onclick = () => remind(isIOS);
+  }
+
+  // ---------- privacy and your data ----------
+  function privacySection() {
+    const id = store.get("deviceId", null, (v) => typeof v === "string" && /^[0-9a-f-]{36}$/.test(v));
+    const ask = id ? `mailto:${CONTACT}?subject=${encodeURIComponent("Delete my Mornward data")}&body=${
+      encodeURIComponent("Please delete the stats for this ID: " + id)}` : "";
+    return `<details class="section" id="privSec"><summary>Privacy and your data</summary><div class="inner">
+        <p>Your intentions are saved only in this browser on this phone. Clearing browser data deletes them.</p>
+        <p id="statsLine"></p>
+        <h3>What's counted</h3>${COUNTED}
+        <h3>What's never sent</h3>${NOT_SENT}
+        <p>Stored on Supabase in the United States, never sold or used for ads, deleted within 90 days after the beta ends.
+          <a href="terms.html" target="_blank" rel="noopener">Full terms</a></p>
+        ${id ? `<p>Your anonymous ID:</p><code class="myid" id="myId">${esc(id)}</code>
+          <p>To see or delete the stats sent with it, email it to <a href="${ask}">${CONTACT}</a>. Handled within 30 days.</p>`
+        : `<p>No stats have been sent from this phone.</p>`}
+        <button class="link start" type="button" id="wipeLocal">Delete everything on this phone</button>
+      </div></details>`;
+  }
+  function wirePrivacy() {
+    const draw = () => {
+      $("#statsLine").innerHTML = statsOn()
+        ? `Anonymous counts are on. <button class="link inline" type="button" id="statsToggle">Turn off</button>`
+        : `Anonymous counts are off. <button class="link inline" type="button" id="statsToggle">Turn back on</button>`;
+      $("#statsToggle").onclick = () => {
+        if (statsOn()) { store.set("noStats", true); store.set("outbox", []); store.set("viewbox", []); }
+        else store.set("noStats", false);
+        draw();
+      };
+    };
+    draw();
+    $("#wipeLocal").onclick = () => {
+      const id = store.get("deviceId", null);
+      const msg = "This deletes your intentions and settings on this phone. It can't be undone." +
+        (id ? "\n\nIf you also want your stats deleted, email your ID first." : "");
+      if (!confirm(msg)) return;
+      store.keys().forEach((k) => store.del(k));
+      location.reload();
+    };
+  }
+
+  // ---------- arriving from a reminder, a link, or the iPhone home-screen icon ----------
+  const viaCalendar = new URLSearchParams(location.search).get("via") === "calendar";
+  // The reminder link carries the anonymous ID and choices. A browser that has never seen Mornward (the first
+  // visit happened inside another app's browser) takes them, so the same person isn't counted twice.
+  (() => {
+    const m = location.hash.match(/^#r=(.+)$/);
+    if (!m) return;
+    try { history.replaceState(null, "", location.pathname + location.search); } catch {}
+    if (store.get("deviceId", null) !== null) return;
+    let r;
+    try { r = JSON.parse(decodeURIComponent(m[1])); } catch { return; }
+    if (!r || typeof r !== "object" || r.v !== 1) return;
+    if (typeof r.i === "string" && /^[0-9a-f-]{36}$/.test(r.i)) { store.set("deviceId", r.i); store.set("everStarted", true); }
+    if (r.t === TERMS_VERSION) store.set("agreed", { version: TERMS_VERSION, on: dayKey(), how: "carried" });
+    if (r.s === 1) store.set("noStats", true);
+    if (isAlarmTime(r.a)) store.set("alarmAt", r.a);
+    if (typeof r.f === "string" && /^[a-z0-9-]{1,20}$/.test(r.f)) store.set("from", r.f);
+    // Links from the previous version could carry a note; keep it, dated
+    if (typeof r.n === "string" && r.n.trim() && isDay(r.nd) && !store.get("letter", null, isLetter))
+      store.set("letter", { text: r.n.slice(0, 200), forDay: r.nd, writtenOn: isDay(r.nw) ? r.nw : r.nd });
+  })();
+  // People who used the previous version aren't new: their first routine here isn't marked as a first visit
+  if (store.get("everStarted", false) !== true && (store.get("setup", null) || store.get("agreed", null))) store.set("everStarted", true);
+  // Which link someone came from (?from=reddit). Kept on the phone, sent once with the first routine.
+  const linkFrom = (() => {
+    const v = (new URLSearchParams(location.search).get("from") || "").toLowerCase();
+    return /^[a-z0-9-]{1,20}$/.test(v) ? v : null;
+  })();
+  if (linkFrom && store.get("from", null) === null) store.set("from", linkFrom);
+  // On iPhone the home-screen icon starts with empty storage. Point it at an address that carries the link
+  // source and the anonymous ID and choices (after "#", never sent anywhere). Intentions are not carried:
+  // they would end up in the address. Safari uses the manifest's start address if it reads it, otherwise the page's.
+  function prepareIconStart(updateAddress = false) {
+    if (!isIOS || onHomeScreen) return;
+    const from = store.get("from", null);
+    const known = hasAgreed();
+    if (!from && !known) return;
+    const rel = "./" + (from ? "?from=" + encodeURIComponent(from) : "") + (known ? "#r=" + carryState() : "");
+    const abs = (u) => new URL(u, location.href).href;
+    const m = { name: "Mornward", short_name: "Mornward", start_url: abs(rel), scope: abs("./"),
+      display: "standalone", background_color: "#EDF5FC", theme_color: "#EDF5FC",
+      icons: [{ src: abs("icons/icon-192.png"), sizes: "192x192", type: "image/png" },
+              { src: abs("icons/icon-512.png"), sizes: "512x512", type: "image/png" }] };
+    const link = document.querySelector('link[rel="manifest"]');
+    if (link) link.href = "data:application/manifest+json," + encodeURIComponent(JSON.stringify(m));
+    if (known && updateAddress) { try { history.replaceState(null, "", rel); } catch {} }
+  }
+  prepareIconStart();
+  function shareUrl() {
+    const from = store.get("from", null);
+    return "https://mornward.app/" + (from ? "?from=" + encodeURIComponent(from) : "") + (hasAgreed() ? "#r=" + carryState() : "");
+  }
+
+  // ---------- which screen to show ----------
+  // Today's routine picks up where it was (breathing comes back paused). A routine from an earlier date is
+  // never shown as today's; it's under "Earlier intentions", dated. One started just before midnight can be finished.
+  function home() {
+    const today = dayKey();
+    routine = store.get("routine", null, isRoutine);
+    const r = routine;
+    const current = r && (r.day === today ||
+      (r.phase !== "done" && r.day === addDays(today, -1) && Date.now() - r.startedAt < CARRY_OVER_MS));
+    if (!current) renderBegin();
+    else if (r.phase === "breathe") renderBreathe(true);
+    else if (r.phase === "choose") renderChoose();
+    else if (r.phase === "finish") renderFinish();
+    else renderToday();
+  }
+  // Phones keep pages alive for days. Coming back on a new date shows that day's Begin, unless a routine
+  // is in progress on screen (breathing or typing), which stays put.
+  let shownFor = dayKey();
+  function checkDay() {
+    if (document.hidden) return;
+    const today = dayKey();
+    if (today === shownFor) return;
+    if (br || $("#intent")) return;
+    shownFor = today;
+    home();
+  }
+  document.addEventListener("visibilitychange", checkDay);
+  window.addEventListener("pageshow", checkDay);
+  setInterval(checkDay, 60000);
 
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
   }
-  tickClock();
-  setInterval(tickClock, 30000);
   flushStats();
-  boot();
+  home();
 })();
 </script>
