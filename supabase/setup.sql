@@ -12,11 +12,16 @@ create table if not exists public.events (
   created_at  timestamptz not null default now(),
   device_id   uuid not null,
   day         date not null,
-  kind        text not null check (kind in ('morning_start', 'morning_done', 'setup_done', 'rating', 'door_open')),
+  kind        text not null check (kind in ('morning_start', 'morning_done', 'setup_done', 'rating', 'door_open', 'screen_view')),
   data        jsonb not null default '{}'::jsonb
               check (jsonb_typeof(data) = 'object' and pg_column_size(data) <= 2048),
   app_version text check (char_length(app_version) <= 20)
 );
+
+-- Tables made before screen_view existed: widen the allowed kinds (safe to run again)
+alter table public.events drop constraint if exists events_kind_check;
+alter table public.events add constraint events_kind_check
+  check (kind in ('morning_start', 'morning_done', 'setup_done', 'rating', 'door_open', 'screen_view'));
 
 create index if not exists events_device_day on public.events (device_id, day);
 create index if not exists events_kind_day on public.events (kind, day);
@@ -109,3 +114,19 @@ from public.events
 where kind = 'morning_done' and coalesce(data->>'practice', '') <> 'true';
 
 revoke all on public.daily_mornings, public.testers, public.pass_rules, public.step_stats from anon, authenticated;
+
+-- First-visit funnel: how many new devices reached each onboarding screen, in order.
+-- Screens before the terms (welcome, phone-first) only count people who then agreed.
+create or replace view public.onboarding_funnel with (security_invoker = on) as
+with steps(screen, pos) as (values
+  ('view_welcome', 1), ('view_phone_first', 2), ('view_welcome_install_steps', 3), ('view_terms', 4),
+  ('view_reset_breathe', 5), ('view_reset_read', 6), ('view_reset_one', 7), ('view_homescreen_prompt', 8),
+  ('view_install_steps', 9), ('view_install_prompt', 10), ('view_personalize', 11), ('view_see_you', 12))
+select s.pos, s.screen,
+       count(distinct e.device_id) as devices,
+       min(e.day) as first_day, max(e.day) as last_day
+from steps s
+left join public.events e on e.kind = 'screen_view' and e.data->>'screen' = s.screen
+group by s.pos, s.screen
+order by s.pos;
+

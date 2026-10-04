@@ -22,6 +22,8 @@ The 1-minute version (offered after setup in the afternoon and evening) sends on
 
 New visitors (from the reset-first welcome) do the 1-minute reset before any setup question. Their `setup_done` is sent once, when that first reset is finished, with `flow: "reset"` and `habit: null`; if they answer the optional question afterwards, the habit is saved on the phone and shows up on their `morning_start` events, without a second `setup_done`.
 
+`screen_view` (from app version beta-3) records which first-visit screens a new device reached: `data.screen` is one of `view_welcome`, `view_phone_first`, `view_welcome_install_steps`, `view_terms`, `view_reset_breathe`, `view_reset_read`, `view_reset_one`, `view_homescreen_prompt`, `view_install_steps`, `view_install_prompt`, `view_personalize`, `view_see_you`. Each screen is sent at most once per visit, only for people who weren't set up yet, and nothing is sent before the terms are agreed (welcome and phone-first views wait and go with the agreement). So the welcome and terms counts only include people who agreed: compare them with ad clicks to see who left before agreeing. See the `onboarding_funnel` view. Re-run `setup.sql` once before this version goes live, or the database rejects these rows (the app sends them separately, so nothing else is lost).
+
 `setup_done` also carries `from`: the link source (`?from=reddit` → `reddit`), or null. Count sign-ups by source:
 
 ```sql

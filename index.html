@@ -1048,13 +1048,14 @@
   const STATS = {
     url: "https://cnwwyucolebrcbydbfej.supabase.co/rest/v1/events",
     key: "sb_publishable_XpdHaGbjKX5CC0LRYiWBxQ_O8xO2oCs",
-    version: "beta-2"
+    version: "beta-3"
   };
   // Where questions and data requests go (shown in the agreement, on the done screen and on terms.html)
   const CONTACT = "mornward@proton.me";
   // Bump TERMS_VERSION when the wording changes in a way people should re-read; everyone is asked again.
   // beta-2: contact, US storage consent, retention and data rights (Thailand PDPA)
-  const TERMS_VERSION = "beta-2";
+  // beta-3: also counts which onboarding screens a new person reached (screen_view)
+  const TERMS_VERSION = "beta-3";
   const hasAgreed = () => {
     const a = store.get("agreed", null, (v) => typeof v === "object");
     return !!a && a.version === TERMS_VERSION;
@@ -1128,38 +1129,43 @@
     return id;
   }
   let flushing = false;
+  // Two queues, each sent in its own request: if the database doesn't accept screen views yet
+  // (setup.sql not re-run), only those are dropped, never a morning or a setup.
+  const QUEUES = ["outbox", "viewbox"];
   async function flushStats() {
     if (flushing || !statsOn() || !navigator.onLine) return;
-    const outbox = store.get("outbox", [], Array.isArray);
-    if (!outbox.length) return;
     flushing = true;
-    let sent = false;
-    try {
-      const res = await fetch(STATS.url, {
-        method: "POST",
-        keepalive: true,
-        headers: { apikey: STATS.key, "Content-Type": "application/json", Prefer: "return=minimal" },
-        body: JSON.stringify(outbox)
-      });
-      // Sent, or rejected for good (bad data): either way don't retry these rows forever
-      if (res.ok || (res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429)) {
-        const now = store.get("outbox", [], Array.isArray);
-        store.set("outbox", now.slice(outbox.length));
-        sent = true;
-      }
-    } catch { /* offline or blocked: keep them for next time */ }
+    let again = false;
+    for (const q of QUEUES) {
+      const rows = store.get(q, [], Array.isArray);
+      if (!rows.length) continue;
+      try {
+        const res = await fetch(STATS.url, {
+          method: "POST",
+          keepalive: true,
+          headers: { apikey: STATS.key, "Content-Type": "application/json", Prefer: "return=minimal" },
+          body: JSON.stringify(rows)
+        });
+        // Sent, or rejected for good (bad data): either way don't retry these rows forever
+        if (res.ok || (res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429)) {
+          const now = store.get(q, [], Array.isArray).slice(rows.length);
+          store.set(q, now);
+          // Rows queued while this request was out (two events close together) go now, not on the next visit
+          if (now.length) again = true;
+        }
+      } catch { /* offline or blocked: keep them for next time */ }
+    }
     flushing = false;
-    // Rows queued while this request was out (two events close together) go now, not on the next visit
-    if (sent && store.get("outbox", [], Array.isArray).length) flushStats();
+    if (again) flushStats();
   }
   function track(kind, data = {}) {
     if (!statsOn()) return;
     const onHome = navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
     const row = { device_id: deviceId(), day: (typeof run !== "undefined" && run) ? run.today : dayKey(),
-      kind, data: { ...data, home_screen: onHome, ...(typeof run !== "undefined" && run && run.practice && kind !== "setup_done" ? { practice: true } : {}) },
+      kind, data: { ...data, home_screen: onHome, ...(typeof run !== "undefined" && run && run.practice && kind !== "setup_done" && kind !== "screen_view" ? { practice: true } : {}) },
       app_version: STATS.version };
-    const outbox = store.get("outbox", [], Array.isArray).concat([row]).slice(-50);
-    store.set("outbox", outbox);
+    const q = kind === "screen_view" ? "viewbox" : "outbox";
+    store.set(q, store.get(q, [], Array.isArray).concat([row]).slice(-50));
     flushStats();
   }
   window.addEventListener("online", flushStats);
@@ -1537,7 +1543,7 @@
           ? `Anonymous stats are on: which steps you finish, never what you write. <button class="quiet" type="button" id="statsToggle">Turn off</button>`
           : `Anonymous stats are off. <button class="quiet" type="button" id="statsToggle">Turn back on</button>`;
         $("#statsToggle").onclick = () => {
-          if (statsOn()) { store.set("noStats", true); store.set("outbox", []); } else { store.set("noStats", false); }
+          if (statsOn()) { store.set("noStats", true); store.set("outbox", []); store.set("viewbox", []); } else { store.set("noStats", false); }
           drawStatsLine();
         };
       };
@@ -1730,7 +1736,7 @@
     const letter = store.get("letter", null, isLetter);
     const draft = letter && letter.forDay > dayKey() ? letter.text : "";
     // Android phones mostly use Google Calendar, which can't open a calendar file; iPhones use Apple's Calendar
-    const alt = isAndroid ? "Use a calendar file instead" : "Use Google Calendar instead";
+    const alt = isAndroid ? "Use a calendar file" : "Use Google Calendar";
     return `
       <div class="remind" id="kit">
         <h2>A note for tomorrow-you</h2>
@@ -1738,11 +1744,11 @@
           <textarea id="kitNote" maxlength="200" placeholder="e.g. Don't open Instagram first. You promised.">${esc(draft)}</textarea></label>
         <label class="field" for="kitAt">Alarm time
           <input type="time" id="kitAt" value="${esc(at)}"></label>
-        <p class="small">A calendar reminder for ${REMIND_DAYS} mornings. Only you see it.</p>
+        <p class="small">Reminder for ${REMIND_DAYS} mornings. Only you see it.</p>
         <div class="btnrow stack">
           <button class="primary" id="kitGo" type="button">Add to my calendar</button>
           <button class="quiet" id="kitAlt" type="button">${alt}</button>
-          <button class="quiet" id="kitNoteOnly" type="button">Just save the note</button>
+          <button class="quiet" id="kitNoteOnly" type="button">Save note only</button>
         </div>
         <p class="saved" id="kitMsg" hidden></p>
       </div>`;
@@ -1844,6 +1850,7 @@
     card.innerHTML = setupScreens[setupStep]();
     window.scrollTo(0, 0);
     announceScreen(setupStep === 0 ? "Setup: one question" : "Pick your useful apps");
+    if (setupStep === 0) screenView("view_personalize");
     // After the first reset, setup is already counted: answering here only personalizes tomorrow
     const finish = (skipped = false) => {
       const already = store.get("setup", { done: false }, isSetup).done;
@@ -2009,7 +2016,26 @@
       </div>`;
     window.scrollTo(0, 0);
     announceScreen("Open Mornward on your phone");
+    screenView("view_phone_first");
     $("#phoneLater").onclick = () => { welcomed = true; boot(); };
+  }
+
+  // ---------- which onboarding screens a new person reaches (screen_view) ----------
+  // Only for people who weren't set up when the page opened, and each screen at most once per visit.
+  // Before the terms are agreed nothing is sent: those views wait here and go only if the person agrees.
+  const onboarding = !store.get("setup", { done: false }, isSetup).done;
+  const seenScreens = new Set();
+  let earlyViews = [];
+  function screenView(name) {
+    if (!onboarding || seenScreens.has(name)) return;
+    seenScreens.add(name);
+    if (hasAgreed()) track("screen_view", { screen: name });
+    else earlyViews.push(name);
+  }
+  function sendEarlyViews() {
+    const views = earlyViews;
+    earlyViews = [];
+    views.forEach((name) => track("screen_view", { screen: name }));
   }
 
   // ---------- adding Mornward to the home screen: one panel for every screen ----------
@@ -2095,6 +2121,7 @@
       go.disabled = true;
       const ask = installPrompt;
       installPrompt = null; // a prompt can only be shown once
+      screenView(ctx === "done" ? "view_install_prompt" : "view_welcome_install_prompt");
       try {
         await ask.prompt();
         const choice = await ask.userChoice;
@@ -2110,7 +2137,7 @@
     const how = box.querySelector("[data-install-how]");
     if (how) how.onclick = () => {
       installOpen[ctx] = !installOpen[ctx];
-      if (installOpen[ctx]) prepareIconStart(true);
+      if (installOpen[ctx]) { prepareIconStart(true); screenView(ctx === "done" ? "view_install_steps" : "view_welcome_install_steps"); }
       refreshInstallPanels();
       const again = document.querySelector(`[data-install="${ctx}"] [data-install-how]`);
       if (again) again.focus();
@@ -2155,17 +2182,18 @@
         <div class="wmid">
           ${WELCOME_ART}
           <h1>Your first 5 minutes go to someone.<br><em>Make it you.</em></h1>
-          <p class="wlede">Open it right after your alarm: <b>breathe, read one line, get up, plan your day.</b> Five minutes, then&nbsp;it&nbsp;ends.</p>
+          <p class="wlede">After your alarm: <b>breathe, read one line, get up, plan your day.</b> Five&nbsp;minutes.</p>
           <p class="wedge">No lock. No lecture. Just a better first move.</p>
         </div>
         <div class="wbottom">
-          <p class="wtrust"><span>Free ·</span> <span>No account ·</span> <span>Lives on your home screen</span></p>
+          <p class="wtrust"><span>Free ·</span> <span>No account</span></p>
           <button class="wgo" id="welcomeGo" type="button">Try a 1-minute reset</button>
           ${installPanel("welcome")}
         </div>
       </div>`;
     window.scrollTo(0, 0);
     announceScreen("Welcome to Mornward");
+    screenView("view_welcome");
     document.querySelectorAll("[data-install]").forEach(wireInstallPanel);
     // Straight to the short reset (after the terms): the home-screen ask comes after they've felt it work
     $("#welcomeGo").onclick = () => {
@@ -2184,16 +2212,15 @@
     document.body.classList.remove("welcoming");
     placeSun("Welcome");
     card.innerHTML = `
-      <p class="eyebrow">Before you start</p>
       <h1>The <em class="hl">short</em> version.</h1>
       <div class="terms">
         <ul class="tldr">
-          <li>No account. What you write stays on your phone.</li>
-          <li>A few anonymous counts, like whether you finished, help improve the beta.</li>
-          <li>Stored in the US, deleted after the beta. Turn off any time.</li>
+          <li>No account. Your writing stays on your phone.</li>
+          <li>Anonymous counts, like which screens you finish, improve the beta.</li>
+          <li>Stored in the US. Turn off any time.</li>
         </ul>
         <details class="more">
-          <summary>See exactly what's tracked</summary>
+          <summary>What's tracked</summary>
           <div class="terms">
         <section class="yes">
           <h3><span aria-hidden="true">✓</span> What Mornward keeps track of</h3>
@@ -2204,6 +2231,7 @@
             <li>How the morning went: minutes, streak, breathing done or skipped, how many get-up boxes you ticked, and whether it was a practice run.</li>
             <li>Your 👎 / 👌 / 👍, and which app you opened from the one-job list, if any.</li>
             <li>Which link you came from (like "reddit"), if the link says so.</li>
+            <li>Which first-visit screens you reached, like the welcome or the home-screen step.</li>
           </ul>
         </section>
         <section class="no">
@@ -2238,15 +2266,17 @@
         </section>
           </div>
         </details>
-        <p class="small"><a href="terms.html" target="_blank" rel="noopener">Read the full terms and privacy page</a></p>
+        <p class="small"><a href="terms.html" target="_blank" rel="noopener">Full terms</a></p>
       </div>
       <div class="btnrow stack">
         <button class="primary" id="agreeGo" type="button">Agree and continue</button>
       </div>`;
     window.scrollTo(0, 0);
     announceScreen("Before you start: the beta terms");
+    screenView("view_terms");
     $("#agreeGo").onclick = () => {
       store.set("agreed", { version: TERMS_VERSION, on: dayKey() });
+      sendEarlyViews();
       boot();
     };
   }
@@ -2282,7 +2312,6 @@
     placeSun("See you tomorrow");
     // Something to do right now, whatever time it is: the real morning, a 1-minute taste, or a note for tomorrow
     card.innerHTML = `
-      <p class="eyebrow">You're set</p>
       <h1>See you <em class="hl">${nextMorning().toLowerCase()}</em>.</h1>
       <p class="lede">Alarm off → open Mornward.</p>
       ${part === "morning" ? `<div class="btnrow stack"><button class="primary" id="startNow" type="button">It's morning. Start now</button></div>` : ""}
@@ -2291,6 +2320,7 @@
       ${part === "evening" && !afterReset ? `<div class="btnrow stack"><button class="quiet" id="resetGo" type="button">Or try the 1-minute reset now</button></div>` : ""}`;
     window.scrollTo(0, 0);
     announceScreen("Setup finished. See you tomorrow.");
+    screenView("view_see_you");
     wireKit();
     if ($("#startNow")) $("#startNow").onclick = () => { seeYouAt = 0; leaveSetup(); };
     if ($("#resetGo")) $("#resetGo").onclick = () => { seeYouAt = 0; startReset(); };
@@ -2338,7 +2368,7 @@
     } else if (stage === "one") {
       card.innerHTML = `
         <p class="eyebrow">3 of 3 · the rest of today</p>
-        <h2>One thing that would make the rest of today count?</h2>
+        <h2>One thing for the rest of today?</h2>
         <label class="field" for="resetOne">Just one
           <input type="text" id="resetOne" maxlength="120" placeholder="e.g. Finish the reading before dinner"></label>
         <div class="btnrow"><button class="primary" id="go" type="button">That's my one thing</button></div>`;
@@ -2375,6 +2405,7 @@
     }
     window.scrollTo(0, 0);
     announceScreen(stage.startsWith("done") ? "That's the 1-minute reset" : `1-minute reset, step ${["breathe", "read", "one"].indexOf(stage) + 1} of 3`);
+    if (run.first && !stage.startsWith("done")) screenView("view_reset_" + stage);
   }
   // Only reached once the reset is actually finished. Setup counts as done here, so the next open is the
   // morning itself; the habit question and the reminder stay optional.
@@ -2400,6 +2431,7 @@
     $("#firstPersonal").onclick = () => startSetup(0);
     window.scrollTo(0, 0);
     announceScreen("First reset complete");
+    screenView("view_homescreen_prompt");
   }
 
   // Evening, morning already done: just the note for tomorrow, without running the morning again
