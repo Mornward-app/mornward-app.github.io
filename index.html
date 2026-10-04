@@ -273,14 +273,14 @@
   .vsteps.four li { font-size: 0.75rem; line-height: 1rem; }
   /* Week strip: done days are suns, tomorrow is an outline */
   .week { display: flex; flex-direction: column; gap: 10px; }
-  .week ol { list-style: none; margin: 0; padding: 0; display: flex; justify-content: space-between; gap: 4px; }
+  .week ol { list-style: none; margin: 0; padding: 0; display: flex; justify-content: space-between; gap: 2px; }
   .week li { position: relative; flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
   /* The path: a thin track between days; back-to-back mornings join in sun colour; a dashed line points to tomorrow */
-  .week li + li::before { content: ""; position: absolute; top: 16px; right: 50%; width: calc(100% + 4px); height: 2px;
+  .week li + li::before { content: ""; position: absolute; top: 15px; right: 50%; width: calc(100% + 2px); height: 2px;
     background: var(--track); border-radius: 1px; }
-  .week li.joined::before { height: 4px; top: 15px; background: var(--sun); }
+  .week li.joined::before { height: 4px; top: 14px; background: var(--sun); }
   .week li.tonext::before { background: none; border-top: 2px dashed var(--sun); height: 0; }
-  .week .dot { position: relative; z-index: 1; width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--track);
+  .week .dot { position: relative; z-index: 1; width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--track);
     background: var(--bg); display: grid; place-items: center; }
   .week .done .dot { background: var(--sun); border-color: var(--sun); color: #18222F; }
   .week .done .dot .i { width: 20px; height: 20px; }
@@ -1408,13 +1408,14 @@
   // tomorrow waits as an outline.
   function weekStrip(doneToday) {
     const today = dayKey(), done = doneDays();
-    const offs = doneToday ? [-5, -4, -3, -2, -1, 0, 1] : [-6, -5, -4, -3, -2, -1, 0];
-    // Count only days since the first morning, and never a day that isn't over yet: day one reads 1 of 1, 100%
+    // The seven days that count, plus tomorrow once today is done, so the suns always match the number
+    const offs = doneToday ? [-6, -5, -4, -3, -2, -1, 0, 1] : [-6, -5, -4, -3, -2, -1, 0];
+    // Progress toward a full week: 7 mornings in the last seven days fill the ring. It starts at 0% and each morning
+    // adds to it. Days before the first morning are drawn quieter so they don't read as misses.
     const start = [...done].sort()[0] || today;
-    const counted = offs.filter((o) => o <= 0).map((o) => addDays(today, o))
-      .filter((d) => d >= start && (d !== today || done.has(d)));
-    const n = counted.filter((d) => done.has(d)).length, den = counted.length;
-    const pct = den ? Math.round((100 * n) / den) : 0;
+    const GOAL = 7;
+    const n = [-6, -5, -4, -3, -2, -1, 0].filter((o) => done.has(addDays(today, o))).length, den = GOAL;
+    const pct = Math.round((100 * n) / GOAL);
     let prevDone = false;
     const slots = offs.map((o) => {
       const d = addDays(today, o);
@@ -1426,7 +1427,6 @@
       prevDone = isDone;
       return `<li class="${cls}"><span class="dot">${isDone ? icon("sun") : ""}</span><span class="wd">${o === 0 ? "Today" : o === 1 ? "Next" : esc(wd)}</span></li>`;
     }).join("");
-    if (!den) return `<div class="week"><ol>${slots}</ol></div>`;
     const tail = doneToday ? "See you tomorrow" : "Today's is next";
     const label = `${n} of ${den} ${den === 1 ? "morning" : "mornings"} this week, ${pct} percent. ${tail}.`;
     // A small ring fills with the share of mornings done
@@ -1435,7 +1435,7 @@
         <ol aria-hidden="true">${slots}</ol>
         <div class="wsum" aria-hidden="true">
           <svg class="ring" viewBox="0 0 52 52"><circle class="rt" cx="26" cy="26" r="21"/>
-            <circle class="rf" cx="26" cy="26" r="21" stroke-dasharray="${((C * pct) / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 26 26)"/>
+            ${pct ? `<circle class="rf" cx="26" cy="26" r="21" stroke-dasharray="${((C * pct) / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 26 26)"/>` : ""}
             <text x="26" y="30" text-anchor="middle">${pct}%</text></svg>
           <p><b>${n} of ${den} ${den === 1 ? "morning" : "mornings"}</b><span>this week · ${esc(tail.toLowerCase())}</span></p>
         </div>

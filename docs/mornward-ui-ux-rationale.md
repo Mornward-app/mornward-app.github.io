@@ -159,9 +159,11 @@ alarm show `via: "alarm"`. Nothing is counted when someone sets a reminder, beca
 
 - **A path between the days:** a thin track joins the seven circles. Back-to-back mornings join in a thicker sun-coloured
   line, so a run of days reads as one stretch; from the last morning, a dashed sun line points to tomorrow ("Next").
-- **A ring and a percentage** ("67% · 4 of 6 mornings this week"). It counts only days since the first morning, and
-  never a day that isn't over yet, so day one is 1 of 1 (100%), not 1 of 7 (14%). Days before the first morning are drawn
-  quieter so they don't read as misses. Screen readers hear "4 of 6 mornings this week, 67 percent. See you tomorrow."
+- **A ring and a percentage that fill up** ("57% · 4 of 7 mornings this week"). The goal is seven mornings in the last
+  seven days: it starts at 0%, each morning adds about 14%, and a full week is 100% (the founder's call: progress that
+  grows, rather than a rate that starts at 100%). All seven counted days are always on the strip, plus "Next" once today
+  is done, so the suns match the number. Days before the first morning are drawn quieter. Screen readers hear
+  "4 of 7 mornings this week, 57 percent. See you tomorrow."
 - **Uncertainty:** a percentage can motivate or pressure; it stays off Finish and never says "lost". Watch next-day
   return and ask testers how it felt.
 - Also fixed while testing: on day 5 (where the mini-task bank comes round again) a few tasks could repeat from day 4;
