@@ -379,6 +379,15 @@
   .welcome .wrows small { display: block; font-size: 14px; color: var(--w-quiet); margin-top: 2px; }
   .welcome .wnote { color: var(--w-quiet); font-size: 15px; line-height: 1.5; margin-top: 16px; text-wrap: pretty; }
   .welcome .wdone { color: var(--w-amber); font-weight: 700; font-size: 17px; margin-top: 18px; }
+  .welcome .wpin { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; padding: 14px 16px; border-radius: 16px;
+    background: rgba(245, 178, 92, .08); border: 1px solid rgba(245, 178, 92, .3); }
+  .welcome .wpin .wpinhead { display: flex; align-items: center; gap: 12px; color: var(--w-ink); font-size: 15.5px; line-height: 1.4; }
+  .welcome .wpin .wpinhead svg { flex: none; width: 36px; height: 36px; border-radius: 9px; }
+  .welcome .wpin .wpinhead b { font-weight: 700; }
+  .welcome .wpin .wpinhow { color: var(--w-soft); font-size: 14.5px; line-height: 1.5; margin: 0; }
+  .welcome .wpin .wpinhow b { color: var(--w-ink); }
+  .welcome button.wpingo { background: transparent; color: var(--w-amber); border-color: var(--w-amber); font-weight: 700; width: 100%; }
+  .welcome button.wpingo:focus-visible { outline-color: var(--w-ink); }
   .welcome button.wlater { background: transparent; border-color: transparent; color: var(--w-soft); width: 100%; }
   .welcome button.wlater:focus-visible { outline-color: var(--w-ink); }
   .terms .tldr { display: flex; flex-direction: column; gap: 8px; margin: 0; padding-left: 1.2em; font-size: 16px; }
@@ -1967,8 +1976,13 @@
     e.preventDefault();
     installPrompt = e;
     if ($("#installScreen")) renderInstall();
+    refreshWelcomeInstall();
   });
-  window.addEventListener("appinstalled", () => { installed = true; installPrompt = null; if ($("#installScreen")) renderInstall(); });
+  window.addEventListener("appinstalled", () => {
+    installed = true; installPrompt = null;
+    if ($("#installScreen")) renderInstall();
+    refreshWelcomeInstall();
+  });
   // Opened from the calendar reminder. If this browser has never seen Mornward (the setup happened inside
   // another app's browser), take the setup the link carries, so the morning starts instead of the welcome.
   const viaCalendar = new URLSearchParams(location.search).get("via") === "calendar";
@@ -2047,7 +2061,7 @@
           <h1>Put Mornward where your <em>thumb</em> goes.</h1>
           <p class="wlede">Your thumb goes to the same spot every morning. Put the sun there.</p>
           ${body}
-          ${installed || (isAndroid && installPrompt) ? "" : `<p class="wnote">Opened this from Reddit, Instagram or another app? Tap <b>⋯</b> and choose <b>Open in browser</b> first.</p>`}
+          ${installed || (isAndroid && installPrompt) ? "" : `<p class="wnote">From Reddit or another app? Tap <b>⋯</b>, then <b>Open in browser</b>.</p>`}
         </div>
         <div class="wbottom">
           ${main}
@@ -2095,6 +2109,53 @@
     $("#phoneLater").onclick = () => { welcomed = true; boot(); };
   }
 
+  // Bottom of the welcome: pull people to put Mornward on their home screen before anything else.
+  // Testers who opened it from the icon kept coming back; nobody who stayed in a browser tab did.
+  // Android Chrome can install in one tap (needs the service worker); iPhone only allows Share → Add to Home Screen.
+  // Instagram, Facebook, TikTok and others say so in their browser's name; Reddit doesn't, so the hint covers it too.
+  const inAppBrowser = /Instagram|FBAN|FBAV|FB_IAB|TikTok|musical_ly|Snapchat|Line\/|Twitter|LinkedInApp|reddit/i.test(ua);
+  function welcomeInstall() {
+    if (onHomeScreen || onComputer()) return "";
+    const head = (text) => `<div class="wpinhead">${LOGO}<span>${text}</span></div>`;
+    if (installed) {
+      return `<div class="wpin">${head("<b>✓ Added to your home screen.</b> Open Mornward from there to set up.")}</div>`;
+    }
+    if (isAndroid && installPrompt) {
+      return `<div class="wpin">${head("<b>Works best from your home screen.</b> One tap, and tomorrow your thumb finds it.")}
+        <button class="wpingo" id="welcomeInstallGo" type="button">Add to home screen</button></div>`;
+    }
+    const how = isIOS
+      ? "Tap <b>Share</b> (the square with the arrow), then <b>Add to Home Screen</b>."
+      : "Tap <b>⋮</b> at the top right, then <b>Add to Home screen</b>.";
+    const away = isIOS ? "Open in Safari" : "Open in Chrome";
+    const tip = inAppBrowser
+      ? `This app's browser can't add it. Tap <b>⋯</b>, choose <b>${away}</b>, then: ${how.charAt(0).toLowerCase() + how.slice(1)}`
+      : `${how} Opened this from Reddit or another app? Tap <b>⋯</b> and choose <b>${away}</b> first.`;
+    return `<div class="wpin">${head("<b>Works best from your home screen.</b> Tomorrow your thumb finds it there.")}
+      <p class="wpinhow">${tip}</p></div>`;
+  }
+  function wireWelcomeInstall() {
+    const go = $("#welcomeInstallGo");
+    if (!go) return;
+    go.onclick = async () => {
+      const ask = installPrompt;
+      if (!ask) return;
+      try {
+        ask.prompt();
+        const choice = await ask.userChoice;
+        installPrompt = null;
+        if (choice && choice.outcome === "accepted") installed = true;
+      } catch { installPrompt = null; }
+      refreshWelcomeInstall();
+    };
+  }
+  function refreshWelcomeInstall() {
+    const box = $("#welcomeInstall");
+    if (!box) return;
+    box.innerHTML = welcomeInstall();
+    wireWelcomeInstall();
+  }
+
   function renderWelcome() {
     clearTimers();
     guardTaps();
@@ -2113,10 +2174,12 @@
           <p class="wtrust"><span>Free ·</span> <span>No account ·</span> <span>Lives on your home screen</span></p>
           <p class="whint">2-minute setup now · real start tomorrow morning</p>
           <button class="wgo" id="welcomeGo" type="button">Get started →</button>
+          <div id="welcomeInstall">${welcomeInstall()}</div>
         </div>
       </div>`;
     window.scrollTo(0, 0);
     announceScreen("Welcome to Mornward");
+    wireWelcomeInstall();
     $("#welcomeGo").onclick = () => {
       if (needsInstallStep()) { guardTaps(); renderInstall(); return; }
       if (onComputer()) { guardTaps(); renderPhoneFirst(); return; }
@@ -2441,6 +2504,9 @@
   document.addEventListener("visibilitychange", () => { if (!document.hidden) freshRunIfNewDay(); });
   window.addEventListener("pageshow", freshRunIfNewDay);
 
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
   tickClock();
   setInterval(tickClock, 30000);
   flushStats();
