@@ -78,6 +78,17 @@ after. Two earlier decisions change because of it, and the reasons are recorded 
 | Ideas sat below Save | Order is now field → ideas → Save. The ideas are one row you can swipe, so Save moves only about 50 px and stays above an iPhone keyboard. Tapping an idea only fills the field. |
 | "3 taps" and arrows at browser buttons | Removed. The title is "Add Mornward to your home screen", every set of steps ends with the confirmation (for example "Tap Add"), and there are no arrows. The steps still need checking on real browsers. |
 
+### Pass 4: "mini task", a list of mini tasks, a hidden Test drive panel
+
+- **"Intention" became "mini task"** in everything people see ("Before the scroll, one mini task.", "My mini task",
+  "Save my task", "Earlier tasks"). "Intention" felt heavy for "Make my bed". Internal names (`intention_saved`,
+  `intent:` keys) are unchanged, so stored data and stats carry on.
+- **Twelve mini tasks as a vertical list** (your own last two first, marked "Use again"). Save and Skip stay pinned to
+  the bottom while you scroll. While typing, the list folds away so Save sits under the field above the keyboard;
+  it returns 0.45 s after typing ends, so a tap on Save lands before anything moves.
+- **Preview tools are a slim "Test drive" tab** that slides up a panel (Next day, Back to today, Theme, Steps, Start
+  fresh). Preview build only.
+
 ## What was removed from the core flow, and what was kept
 
 Removed from the screens: the five-step timeline and sky arc, the daily quote, the movement checklist, the

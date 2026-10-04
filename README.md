@@ -1,9 +1,9 @@
 # Mornward
 
-**Before the scroll, one clear intention.**
+**Before the scroll, one mini task.**
 
 Mornward is a free one-minute routine for the moment your alarm goes off, before the feed gets there first.
-Three breaths, then choose one small thing that matters this morning. Then get on with your morning.
+Three breaths, then one small thing for this morning. Then get on with your morning.
 
 **Try it: [mornward.app](https://mornward.app)**. Free, no account. Currently in beta.
 
@@ -11,13 +11,13 @@ Three breaths, then choose one small thing that matters this morning. Then get o
 
 | Screen | What happens |
 | --- | --- |
-| Begin | One button: 3 breaths → 1 intention → ready. About one minute. |
+| Begin | One button: 3 breaths → 1 mini task → ready. About one minute. |
 | Breathe | Three slow breaths (4 seconds in, 6 out), with Pause and Skip |
-| Choose | "What matters this morning?" Type one small intention, or tap an idea (your own recent ones first), or skip |
-| Finish | "You're ready." The sun rises; your intention, with Edit |
+| Choose | "What matters this morning?" Write a mini task, or pick one of twelve (your own recent ones first), or skip |
+| Finish | "You're ready." The sun rises; your mini task, with Edit |
 
-Open it again the same day and you see today's intention. The next day it offers the routine again;
-earlier intentions stay on your phone, listed by date. A calendar reminder is optional, on the screen after you finish. It never asks for notification permission.
+Open it again the same day and you see today's mini task. The next day it offers the routine again;
+earlier tasks stay on your phone, listed by date. A calendar reminder is optional, on the screen after you finish. It never asks for notification permission.
 Light and dark: it follows your phone, or pick one under Appearance.
 Begin and the screen after Finish show an "Add to home screen" box (Chrome's one-tap install on Android, Apple's
 Share steps on iPhone) and a week strip: each morning you did it is a sun, and tomorrow waits as an outline.
@@ -35,4 +35,4 @@ Details: [terms and privacy](https://mornward.app/terms.html). Questions: mornwa
 ## For developers
 
 One self-contained `index.html`, with no framework and no build step, hosted on GitHub Pages.
-Your intentions are stored in `localStorage`. The optional anonymous stats go to Supabase; see `supabase/ANALYTICS.md`.
+Your mini tasks are stored in `localStorage`. The optional anonymous stats go to Supabase; see `supabase/ANALYTICS.md`.

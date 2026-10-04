@@ -2,7 +2,7 @@
   "id": "./",
   "name": "Mornward",
   "short_name": "Mornward",
-  "description": "Before the scroll, one clear intention. Three breaths, then one thing that matters. About one minute.",
+  "description": "Before the scroll, one mini task. Three breaths, then one small thing for this morning. About one minute.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -40,7 +40,7 @@
       "sizes": "540x1098",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Begin: before the scroll, one clear intention"
+      "label": "Begin: before the scroll, one mini task"
     },
     {
       "src": "icons/screenshot-2-breathe.png",

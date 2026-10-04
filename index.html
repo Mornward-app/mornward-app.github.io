@@ -2,19 +2,19 @@
 <html lang="en">
 <meta charset="utf-8">
 <title>Mornward</title>
-<meta name="description" content="Before the scroll, one clear intention. Three breaths, then choose what matters this morning. About one minute. Free, no account.">
+<meta name="description" content="Before the scroll, one mini task. Three breaths, then pick one small thing for this morning. About one minute. Free, no account.">
 <!-- Link previews (Reddit, iMessage, WhatsApp, Discord, X) -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://mornward.app/">
 <meta property="og:site_name" content="Mornward">
-<meta property="og:title" content="Mornward: before the scroll, one clear intention">
+<meta property="og:title" content="Mornward: before the scroll, one mini task">
 <meta property="og:description" content="Three breaths. Choose what matters. Then get on with your morning. About one minute. Free, no account.">
 <meta property="og:image" content="https://mornward.app/icons/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Mornward. Before the scroll, one clear intention. 3 breaths, 1 intention, about a minute.">
+<meta property="og:image:alt" content="Mornward. Before the scroll, one mini task. 3 breaths, 1 mini task, about a minute.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Mornward: before the scroll, one clear intention">
+<meta name="twitter:title" content="Mornward: before the scroll, one mini task">
 <meta name="twitter:description" content="Three breaths. Choose what matters. About one minute. Free, no account.">
 <meta name="twitter:image" content="https://mornward.app/icons/og-image.png">
 <!-- resizes-content: on Android Chrome the keyboard shrinks the layout, so the field and its button stay above it -->
@@ -104,14 +104,22 @@
   /* On Choose the actions sit right under the field, not at the bottom: an iPhone keyboard doesn't resize
      the page, so anything at the bottom would end up behind it */
   .actions { display: flex; flex-direction: column; gap: 12px; }
-  /* Ideas: one row you can swipe, so Save stays close to the field (and above an iPhone keyboard) */
-  .chips.strip { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: calc(-1 * var(--gutter));
-    padding: 2px var(--gutter); scroll-padding-inline: var(--gutter); -webkit-overflow-scrolling: touch; }
-  .chips.strip::-webkit-scrollbar { display: none; }
-  /* Soft edges show the row continues */
-  .chips.strip { -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--gutter), #000 calc(100% - var(--gutter)), transparent 100%);
-    mask-image: linear-gradient(to right, transparent 0, #000 var(--gutter), #000 calc(100% - var(--gutter)), transparent 100%); }
-  .chips.strip .chip { flex: none; max-width: 80vw; }
+  /* Mini tasks: one tap each, in a list */
+  .picks { display: flex; flex-direction: column; gap: 8px; }
+  .picks #picksTitle { margin-bottom: -2px; }
+  .typing .picks { display: none; }
+  .pick { min-height: 52px; padding: 12px 14px; border-radius: 14px; background: var(--chip); border: 1.5px solid var(--chip-line);
+    justify-content: flex-start; gap: 10px; text-align: left; font-weight: 600; font-size: 1rem; }
+  .pick .pt { flex: 1; min-width: 0; overflow-wrap: break-word; }
+  .pick .tagown { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: 600; color: var(--text-2); flex: none; }
+  .pick .tagown .i { width: 0.95em; height: 0.95em; }
+  .pick .tick { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--chip-line); flex: none; }
+  .pick[aria-pressed="true"] { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
+  .pick[aria-pressed="true"] .tick { border-color: var(--sun); background: var(--sun)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12.5l4 4L18 8' fill='none' stroke='%2318222F' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 16px no-repeat; }
+  /* Save and Skip stay at the bottom of the screen while you look through the list */
+  .actions.sticky { position: sticky; bottom: 0; z-index: 2; background: var(--bg); margin-inline: calc(-1 * var(--gutter));
+    padding: 12px var(--gutter) max(8px, env(safe-area-inset-bottom)); box-shadow: 0 -12px 16px -12px rgba(15, 27, 42, .25); gap: 4px; }
 
   h1 {
     font-size: 2rem;           /* 32px */
@@ -225,6 +233,12 @@
     padding: 18px var(--gutter) max(18px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 14px;
     max-width: 480px; width: 100%; margin: 0 auto; }
   .gsheet h2 { margin: 0; font-size: 1.25rem; line-height: 1.625rem; }
+  @media (prefers-reduced-motion: no-preference) {
+    .gsheet { animation: slideup .28s cubic-bezier(.2, .8, .2, 1); }
+    .gback { animation: fadein .28s ease-out; }
+    @keyframes slideup { from { transform: translateY(100%); } }
+    @keyframes fadein { from { opacity: 0; } }
+  }
   .gsheet .row .ix { margin-right: -10px; }
   .vsteps { list-style: none; margin: 0; padding: 0; display: flex; gap: 8px; counter-reset: st; }
   .vsteps li { flex: 1 1 0; min-width: 0; counter-increment: st; display: flex; flex-direction: column; align-items: center; gap: 6px;
@@ -247,9 +261,11 @@
   .week .next .dot { border-style: dashed; border-color: var(--text-2); }
   .week .wd { font-size: 0.75rem; line-height: 1rem; color: var(--text-2); }
   .week .now .wd, .week .next .wd { font-weight: 700; color: var(--text); }
-  .preview { margin-top: 28px; padding: 12px 14px; border-radius: 12px; border: 1.5px dashed var(--chip-line); font-size: 0.875rem; line-height: 1.25rem;
-    color: var(--text-2); display: flex; flex-direction: column; gap: 10px; }
-  .preview button { min-height: 44px; padding: 8px 12px; font-size: 0.875rem; }
+  /* Test drive (preview build only): a slim tab, and a panel that slides up */
+  .tdtab { width: auto; min-height: 44px; margin: 20px auto 0; padding: 8px 16px; gap: 8px; border-radius: 999px;
+    font-size: 0.875rem; color: var(--text-2); border: 1.5px dashed var(--chip-line); }
+  .tdgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .tdgrid button { min-height: 48px; padding: 8px 10px; font-size: 0.9375rem; }
 
   /* ---------- sunrise ---------- */
   .sunrise { display: block; width: min(200px, 56%); height: auto; margin: 4px 0; }
@@ -476,11 +492,11 @@
   // Keep in sync with terms.html
   const COUNTED = `<ul>
       <li>A random ID made on this phone, not linked to your name, email or any account.</li>
-      <li>The date, and which steps happened: started, breathing finished or skipped, intention saved or skipped, finished.</li>
+      <li>The date, and which steps happened: started, breathing finished or skipped, mini task saved or skipped, finished.</li>
       <li>Whether you opened it from the home screen, whether you added it there, and which link you came from (like "reddit"), if the link says so.</li>
     </ul>`;
   const NOT_SENT = `<ul>
-      <li>Your intention, or anything else you write. Not a single word.</li>
+      <li>Your mini tasks, or anything else you write. Not a single word.</li>
       <li>Your name, email, phone number, location, contacts or other apps.</li>
       <li>Anything at all once you turn the counts off.</li>
     </ul>`;
@@ -577,6 +593,7 @@
     stopBreathing();
     guardTaps();
     card.innerHTML = html;
+    card.classList.remove("typing");
     $("#installSlot").innerHTML = ""; // only Begin and Today show the home-screen box
     closeGuide();
     window.scrollTo(0, 0);
@@ -627,11 +644,11 @@
     show(`
       <p class="wordmark">mornward</p>
       ${SUN(false)}
-      <h1>Before the scroll,<br>one clear intention.</h1>
+      <h1>Before the scroll,<br>one mini task.</h1>
       ${doneDays().size ? weekStrip(false) : ""}
-      <ol class="flow" aria-label="Three breaths, one intention, then you're ready">
+      <ol class="flow" aria-label="Three breaths, one mini task, then you're ready">
         <li>${icon("breath")}<span>3 breaths</span></li>
-        <li>${icon("pen")}<span>1 intention</span></li>
+        <li>${icon("pen")}<span>1 mini task</span></li>
         <li>${icon("sun")}<span>Ready</span></li>
       </ol>
       <div class="push">
@@ -646,7 +663,7 @@
             here or any time later. Questions: ${CONTACT}</p></details>
         </div>`}
         ${earlier ? `<div class="more">${earlier}</div>` : ""}
-      </div>`, "Mornward. Before the scroll, one clear intention.");
+      </div>`, "Mornward. Before the scroll, one mini task.");
     $("#begin").onclick = begin;
     // The counts choice, before anything is sent
     const pre = $("#preStats");
@@ -778,15 +795,17 @@
   document.addEventListener("visibilitychange", () => { if (document.hidden) pauseBreathing(); });
 
   // ---------- 3. Choose ----------
-  // One-tap ideas, between the field and Save: your own last few intentions first, then a few small starters. Tapping fills the field;
-  // you can still change the words before saving.
-  const STARTERS = ["One focused hour", "Move my body", "Get outside", "Call someone"];
+  // One-tap mini tasks: your own last two first ("Use again"), then twelve small starters. Tapping one fills the
+  // field; you can still change the words before saving.
+  const STARTERS = ["Drink a glass of water", "Make my bed", "No phone until I'm dressed", "Stretch for two minutes",
+    "Step outside for five minutes", "Eat a proper breakfast", "Plan my top three for today", "One focused hour on what matters",
+    "Reply to one message I've put off", "Tidy one small space", "Text someone I care about", "Take a short walk"];
   function ideas(day) {
     const own = [];
     for (const [, t] of earlierEntries(day)) { if (!own.includes(t)) own.push(t); if (own.length === 2) break; }
-    return [...own.map((t) => ({ t, own: true })), ...STARTERS.filter((s) => !own.includes(s)).map((t) => ({ t, own: false }))].slice(0, 5);
+    return [...own.map((t) => ({ t, own: true })), ...STARTERS.filter((x) => !own.includes(x)).map((t) => ({ t, own: false }))];
   }
-  // editing: changing (or adding) an intention after the routine; `back` draws the screen to return to
+  // editing: changing (or adding) a mini task after the routine; `back` draws the screen to return to
   function renderChoose(editing = false, back = null) {
     const day = routine.day;
     const saved = intentionFor(day);
@@ -795,19 +814,20 @@
     show(`
       <h1>What matters<br>this morning?</h1>
       <div class="field">
-        <label for="intent">My intention</label>
+        <label for="intent">My mini task</label>
         <textarea id="intent" rows="1" maxlength="${MAX_INTENTION}" enterkeyhint="done" autocomplete="off"
-          autocapitalize="sentences" placeholder="Something small is enough" aria-describedby="imsg">${esc(value)}</textarea>
+          autocapitalize="sentences" placeholder="Write your own, or pick one below" aria-describedby="imsg">${esc(value)}</textarea>
         <p class="msg" id="imsg" role="status"></p>
       </div>
-        <div class="chips strip" id="ideas" role="group" aria-label="Ideas to tap">
-        ${ideas(day).map((x, i) => `<button class="chip${x.own ? " own" : ""}" type="button" data-idea="${i}"
-          aria-pressed="false"${x.own ? ` aria-label="Use again: ${esc(x.t)}"` : ""}>${x.own ? icon("again") : ""}<span>${esc(x.t)}</span></button>`).join("")}
+      <div class="picks" id="ideas" role="group" aria-labelledby="picksTitle">
+        <p class="support" id="picksTitle">Or pick one</p>
+        ${ideas(day).map((x, i) => `<button class="pick" type="button" data-idea="${i}" aria-pressed="false">
+          <span class="pt">${esc(x.t)}</span>${x.own ? `<span class="tagown">${icon("again")}Use again</span>` : ""}<span class="tick" aria-hidden="true"></span></button>`).join("")}
       </div>
-      <div class="actions">
-        <button class="primary" id="isave" type="button">Save my intention</button>
+      <div class="actions sticky">
+        <button class="primary" id="isave" type="button">Save my task</button>
         <button class="link" id="iskip" type="button">${editing ? "Keep it as it was" : "Skip for today"}</button>
-      </div>`, editing ? "Edit your intention" : "What matters this morning?");
+      </div>`, editing ? "Edit your mini task" : "What matters this morning?");
     const field = $("#intent");
     const msg = (t, err = false) => { $("#imsg").textContent = t; $("#imsg").className = "msg" + (err ? " err" : ""); };
     const grow = () => { field.style.height = "auto"; field.style.height = field.scrollHeight + 4 + "px"; };
@@ -827,14 +847,14 @@
       field.value = list[b.dataset.idea].t;
       grow(); keepDraft(); markIdeas();
     }));
+    // While typing, the list folds away so Save sits right under the field, above the keyboard. It comes back a
+    // moment after typing ends, so a tap meant for Save lands before anything moves.
+    let unfold = 0;
+    field.addEventListener("focus", () => { clearTimeout(unfold); card.classList.add("typing"); });
+    field.addEventListener("blur", () => { unfold = setTimeout(() => card.classList.remove("typing"), 450); });
     field.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); save(); } });
-    // Keep the field and its button above the keyboard once it opens. The ideas are one row and never move or
-    // hide, so a tap meant for Save can't land on an idea.
+    // Keep Save in view once the keyboard opens
     field.addEventListener("focus", () => setTimeout(() => { const b = $("#isave"); if (b) b.scrollIntoView({ block: "nearest" }); }, 350));
-    if (window.visualViewport) {
-      const keep = () => { if (document.activeElement === field) { const b = $("#isave"); if (b) b.scrollIntoView({ block: "nearest" }); } };
-      window.visualViewport.addEventListener("resize", keep);
-    }
     const save = () => {
       const text = cleanIntention(field.value);
       if (!text) { msg("Write a few words first, or skip for today.", true); field.focus(); return; }
@@ -871,17 +891,17 @@
   function intentionBlock(text, label) {
     return `<div class="intention">
         <div class="row"><span class="support">${label}</span>
-          <button class="link" id="iedit" type="button" aria-label="Edit your intention">Edit</button></div>
+          <button class="link" id="iedit" type="button" aria-label="Edit your mini task">Edit</button></div>
         <p class="text" id="itext">${esc(text)}</p>
       </div>`;
   }
-  const addButton = `<button class="chip add" id="iadd" type="button">${icon("plus")}<span>Add an intention</span></button>`;
+  const addButton = `<button class="chip add" id="iadd" type="button">${icon("plus")}<span>Add a mini task</span></button>`;
   function renderFinish(note = "") {
     const text = intentionFor(routine.day);
     show(`
       ${SUN(true, !note)}
       <h1>You're ready.</h1>
-      ${text ? intentionBlock(text, "Your intention") : `<p class="body">No intention today.</p>${addButton}`}
+      ${text ? intentionBlock(text, "Your mini task") : `<p class="body">No task today.</p>${addButton}`}
       <p class="msg ok" role="status">${esc(note)}</p>
       <div class="push">
         <button class="primary" id="finish" type="button">Finish</button>
@@ -903,8 +923,8 @@
     const text = intentionFor(routine.day);
     show(`
       <div class="row"><p class="wordmark">mornward</p><p class="support">${esc(fmtDay(routine.day))}</p></div>
-      <h1>${text ? "Today's intention" : "Done for today"}</h1>
-      ${text ? intentionBlock(text, "Today") : `<p class="body">No intention today.</p>${addButton}`}
+      <h1>${text ? "Today's mini task" : "Done for today"}</h1>
+      ${text ? intentionBlock(text, "Today") : `<p class="body">No task today.</p>${addButton}`}
       <p class="msg ok" role="status">${esc(note)}</p>
       ${weekStrip(true)}
       <button class="chip" id="again" type="button">${icon("again")}<span>Do the routine again</span></button>
@@ -914,7 +934,7 @@
         ${reminderSection()}
         ${themeSection()}
         ${privacySection()}
-      </div>`, text ? "Today's intention" : "Done for today");
+      </div>`, text ? "Today's mini task" : "Done for today");
     ($("#iedit") || $("#iadd")).onclick = () => renderChoose(true, renderToday);
     $("#again").onclick = begin;
     renderInstall();
@@ -976,7 +996,7 @@
     const note = letter && letter.text.trim() ? letter : null;
     if (!items.length && !note) return "";
     return `<details class="section" id="earlier">
-        <summary><span class="sl">${icon("list")}Earlier intentions</span></summary>
+        <summary><span class="sl">${icon("list")}Earlier tasks</span></summary>
         <div class="inner"><ul class="history">
           ${items.map(([d, t]) => `<li><span class="when">${esc(fmtDay(d))}</span><span class="what">${esc(t)}</span></li>`).join("")}
           ${note ? `<li><span class="when">A note you wrote${isDay(note.writtenOn) ? " on " + esc(fmtDay(note.writtenOn)) : ""}</span><span class="what">${esc(note.text)}</span></li>` : ""}
@@ -1222,7 +1242,7 @@
     return d;
   }
   const icsLocal = (d) => `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}T${pad2(d.getHours())}${pad2(d.getMinutes())}00`;
-  const REMIND_TITLE = "Mornward: three breaths, one intention";
+  const REMIND_TITLE = "Mornward: three breaths, one mini task";
   // The link carries this phone's anonymous ID and choices after "#", which never reaches a server. A page opened
   // inside Reddit or Instagram keeps its own storage; without this the reminder would open as a new person.
   function carryState() {
@@ -1231,7 +1251,7 @@
     return encodeURIComponent(JSON.stringify(r));
   }
   const carryLink = () => "https://mornward.app/?via=calendar#r=" + carryState();
-  const reminderText = (link) => `Before the scroll: ${link}\nThree breaths, one intention. About a minute.`;
+  const reminderText = (link) => `Before the scroll: ${link}\nThree breaths, one mini task. About a minute.`;
   const icsEsc = (t) => t.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
   // Calendar files want lines of at most 75 bytes; longer ones continue on the next line after a space
   const icsFold = (line) => {
@@ -1252,7 +1272,7 @@
       `UID:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}@mornward.app`,
       `DTSTAMP:${stamp}`, `DTSTART:${icsLocal(start)}`, "DURATION:PT5M", `RRULE:FREQ=DAILY;COUNT=${REMIND_DAYS}`,
       `SUMMARY:${icsEsc(REMIND_TITLE)}`, `DESCRIPTION:${icsEsc(reminderText(link))}`, `URL:${link}`,
-      "BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${icsEsc("Before the scroll: one clear intention")}`, "TRIGGER:PT0M", "END:VALARM",
+      "BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${icsEsc("Before the scroll: one mini task")}`, "TRIGGER:PT0M", "END:VALARM",
       "END:VEVENT", "END:VCALENDAR"].map(icsFold).join("\r\n") + "\r\n";
   }
   function googleCalendarLink(v, link) {
@@ -1312,7 +1332,7 @@
     const ask = id ? `mailto:${CONTACT}?subject=${encodeURIComponent("Delete my Mornward data")}&body=${
       encodeURIComponent("Please delete the stats for this ID: " + id)}` : "";
     return `<details class="section" id="privSec"><summary><span class="sl">${icon("lock")}Privacy and your data</span></summary><div class="inner">
-        <p>Your intentions are saved only in this browser on this phone. Clearing browser data deletes them.</p>
+        <p>Your tasks are saved only in this browser on this phone. Clearing browser data deletes them.</p>
         <p id="statsLine"></p>
         <h3>What's counted</h3>${COUNTED}
         <h3>What's never sent</h3>${NOT_SENT}
@@ -1323,7 +1343,7 @@
         : `<p>No stats have been sent from this phone.</p>`}
         <button class="link start" type="button" id="wipeLocal" aria-expanded="false" aria-controls="wipeAsk">Delete everything on this phone</button>
         <div class="ask" id="wipeAsk" hidden>
-          <p><b>Delete your intentions and settings on this phone?</b> This can't be undone.${id ? " If you also want your stats deleted, email your ID first." : ""}</p>
+          <p><b>Delete your tasks and settings on this phone?</b> This can't be undone.${id ? " If you also want your stats deleted, email your ID first." : ""}</p>
           <div class="btnrow"><button class="danger" type="button" id="wipeYes">Delete everything</button>
             <button class="secondary" type="button" id="wipeNo">Cancel</button></div>
         </div>
@@ -1409,7 +1429,7 @@
 
   // ---------- which screen to show ----------
   // Today's routine picks up where it was (breathing comes back paused). A routine from an earlier date is
-  // never shown as today's; it's under "Earlier intentions", dated. One started just before midnight can be finished.
+  // never shown as today's; it's under "Earlier tasks", dated. One started just before midnight can be finished.
   function home() {
     const today = dayKey();
     routine = store.get("routine", null, isRoutine);
@@ -1440,45 +1460,64 @@
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
   }
-  // ---------- preview tools (preview build only) ----------
-  // Try every state without waiting: move the pretend date forward a day, go back to today, or start fresh.
+  // ---------- Test drive (preview build only) ----------
+  // A slim tab at the bottom; tapping it slides up a panel to try other days, themes and phones. Nothing is sent.
   function previewBar() {
     if (!PREVIEW) return;
-    const bar = document.createElement("div");
-    bar.className = "preview";
-    bar.setAttribute("role", "region");
-    bar.setAttribute("aria-label", "Preview tools");
-    document.querySelector(".app").insertBefore(bar, $("#installSlot"));
-    const draw = () => {
+    const tab = document.createElement("button");
+    tab.type = "button";
+    tab.className = "tdtab";
+    tab.id = "tdTab";
+    tab.setAttribute("aria-haspopup", "dialog");
+    tab.innerHTML = `<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><span>Test drive</span>`;
+    document.querySelector(".app").appendChild(tab);
+    const theme = () => store.get("theme", "auto", (v) => THEMES.includes(v));
+    const phone = () => ({ ios: "iPhone", android: "Android" }[store.get("previewPlatform", "")] || "this phone");
+    const close = () => { const d = $("#testDrive"); if (d) { d.remove(); tab.focus(); } };
+    const open = () => {
+      close();
       const shifted = shiftMs() !== 0;
-      bar.innerHTML = `<p><b>Preview</b> · nothing is sent${shifted ? ` · pretending it's ${esc(fmtDay(dayKey()))}` : ""}</p>
-        <div class="btnrow">
-          <button type="button" class="secondary" id="pvNext">Next day</button>
-          ${shifted ? `<button type="button" class="secondary" id="pvToday">Back to today</button>` : ""}
-          <button type="button" class="secondary" id="pvTheme">Theme: ${esc(store.get("theme", "auto", (v) => THEMES.includes(v)))}</button>
-          <button type="button" class="secondary" id="pvPhone">Steps: ${esc({ ios: "iPhone", android: "Android" }[store.get("previewPlatform", "")] || "this phone")}</button>
-          <button type="button" class="secondary" id="pvReset">Start fresh</button>
+      const wrap = document.createElement("div");
+      wrap.className = "guide";
+      wrap.id = "testDrive";
+      wrap.innerHTML = `<div class="gback" data-td-close></div>
+        <div class="gsheet" role="dialog" aria-modal="true" aria-labelledby="tdTitle">
+          <div class="row"><h2 id="tdTitle" tabindex="-1">Test drive</h2>
+            <button class="ix" data-td-close type="button" aria-label="Close"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+          <p class="support">Try other days, themes and phones. Nothing is sent.${shifted ? ` Pretending it's <b>${esc(fmtDay(dayKey()))}</b>.` : ""}</p>
+          <div class="tdgrid">
+            <button type="button" class="secondary" id="pvNext">Next day</button>
+            ${shifted ? `<button type="button" class="secondary" id="pvToday">Back to today</button>` : ""}
+            <button type="button" class="secondary" id="pvTheme">Theme: ${esc(theme())}</button>
+            <button type="button" class="secondary" id="pvPhone">Steps: ${esc(phone())}</button>
+            <button type="button" class="secondary" id="pvReset">Start fresh</button>
+          </div>
         </div>`;
+      document.body.appendChild(wrap);
+      wrap.querySelectorAll("[data-td-close]").forEach((x) => (x.onclick = close));
       // Tomorrow at 7:00, so the morning always looks like a morning
       $("#pvNext").onclick = () => {
         const t = now(); t.setDate(t.getDate() + 1); t.setHours(7, 0, 0, 0);
-        store.set("previewShift", t.getTime() - Date.now()); draw(); home();
+        store.set("previewShift", t.getTime() - Date.now()); close(); home();
       };
-      if ($("#pvToday")) $("#pvToday").onclick = () => { store.del("previewShift"); draw(); home(); };
+      if ($("#pvToday")) $("#pvToday").onclick = () => { store.del("previewShift"); close(); home(); };
       $("#pvTheme").onclick = () => {
-        const t = store.get("theme", "auto", (v) => THEMES.includes(v));
-        store.set("theme", THEMES[(THEMES.indexOf(t) + 1) % THEMES.length]); applyTheme(); draw();
-        card.querySelectorAll("[data-theme-pick]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.themePick === store.get("theme", "auto"))));
+        store.set("theme", THEMES[(THEMES.indexOf(theme()) + 1) % THEMES.length]); applyTheme();
+        $("#pvTheme").textContent = "Theme: " + theme();
+        card.querySelectorAll("[data-theme-pick]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.themePick === theme())));
       };
       $("#pvPhone").onclick = () => {
         const order = [null, "ios", "android"], cur = store.get("previewPlatform", null);
         const next = order[(order.indexOf(cur) + 1) % order.length];
         if (next) store.set("previewPlatform", next); else store.del("previewPlatform");
-        draw(); refreshHome();
+        $("#pvPhone").textContent = "Steps: " + phone();
+        refreshHome();
       };
       $("#pvReset").onclick = () => { store.keys().forEach((k) => store.del(k)); location.reload(); };
+      $("#tdTitle").focus();
     };
-    draw();
+    tab.onclick = open;
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
   }
 
   applyTheme();
