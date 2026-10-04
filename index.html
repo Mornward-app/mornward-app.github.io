@@ -338,12 +338,12 @@
   .welcome .wlede, .welcome .wedge { text-wrap: pretty; }
   .welcome .wbottom { padding-top: 28px; display: flex; flex-direction: column; gap: 14px; }
   .welcome .wtrust {
-    font-family: var(--mono); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase;
+    font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase;
     color: var(--w-quiet); text-align: center;
   }
   .welcome .wtrust span { white-space: nowrap; }
   .welcome .wlede b { color: var(--w-ink); font-weight: 600; }
-  .welcome .whint { color: var(--w-soft); font-size: 15px; text-align: center; margin-top: -4px; }
+  .welcome .whint { color: var(--w-soft); font-size: 13px; text-align: center; margin-top: -6px; }
   .welcome .qrbox { margin: 24px auto 0; width: 200px; padding: 12px; border-radius: 18px; background: #f4efe6; }
   .welcome .qrbox svg { display: block; width: 100%; height: auto; }
   .welcome .qrcap { text-align: center; color: var(--w-soft); font-size: 15px; margin-top: 12px; }
@@ -1339,7 +1339,7 @@
         <p class="eyebrow">${hello} · ${already ? "already done today" : "five minutes, then you're free"}</p>
         <h1>${line}</h1>
         <p class="lede">Your thumb wanted something to hold on to. This gives it a short, finished job:
-          breathe, read one short quote, get out of bed, plan your day. Then it ends.</p>
+          breathe, read one line, get up, plan your day. Then it ends.</p>
         <p class="small">${streakLine}</p>
         ${pendingNote() ? `<p class="small notewait">You left yourself a note. It's waiting near the end.</p>` : ""}
         <div class="btnrow stack">
@@ -1529,7 +1529,7 @@
       wireKit();
       wireDoors();
       const pick = $("#pickDoors");
-      if (pick) pick.onclick = () => startSetup(2);
+      if (pick) pick.onclick = () => startSetup(1);
 
       $("#close").onclick = () => {
         clearTimers();
@@ -1556,16 +1556,11 @@
 
   // ---------- setup: a one-time tour the first time someone opens the app ----------
   const HABITS = {
-    social: { label: "Social media", hint: "Instagram, Snapchat, TikTok…", app: "your social app", thing: "the feed", tally: "posts seen",
-      finale: "Tomorrow, the first thing you see will be *yours*." },
-    games: { label: "A game", hint: "“just one match”… then five", app: "your game", thing: "your game", tally: "matches played",
-      finale: "Tomorrow, the first thing you win is the *morning*." },
-    video: { label: "YouTube or videos", hint: "Shorts, “one more video”", app: "your video app", thing: "the next video", tally: "videos watched",
-      finale: "Tomorrow, you're the one who picks what's *next*." },
-    news: { label: "News or headlines", hint: "bad news before your eyes are open", app: "your news app", thing: "the headlines", tally: "headlines read",
-      finale: "Tomorrow, the news can wait until you're *up*." },
-    other: { label: "Something else", hint: "", app: "that app", thing: "that app", tally: "feeds scrolled",
-      finale: "See you at first *light*." }
+    social: { label: "Social media", tally: "posts seen" },
+    games: { label: "A game", tally: "matches played" },
+    video: { label: "YouTube or videos", tally: "videos watched" },
+    news: { label: "News or headlines", tally: "headlines read" },
+    other: { label: "Something else", tally: "feeds scrolled" }
   };
   // Apps people may still need for one specific job. Links go to messages or search where the app allows it,
   // not the home feed. On a phone most of these open the real app.
@@ -1635,39 +1630,6 @@
   let setupStep = -1; // -1 = not in setup
   const saveSetup = (patch) => store.set("setup", { ...store.get("setup", { done: false }, isSetup), ...patch });
 
-  function homeScreenSteps(h) {
-    const move = `Drag the sun to where <b>${esc(h.app)}</b> sits now. Then move that app anywhere your thumb won't find it on autopilot.`;
-    if (onHomeScreen) {
-      return `<p class="check">✓ You opened this from your home screen. That's the hard part done.</p>
-        <ol class="howto"><li>${move}</li></ol>`;
-    }
-    if (isIOS) {
-      return `<ol class="howto">
-          <li>Tap the <b>Share</b> button, the square with an arrow pointing up. In Safari it's in the bottom bar; in Chrome it's in the address bar.</li>
-          <li>Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.</li>
-          <li>${move}</li>
-        </ol>`;
-    }
-    if (isAndroid) {
-      return `<ol class="howto">
-          <li>Tap the <b>⋮</b> menu at the top right of Chrome.</li>
-          <li>Tap <b>Add to Home screen</b> (it may say <b>Install app</b>), then <b>Add</b>.</li>
-          <li>${move}</li>
-        </ol>`;
-    }
-    return `<p class="lede">Mornward is made for your phone. Open this address on it, then come back to this step:</p>
-      <p class="addr">${esc(location.href.split("#")[0])}</p>`;
-  }
-
-  // Android only. Not on iPhone: a Shortcuts "Open URLs" automation opens Safari, whose storage is separate from the
-  // home-screen app, so the morning would start over at the welcome screen.
-  function alarmSteps() {
-    return `<ol class="howto">
-        <li>Open <b>Modes and Routines</b> (Samsung) or a routines app like Tasker.</li>
-        <li>Trigger: <b>alarm dismissed</b>. Action: <b>open mornward.app</b>.</li>
-      </ol>`;
-  }
-
   // The alarm time is kept on this phone only, to turn "tomorrow" into a specific plan. It's never sent.
   const isAlarmTime = (v) => typeof v === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
   const alarmLabel = (v) => {
@@ -1677,9 +1639,6 @@
   };
   // Setting up after midnight, the next morning is today, not tomorrow
   const nextMorning = () => (new Date().getHours() < 5 ? "This morning" : "Tomorrow");
-  const planLine = (v) => isAlarmTime(v)
-    ? `<b>${nextMorning()} at ${esc(alarmLabel(v))}:</b> alarm off, then tap the sun.`
-    : `<b>${nextMorning()}, right after your alarm:</b> tap the sun.`;
 
   // ---------- tomorrow kit: a note for tomorrow-you, plus a calendar reminder ----------
   // Most people never add Mornward to their home screen, so nothing reminds them it exists. A calendar event at
@@ -1747,16 +1706,14 @@
     const alt = isAndroid ? "Use a calendar file instead" : "Use Google Calendar instead";
     return `
       <div class="remind" id="kit">
-        <p class="eyebrow">Before you go · 30 seconds</p>
-        <h2>Leave tomorrow-you a reason to open it.</h2>
-        <label class="field" for="kitNote">One line for tomorrow morning
+        <h2>A note for tomorrow-you</h2>
+        <label class="field" for="kitNote"><span class="sr-only">Your note</span>
           <textarea id="kitNote" maxlength="200" placeholder="e.g. Don't open Instagram first. You promised.">${esc(draft)}</textarea></label>
         <label class="field" for="kitAt">Alarm time
           <input type="time" id="kitAt" value="${esc(at)}"></label>
-        <p class="small">Your note waits inside tomorrow's morning, and in a reminder at your alarm time for the next ${REMIND_DAYS} mornings.
-          The reminder goes in your own calendar. Mornward never sees it, and you can delete it any time.</p>
+        <p class="small">A calendar reminder for ${REMIND_DAYS} mornings. Only you see it.</p>
         <div class="btnrow stack">
-          <button class="primary" id="kitGo" type="button">Save and add to my calendar</button>
+          <button class="primary" id="kitGo" type="button">Add to my calendar</button>
           <button class="quiet" id="kitAlt" type="button">${alt}</button>
           <button class="quiet" id="kitNoteOnly" type="button">Just save the note</button>
         </div>
@@ -1800,36 +1757,17 @@
     };
   }
 
-  const hl = (t) => esc(t).replace(/\*(.+?)\*/, '<em class="hl">$1</em>');
+  // Setup is one question. The useful-apps picker is offered later, from the end of a morning.
   const setupScreens = [
     () => `
-      <p class="eyebrow">1 of 3 · be honest</p>
-      <p class="lede">Your thumb wakes up before <em class="hl">you</em> do.</p>
-      <h2>What does it open first?</h2>
-      <p class="small">No judgment. I built this because mine went straight to a game, three matches deep before I'd even sat up.</p>
+      <p class="eyebrow">One question</p>
+      <h2>Alarm off. Your thumb goes straight to…</h2>
       <div class="choices">
-        ${Object.entries(HABITS).map(([k, h]) =>
-          `<button type="button" data-habit="${k}"><strong>${esc(h.label)}</strong>${h.hint ? `<span>${esc(h.hint)}</span>` : ""}</button>`).join("")}
+        ${Object.entries(HABITS).map(([k, h]) => `<button type="button" data-habit="${k}"><strong>${esc(h.label)}</strong></button>`).join("")}
       </div>
       <div class="btnrow stack">
-        <button class="quiet" id="sSkip" type="button">Skip the questions</button>
+        <button class="quiet" id="sSkip" type="button">Skip</button>
       </div>`,
-    () => {
-      const h = habit();
-      return `
-      <p class="eyebrow">2 of 3 · the part that actually matters</p>
-      <h2>Put the sun exactly where ${esc(h.app)} lives.</h2>
-      <p class="small">Tomorrow your thumb goes to the same corner of the screen it always does. Make sure the sun is waiting there instead.</p>
-      ${homeScreenSteps(h)}
-      ${!isAndroid ? "" : `<details class="doors">
-        <summary>Bonus: make your alarm open it for you</summary>
-        <div class="inner">${alarmSteps()}</div>
-      </details>`}
-      <div class="btnrow stack">
-        <button class="primary" id="sNext" type="button">${onHomeScreen ? "Next" : "Done, it's there"}</button>
-        <button class="quiet" id="sLater" type="button">I'll do it later</button>
-      </div>`;
-    },
     () => {
       const picked = chosenDoors() || [];
       const chip = ([k, d]) => `<button type="button" data-door="${k}" aria-pressed="${picked.includes(k)}">${esc(d.label)}</button>`;
@@ -1838,7 +1776,7 @@
       const groups = [...new Set(more.map(([, d]) => d.group))];
       const openMore = more.some(([k]) => picked.includes(k));
       return `
-      <p class="eyebrow">3 of 3 · the useful parts</p>
+      <p class="eyebrow">The useful parts</p>
       <h2>Which apps do you still need for something useful?</h2>
       <p class="small">Tap any, or none. They'll sit behind a 10-second wait at the end of your morning,
         and open straight to messages or search, not the feed.</p>
@@ -1865,20 +1803,7 @@
       </details>
       <p class="small">On a phone, most of these open the app itself, so the feed is still in there. Go in for the one job.</p>
       <div class="btnrow stack">
-        <button class="primary" id="sNext" type="button">${picked.length || customDoors().length ? "Save my picks" : "None for me, next"}</button>
-      </div>`;
-    },
-    () => {
-      const h = habit();
-      return `
-      <p class="eyebrow">That's it · the plan for ${nextMorning() === "Tomorrow" ? "tomorrow" : "this morning"}</p>
-      <h1>${hl(h.finale.replace(/^Tomorrow/, nextMorning()))}</h1>
-      <label class="field" for="alarmAt">When does your alarm go off?
-        <input type="time" id="alarmAt" value="${esc(store.get("alarmAt", "", isAlarmTime))}"></label>
-      <p class="lede"><span id="planLine">${planLine(store.get("alarmAt", "", isAlarmTime))}</span> A few minutes, then you're free.</p>
-      <p class="small">Reminder: stats are anonymous and never include what you write. Turn them off at the end of any morning.</p>
-      <div class="btnrow stack">
-        <button class="primary" id="sReady" type="button">I'm ready for tomorrow</button>
+        <button class="primary" id="sNext" type="button">${picked.length || customDoors().length ? "Save my picks" : "None for me"}</button>
       </div>`;
     }
   ];
@@ -1891,36 +1816,22 @@
     placeSun("Setting up");
     card.innerHTML = setupScreens[setupStep]();
     window.scrollTo(0, 0);
-    announceScreen(setupStep < 3 ? `Setup, screen ${setupStep + 1} of 3` : "Setup finished");
-    const go = (n) => { setupStep = n; renderSetup(); };
-    const finish = () => {
+    announceScreen(setupStep === 0 ? "Setup: one question" : "Pick your useful apps");
+    const finish = (skipped = false) => {
       saveSetup({ done: true });
       const st = store.get("setup", {}, isSetup);
-      track("setup_done", { habit: st.habit || null, doors: chosenDoors() || [], own_apps: customDoors().length, skipped: false, from: store.get("from", null) });
-      go(3);
+      track("setup_done", skipped ? { skipped: true, from: store.get("from", null) }
+        : { habit: st.habit || null, doors: chosenDoors() || [], own_apps: customDoors().length, skipped: false, from: store.get("from", null) });
+      renderSeeYou();
     };
     const on = (id, fn) => { const el = $("#" + id); if (el) el.onclick = fn; };
-    // Skipping the questions still ends on the plan for tomorrow, so nobody lands in a "good morning" at night
-    on("sSkip", setupStep === 0 ? () => { saveSetup({ done: true }); track("setup_done", { skipped: true, from: store.get("from", null) }); go(3); } : finish);
-    on("sLater", () => go(2));
-    on("sTry", () => leaveSetup(true));
-    if (setupStep === 3) {
-      const input = $("#alarmAt");
-      input.onchange = input.oninput = () => {
-        if (isAlarmTime(input.value)) store.set("alarmAt", input.value);
-        $("#planLine").innerHTML = planLine(input.value);
-      };
-      on("sReady", () => {
-        if (isAlarmTime(input.value)) store.set("alarmAt", input.value);
-        renderSeeYou();
-      });
-    }
-    card.querySelectorAll("[data-habit]").forEach((b) => (b.onclick = () => { saveSetup({ habit: b.dataset.habit }); go(1); }));
-    if (setupStep === 2) {
+    on("sSkip", () => finish(true));
+    card.querySelectorAll("[data-habit]").forEach((b) => (b.onclick = () => { saveSetup({ habit: b.dataset.habit }); finish(); }));
+    if (setupStep === 1) {
       const chips = [...card.querySelectorAll("[data-door]")];
       const picks = () => chips.filter((c) => c.getAttribute("aria-pressed") === "true").map((c) => c.dataset.door);
       let custom = customDoors();
-      const label = () => { $("#sNext").textContent = picks().length || custom.length ? "Save my picks" : "None for me, next"; };
+      const label = () => { $("#sNext").textContent = picks().length || custom.length ? "Save my picks" : "None for me"; };
       chips.forEach((c) => (c.onclick = () => {
         c.setAttribute("aria-pressed", String(c.getAttribute("aria-pressed") !== "true"));
         label();
@@ -1944,9 +1855,13 @@
         $("#customName").value = ""; $("#customUrl").value = "";
         drawCustom(); label(); msg(`Added ${name.slice(0, 40)}.`);
       };
-      on("sNext", () => { saveSetup({ doors: picks(), custom }); finish(); });
-    } else {
-      on("sNext", () => go(setupStep + 1));
+      // Picked from the end of a morning: save, then back to that screen (setup itself is already done)
+      on("sNext", () => {
+        saveSetup({ doors: picks(), custom });
+        setupStep = -1;
+        stepsEl.hidden = false;
+        render();
+      });
     }
   }
   function startSetup(at = 0) { setupStep = at; renderSetup(); }
@@ -2064,7 +1979,6 @@
           <h1>Put Mornward where your <em>thumb</em> goes.</h1>
           <p class="wlede">Your thumb goes to the same spot every morning. Put the sun there.</p>
           ${body}
-          ${installed || (isAndroid && installPrompt) ? "" : `<p class="wnote">From Reddit or another app? Tap <b>⋯</b>, then <b>Open in browser</b>.</p>`}
         </div>
         <div class="wbottom">
           ${main}
@@ -2131,8 +2045,7 @@
         <p class="wpinhow">First tap <b>⋯</b> → <b>Open in ${browser}</b></p></div>`;
     }
     return `<div class="wpin"><p class="wpinhead"><b>Best on your home screen.</b></p>
-      <p class="wpinhow">${steps}</p>
-      <p class="wpinhow small">In Reddit? <b>⋯</b> → <b>Open in ${browser}</b></p></div>`;
+      <p class="wpinhow">${steps}</p></div>`;
   }
   function wireWelcomeInstall() {
     const go = $("#welcomeInstallGo");
@@ -2166,13 +2079,12 @@
         <div class="wmid">
           ${WELCOME_ART}
           <h1>Your first 5 minutes go to someone.<br><em>Make it you.</em></h1>
-          <p class="wlede"><b>Keep your alarm.</b> Mornward is what you open right after it: breathe, read one short quote,
-            get up, and plan your day. Then&nbsp;it&nbsp;ends.</p>
+          <p class="wlede">Open it right after your alarm: <b>breathe, read one line, get up, plan your day.</b> Five minutes, then&nbsp;it&nbsp;ends.</p>
           <p class="wedge">No lock. No lecture. Just a better first move.</p>
         </div>
         <div class="wbottom">
           <p class="wtrust"><span>Free ·</span> <span>No account ·</span> <span>Lives on your home screen</span></p>
-          <p class="whint">2-minute setup now · real start tomorrow morning</p>
+          <p class="whint">1-minute setup · real start tomorrow</p>
           <button class="wgo" id="welcomeGo" type="button">Get started →</button>
           <div id="welcomeInstall">${welcomeInstall()}</div>
         </div>
@@ -2197,15 +2109,14 @@
     document.body.classList.remove("welcoming");
     placeSun("Welcome");
     card.innerHTML = `
-      <p class="eyebrow">Before you start · the short version</p>
-      <h1>Here's the deal, in <em class="hl">plain</em> words.</h1>
+      <p class="eyebrow">Before you start</p>
+      <h1>The <em class="hl">short</em> version.</h1>
       <div class="terms">
         <ul class="tldr">
-          <li>Mornward counts a few anonymous things, like whether you finished your morning, to see if the beta helps.</li>
-          <li>It never sees what you write, and there's no account.</li>
-          <li>The stats are stored in the United States and deleted within 90 days after the beta. Turn them off any time.</li>
+          <li>No account. What you write stays on your phone.</li>
+          <li>A few anonymous counts, like whether you finished, help improve the beta.</li>
+          <li>Stored in the US, deleted after the beta. Turn off any time.</li>
         </ul>
-        <p class="small">Questions: <a href="mailto:${CONTACT}">${CONTACT}</a></p>
         <details class="more">
           <summary>See exactly what's tracked</summary>
           <div class="terms">
@@ -2254,19 +2165,12 @@
         </details>
         <p class="small"><a href="terms.html" target="_blank" rel="noopener">Read the full terms and privacy page</a></p>
       </div>
-      <label class="agree" for="agreeBox">
-        <input type="checkbox" id="agreeBox">
-        <span>I've read this and I agree to Mornward's beta terms, including anonymous stats stored in the United States.</span>
-      </label>
       <div class="btnrow stack">
-        <button class="primary" id="agreeGo" type="button" disabled>Agree and continue</button>
+        <button class="primary" id="agreeGo" type="button">Agree and continue</button>
       </div>`;
     window.scrollTo(0, 0);
     announceScreen("Before you start: the beta terms");
-    const box = $("#agreeBox"), go = $("#agreeGo");
-    box.onchange = () => { go.disabled = !box.checked; };
-    go.onclick = () => {
-      if (!box.checked) return;
+    $("#agreeGo").onclick = () => {
       store.set("agreed", { version: TERMS_VERSION, on: dayKey() });
       boot();
     };
@@ -2299,14 +2203,13 @@
     guardTaps();
     setupStep = -1;
     seeYouAt = Date.now();
-    const at = alarmLabel(store.get("alarmAt", "", isAlarmTime));
     const part = partOfDay();
     placeSun("See you tomorrow");
     // Something to do right now, whatever time it is: the real morning, a 1-minute taste, or a note for tomorrow
     card.innerHTML = `
       <p class="eyebrow">You're set</p>
-      <h1>See you ${at ? `at <em class="hl">${esc(at)}</em>` : `<em class="hl">${nextMorning().toLowerCase()}</em>`}.</h1>
-      <p class="lede">${nextMorning()}: alarm off, then open Mornward. A few minutes, then you're free.</p>
+      <h1>See you <em class="hl">${nextMorning().toLowerCase()}</em>.</h1>
+      <p class="lede">Alarm off → open Mornward.</p>
       ${part === "morning" ? `<div class="btnrow stack"><button class="primary" id="startNow" type="button">It's morning. Start now</button></div>` : ""}
       ${part === "afternoon" ? `<div class="btnrow stack"><button class="primary" id="resetGo" type="button">Try the 1-minute version now</button></div>` : ""}
       ${tomorrowKit()}

@@ -11,7 +11,7 @@ No lock. No lecture. Just a better first move.
 
 ## How it works
 
-**Once (about 2 minutes):** add Mornward to your home screen, answer 3 quick questions, and tell it when your alarm goes off.
+**Once (about a minute):** add Mornward to your home screen, answer one question, and leave a note for tomorrow with a calendar reminder at your alarm time.
 
 **Every morning (about 5 minutes):**
 
