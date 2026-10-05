@@ -327,6 +327,8 @@
   .tdtab { width: auto; min-height: 44px; margin: 20px auto 0; padding: 8px 16px; gap: 8px; border-radius: 999px;
     font-size: 0.875rem; color: var(--text-2); border: 1.5px dashed var(--chip-line); }
   .tdgrid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  /* Not during the minute itself */
+  .app:has(#bpause) .tdtab, .app:has(#isave) .tdtab { display: none; }
   .tdrow { display: flex; flex-direction: column; gap: 6px; }
   .tdout:empty { display: none; }
   #guideNow:empty { display: none; }
@@ -1592,9 +1594,9 @@
   // ---------- appearance: follows the phone, or pick light or dark ----------
   const THEMES = ["auto", "light", "dark"];
   let themeSet = false; // only clear a theme this page set itself (a host page may set its own)
-  // The live app follows the phone's light or dark setting. Only the preview's Test drive picks one.
+  // Follows the phone's light or dark setting until Light or Dark is picked in Test drive
   function applyTheme() {
-    const t = PREVIEW ? store.get("theme", "auto", (v) => THEMES.includes(v)) : "auto";
+    const t = store.get("theme", "auto", (v) => THEMES.includes(v));
     const root = document.documentElement;
     if (t === "auto") { if (themeSet) root.removeAttribute("data-theme"); themeSet = false; }
     else { root.setAttribute("data-theme", t); themeSet = true; }
@@ -2353,7 +2355,7 @@
   // A slim tab at the bottom; tapping it slides up a panel for trying the app: light or dark, larger text, a sample
   // week of history, and plain-language views of what the phone keeps and what would be counted. Nothing is sent.
   const TEXT_SIZES = { normal: "", large: "125%", largest: "150%" };
-  const applyTextSize = () => { if (PREVIEW) document.documentElement.style.fontSize = TEXT_SIZES[store.get("previewText", "normal", (v) => v in TEXT_SIZES)]; };
+  const applyTextSize = () => { document.documentElement.style.fontSize = TEXT_SIZES[store.get("previewText", "normal", (v) => v in TEXT_SIZES)]; };
   // What a preview would have counted (with the counts on), kept on the phone so it can be shown. Never sent.
   const COUNT_WORDS = {
     routine_started: () => "Started a routine",
@@ -2371,23 +2373,7 @@
   };
   function previewNote(kind, data) {
     if (!PREVIEW || !hasAgreed() || store.get("noStats", false) === true) return;
-    store.set("previewLog", store.get("previewLog", [], Array.isArray).concat([{ kind, data }]).slice(-30));
-  }
-  // Five of the last six days: four full, one with a step skipped, one missed. Real dates; it starts no routine today.
-  function sampleWeek() {
-    const today = dayKey(), ago = (n) => addDays(today, -n);
-    const plan = [[6, "Water first · Make my bed", true], [5, "Short walk", true], [4, "Plan my top 3", false],
-      [2, "Stretch · Text someone", true], [1, "Read 10 pages · Open a window", true]];
-    const merge = (key, list) => store.set(key, [...new Set([...store.get(key, [], isDayList), ...list])].sort());
-    merge("days", plan.map(([n]) => ago(n)));
-    merge("fullDays", plan.filter((p) => p[2]).map(([n]) => ago(n)));
-    for (const [n, t] of plan) if (!store.get("intent:" + ago(n), null, isText)) store.set("intent:" + ago(n), t);
-    const s = store.get("startDay", null, isDay);
-    if (!s || s > ago(6)) store.set("startDay", ago(6));
-    store.set("everStarted", true);
-    agree("preview");
-    usePrepared();
-    home();
+    store.set("countLog", store.get("countLog", [], Array.isArray).concat([{ kind, data }]).slice(-30));
   }
   function keptHtml() {
     const days = doneDays().size, full = fullDays().size;
@@ -2405,7 +2391,7 @@
       <p class="support">Only on this phone. Your words never leave it.</p>`;
   }
   function countsHtml() {
-    const log = store.get("previewLog", [], Array.isArray);
+    const log = store.get("countLog", [], Array.isArray);
     const off = store.get("noStats", false) === true;
     const rows = log.slice(-12).reverse().map((r) => { try { return (COUNT_WORDS[r.kind] || (() => r.kind))(r.data || {}); } catch { return r.kind; } });
     return `<h3>What would be counted</h3>
@@ -2413,8 +2399,9 @@
         : `<p>Nothing yet. Do a routine, then look again.</p>`}
       <p class="support">The live app sends these as anonymous counts. This preview sends nothing.</p>`;
   }
+  // Test drive: in the live app, Theme and Text size only. The preview build also shows what the phone keeps and
+  // what would be counted, and can start over. Nothing in it makes up progress or numbers.
   function previewBar() {
-    if (!PREVIEW) return;
     const tab = document.createElement("button");
     tab.type = "button";
     tab.className = "tdtab";
@@ -2438,16 +2425,15 @@
         <div class="gsheet" role="dialog" aria-modal="true" aria-labelledby="tdTitle">
           <div class="row"><h2 id="tdTitle" tabindex="-1">Test drive</h2>
             <button class="ix" data-td-close type="button" aria-label="Close"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
-          <p class="support">Try it out. Nothing is sent from this preview.</p>
+          <p class="support">${PREVIEW ? "Try it out. Nothing is sent from this preview." : "Change how Mornward looks."}</p>
           <div class="tdrow"><span class="flabel">Theme</span>${seg("Theme", shade(), [["light", "Light"], ["dark", "Dark"]])}</div>
           <div class="tdrow"><span class="flabel">Text size</span>${seg("Text size", size(), [["normal", "Normal"], ["large", "Large"], ["largest", "Largest"]])}</div>
-          <div class="tdgrid">
-            <button type="button" class="secondary" id="pvWeek">Show a sample week</button>
+          ${PREVIEW ? `<div class="tdgrid">
             <button type="button" class="secondary" id="pvKept" aria-controls="pvOut">What this phone keeps</button>
             <button type="button" class="secondary" id="pvCounts" aria-controls="pvOut">What would be counted</button>
           </div>
           <div class="tdout" id="pvOut" role="status"></div>
-          <button type="button" class="link" id="pvReset">Start over</button>
+          <button type="button" class="link" id="pvReset">Start over</button>` : ""}
         </div>`;
       document.body.appendChild(wrap);
       wrap.querySelectorAll("[data-td-close]").forEach((x) => (x.onclick = close));
@@ -2459,10 +2445,9 @@
         store.set("previewText", b.dataset.tdTextsize); applyTextSize(); fitSticky();
         wrap.querySelectorAll("[data-td-textsize]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
       }));
-      $("#pvWeek").onclick = () => { close(); sampleWeek(); };
-      $("#pvKept").onclick = () => { $("#pvOut").innerHTML = keptHtml(); };
-      $("#pvCounts").onclick = () => { $("#pvOut").innerHTML = countsHtml(); };
-      $("#pvReset").onclick = () => { store.keys().forEach((k) => store.del(k)); location.reload(); };
+      if ($("#pvKept")) $("#pvKept").onclick = () => { $("#pvOut").innerHTML = keptHtml(); };
+      if ($("#pvCounts")) $("#pvCounts").onclick = () => { $("#pvOut").innerHTML = countsHtml(); };
+      if ($("#pvReset")) $("#pvReset").onclick = () => { store.keys().forEach((k) => store.del(k)); location.reload(); };
       $("#tdTitle").focus();
     };
     tab.onclick = open;

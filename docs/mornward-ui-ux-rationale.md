@@ -90,7 +90,7 @@ after. Two earlier decisions change because of it, and the reasons are recorded 
 - **Twelve mini tasks as a vertical list** (your own last two first, marked "Use again"). Save and Skip stay pinned to
   the bottom while you scroll. While typing, the list folds away so Save sits under the field above the keyboard;
   it returns 0.45 s after typing ends, so a tap on Save lands before anything moves.
-- **Preview tools are a slim "Test drive" tab** that slides up a panel (since October 2026: Light/Dark, text size, a sample week, what the phone keeps, what would be counted, Start over; earlier: Next day, Back to today, Theme, Steps, Start
+- **Preview tools are a slim "Test drive" tab** that slides up a panel (since October 2026, also in the live app: Light/Dark and text size only; the preview adds what the phone keeps, what would be counted and Start over. No sample or made-up progress anywhere; earlier: Next day, Back to today, Theme, Steps, Start
   fresh). Preview build only.
 
 ### Pass 5: pick a few mini tasks (chips, two pre-ticked)
