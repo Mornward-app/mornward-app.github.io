@@ -15,9 +15,9 @@ const pressed = (x) => x.p.$$eval('#installGuide [data-os][aria-pressed="true"]'
     ok(`${device}: from the QR code, the steps open over Welcome`, !!(await x.p.$("#installGuide")) && !!(await x.p.$("#setupGo")));
     ok(`${device}: ${os === "ios" ? "iPhone" : "Android"} is picked for this phone`, JSON.stringify(await pressed(x)) === JSON.stringify([os]));
     ok(`${device}: a short reason, and 'Later' to close`, (await x.p.textContent("#guideWhy")) === "One tap from your home screen when you wake." &&
-      (await x.p.textContent("#installGuide [data-guide-close].secondary")) === "Later");
+      (await x.p.textContent("#installGuide .link[data-guide-close]")) === "Later" && (await x.p.textContent("#installGuide [data-guide-added]")) === "I've added it");
     ok(`${device}: nothing agreed or sent by it`, !(await x.ls("agreed")) && x.bodies.length === 0);
-    await x.p.click("#installGuide [data-guide-close].secondary"); await x.t(300);
+    await x.p.click("#installGuide .link[data-guide-close]"); await x.t(300);
     ok(`${device}: Later closes it; Welcome is there`, !(await x.p.$("#installGuide")) && !!(await x.p.$("#setupGo")));
     await x.p.reload(); await x.t(1000);
     ok(`${device}: it opens once per phone (not again on a reload)`, !(await x.p.$("#installGuide")));

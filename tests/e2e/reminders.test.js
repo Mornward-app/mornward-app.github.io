@@ -1,4 +1,4 @@
-// Issue 9: the calendar file and Google Calendar link are valid and say what we mean; setup taps are counted as taps.
+// Issue 9: the calendar files (cal/HHMM.ics) and Google Calendar link are valid and say what we mean; setup taps are counted as taps.
 // Delivery (an alert actually appearing) can only be checked on real phones: see docs/real-device-checklist.md.
 // Run: node tests/e2e/reminders.test.js   (optional: the `icalendar` Python package for an independent parse)
 const fs = require("fs");
@@ -44,29 +44,34 @@ function icalParse(file) {
   const more = await x.p.textContent("#remMore");
   const android = await x.p.$$eval('#remMore [data-pane="android"]', (l) => l[0].textContent), ios = await x.p.$$eval('#remMore [data-pane="ios"]', (l) => l[0].textContent);
   ok("copy: Google — save it there, set the notification; how to stop it", /Save it there/.test(android) && /At time of event/.test(android) && /Repeats every morning until you delete it in your calendar/.test(more));
-  ok("copy: Apple — open it to add it, check the alert; how to stop it", /Open it to add it to Calendar/.test(ios) && /check the alert/.test(ios) && !/pops up/.test(ios + android));
+  ok("copy: Apple — its own add sheet, tap Add, check the alert; how to stop it", /Apple Calendar's own add sheet/.test(ios) && /Tap Add/.test(ios) && /check the alert/.test(ios) && !/pops up/.test(ios + android));
   ok("copy: the first reminder is stated as a real date and time", /^First reminder: \w+day, \w+ \d+ at /.test(await x.p.textContent("#remWhen")));
   ok("copy: the Shortcut — how to remove it", /delete it under Automation in Shortcuts/.test(await x.p.textContent("#remShortcut")));
 
-  // Calendar file, made at 07:10 for 06:30 (already past today, so tomorrow)
+  // Calendar file: a real link to a file on the site (cal/HHMM.ics), so iPhone shows Apple's add sheet; nothing is made on the phone
   await x.p.click('[data-rem-os="ios"]'); await x.p.fill("#remAt", "06:30");
-  const file = async () => { const dl = x.p.waitForEvent("download"); await x.p.click("#remIcs"); const f = await (await dl).path(); return { f, ics: fs.readFileSync(f, "utf8") }; };
-  const one = await file(), two = await file();
+  const file = async () => { const href = await x.p.getAttribute("#remIcs", "href"); const r = await x.p.request.get(new URL(href, x.p.url()).href);
+    const f = path.join(require("os").tmpdir(), "mw-" + href.replace(/\W/g, "") + ".ics"); const ics = await r.text(); fs.writeFileSync(f, ics);
+    return { href, f, ics, type: r.headers()["content-type"] }; };
+  const one = await file();
+  ok("calendar file: the Apple button links to the file for the time shown (both links)", one.href === "cal/0630.ics" && (await x.p.getAttribute("#remIcsAlt", "href")) === "cal/0630.ics");
+  ok("calendar file: served as text/calendar", /^text\/calendar/.test(one.type), one.type);
   const L = lint(one.ics);
   ok("calendar file: valid lines (CRLF, ≤ 75 octets, folding), required properties, one event with one alarm", L.problems.length === 0, L.problems);
-  ok("calendar file: starts tomorrow 06:30 as floating local time, 5 minutes, every morning until deleted", L.get("DTSTART") === "20261006T063000" && L.get("DURATION") === "PT5M" && L.get("RRULE") === "FREQ=DAILY");
+  ok("calendar file: 06:30 floating local time, 5 minutes, every morning until deleted", /^\d{8}T063000$/.test(L.get("DTSTART")) && L.get("DURATION") === "PT5M" && L.get("RRULE") === "FREQ=DAILY");
   ok("calendar file: an alert at the event time", L.get("TRIGGER") === "PT0M" && L.get("ACTION") === "DISPLAY");
   ok("calendar file: DTSTAMP is UTC with seconds", /^\d{8}T\d{6}Z$/.test(L.get("DTSTAMP")));
   ok("calendar file: text escaped correctly", unescape(L.get("DESCRIPTION")) === "Before the scroll: https://mornward.app/?via=calendar\nThree breaths, one mini task. About a minute.", L.get("DESCRIPTION"));
-  const L2 = lint(two.ics);
-  ok("calendar file: the same UID both times (one phone, one event), SEQUENCE 0 then 1", L.get("UID") === L2.get("UID") && L.get("SEQUENCE") === "0" && L2.get("SEQUENCE") === "1" && /^[0-9a-f]{32}@mornward\.app$/.test(L.get("UID")));
-  ok("calendar file: the UID is not the stats ID", !L.get("UID").includes((await x.ls("deviceId")).replace(/-/g, "")));
+  ok("calendar file: one UID per time, the same for everyone (no ID of any kind)", L.get("UID") === "mornward-0630@mornward.app" && !one.ics.includes((await x.ls("deviceId")).replace(/-/g, "")) && !one.ics.includes(await x.ls("deviceId")));
   const parsed = icalParse(one.f);
-  if (parsed) ok("calendar file: an independent parser (python icalendar) reads the same event", parsed.floating && parsed.start === "2026-10-06T06:30:00" &&
+  if (parsed) ok("calendar file: an independent parser (python icalendar) reads the same event", parsed.floating && /T06:30:00$/.test(parsed.start) &&
     parsed.duration_min === 5 && JSON.stringify(parsed.rrule) === '{"FREQ":["DAILY"]}' && parsed.alarms.length === 1 && parsed.alarms[0].trigger_min === 0 && parsed.method === "PUBLISH", parsed);
   else ok("calendar file: independent parse skipped (no python icalendar; set ICAL_PYTHONPATH)", true);
-  await x.p.fill("#remAt", "07:30"); const later = lint((await file()).ics);
-  ok("calendar file: a time still ahead today starts today", later.get("DTSTART") === "20261005T073000");
+  await x.p.fill("#remAt", "07:30"); const later = await file();
+  ok("calendar file: changing the time changes the link", later.href === "cal/0730.ics" && lint(later.ics).get("DTSTART").endsWith("T073000"));
+  const all = fs.readdirSync(path.join(__dirname, "..", "..", "cal"));
+  ok("calendar files: one for every minute of the day, all valid", all.length === 1440 && all.every((n) => { const t = fs.readFileSync(path.join(__dirname, "..", "..", "cal", n), "utf8");
+    const l = lint(t); return l.problems.length === 0 && l.get("DTSTART").endsWith("T" + n.slice(0, 4) + "00") && l.get("UID") === `mornward-${n.slice(0, 4)}@mornward.app`; }));
 
   // Google Calendar link
   await x.p.click('[data-rem-os="android"]'); await x.p.fill("#remAt", "06:45");
@@ -76,7 +81,9 @@ function icalParse(file) {
 
   // What's counted: the tap, once a day per kind of tap, never "set up" or "delivered"
   await x.p.click("#remGoogle"); await x.t(200); await x.p.click("#remGoogle"); await x.t(200);
-  await x.p.click('[data-rem-os="ios"]'); await x.p.click("#remShortcut summary"); await x.p.click("#remCopy"); await x.t(200);
+  await x.p.click('[data-rem-os="ios"]'); await x.p.click("#remIcs"); await x.t(200); await x.p.click("#remIcs"); await x.t(200);
+  ok("calendar tap: the page stays put (the file opens on its own)", /\/(index\.html)?(\?|#|$)/.test(new URL(x.p.url()).pathname + new URL(x.p.url()).search) && !!(await x.p.$("#remIcs")), x.p.url());
+  await x.p.click("#remShortcut summary"); await x.p.click("#remCopy"); await x.t(200);
   // the shortcut tap is counted after the clipboard write finishes (real time, not the page clock)
   for (let i = 0; i < 50 && !x.rows().some((r) => r.data.action === "shortcut_link"); i++) { await drain(x); await x.p.waitForTimeout(100); await x.t(100); }
   const taps = x.rows().filter((r) => r.kind === "reminder_setup").map((r) => r.data.action).sort();

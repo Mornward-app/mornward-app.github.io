@@ -72,47 +72,38 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     await x.p.reload(); await x.t(700);
     ok("reload mid-setup: back on step 1, choices kept", (await h1(x)) === "Pick your morning tasks." && (await x.p.inputValue("#prepIntent")) === "Call Mum" && JSON.stringify(await ticked(x)) === JSON.stringify(chosen));
     await click(x, "#stepNext");
-    ok("step 2: 'Make it easy to return.', a time, the first date in words, Skip for now", (await h1(x)) === "Make it easy to return." &&
+    ok("step 2: 'Make it easy to return.', a time (no day to pick), the first reminder in words, Skip for now", (await h1(x)) === "Make it easy to return." &&
       (await x.p.textContent(".stepnum")) === "Step 2 of 2" &&
-      !!(await x.p.$("#remAt")) && !!(await x.p.$("#remDate")) && /^First reminder: Monday, October 5 at 7:00/.test(await x.p.textContent("#remWhen")) &&
+      !!(await x.p.$("#remAt")) && !(await x.p.$("#remDate")) && !(await x.p.$("[data-rem-day]")) && /^First reminder: Monday, October 5 at 7:00/.test(await x.p.textContent("#remWhen")) &&
       (await x.p.textContent("#stepSkip")) === "Skip for now");
     ok(`step 2: few words (≤ ${BUDGET.ret}); the extra calendar steps are folded`, (await words(x)) <= BUDGET.ret && !(await x.p.$("#remMore[open]")), "words: " + await words(x));
-    ok("step 2: suggests tomorrow (Sunday evening → Monday) at the time shown", (await x.p.inputValue("#remDate")) === "2026-10-05" && (await x.p.inputValue("#remAt")) === "07:00");
+    ok("step 2: the next morning (Sunday evening → Monday) at the time shown", /^First reminder: Monday, October 5 at 7:00/.test(await x.p.textContent("#remWhen")) && (await x.p.inputValue("#remAt")) === "07:00");
     ok("step 2: one visually primary action (Continue); calendar and home screen are secondary", (await x.p.$$("#card .primary")).length === 1 &&
       (await x.p.textContent("#card .primary")) === "Continue" && !!(await x.p.$("#addSec")));
     ok("step 2: no hard-coded 'tomorrow'", !/tomorrow/i.test(await text(x)));
-    // One card: tap a time, tap a day
+    // One card: tap a time
     await x.p.click('[data-rem-quick="06:30"]'); await x.t(100);
     ok("step 2: a quick time sets the time and the first reminder", (await x.p.inputValue("#remAt")) === "06:30" &&
       /at 6:30/.test(await x.p.textContent("#remWhen")) && (await x.p.getAttribute('[data-rem-quick="06:30"]', "aria-pressed")) === "true");
-    ok("step 2: three days to tap, starting with the suggested one", JSON.stringify(await x.p.$$eval("[data-rem-day]", (l) => l.map((e) => e.dataset.remDay))) === '["2026-10-05","2026-10-06","2026-10-07"]' &&
-      (await x.p.getAttribute('[data-rem-day="2026-10-05"]', "aria-pressed")) === "true");
-    await x.p.click('[data-rem-day="2026-10-07"]'); await x.t(100);
-    ok("step 2: tapping a day sets the first morning", (await x.p.inputValue("#remDate")) === "2026-10-07" && /^First reminder: Wednesday, October 7 at 6:30/.test(await x.p.textContent("#remWhen")));
-    await x.p.fill("#remDate", "2026-10-12"); await x.p.dispatchEvent("#remDate", "change"); await x.t(100);
-    ok("step 2: a later date (Other) shows on the Other button", (await x.p.getAttribute("#remOther", "aria-pressed")) === "true" && (await x.p.textContent("#remOtherLbl")) !== "Other" &&
-      !(await x.p.$('[data-rem-day][aria-pressed="true"]')));
-    ok("step 2: the time and day rows don't squeeze (each box inside the card)", await x.p.evaluate(() => { const c = document.querySelector(".remcard").getBoundingClientRect();
+    ok("step 2: the time row doesn't squeeze (each box inside the card)", await x.p.evaluate(() => { const c = document.querySelector(".remcard").getBoundingClientRect();
       return [...document.querySelectorAll(".remcard input[type=time], .remcard .chip")].every((e) => { const r = e.getBoundingClientRect(); return r.left >= c.left - 1 && r.right <= c.right + 1; }); }));
     await x.p.click('[data-rem-quick="07:00"]'); await x.t(100);
-    // Choose Tuesday 07:00 instead, then open Google Calendar (never saved there)
-    await x.p.fill("#remDate", "2026-10-06"); await x.p.dispatchEvent("#remDate", "change");
-    ok("step 2: the first date can be moved", /^First reminder: Tuesday, October 6 at 7:00/.test(await x.p.textContent("#remWhen")));
     const g = decodeURIComponent(await x.p.getAttribute("#remGoogle", "href"));
-    ok("step 2: the Google link starts on the chosen date, carries no setup answers or IDs", g.includes("dates=20261006T070000") && !/instagram|Call Mum|#r=/i.test(g));
+    ok("step 2: the Google link starts at the first reminder, carries no setup answers or IDs", g.includes("dates=20261005T070000") && !/instagram|Call Mum|#r=/i.test(g));
+    ok("step 2: the Apple link is the file for that time", (await x.p.getAttribute("#remIcs", "href")) === "cal/0700.ics");
     await x.p.click("#remGoogle"); await x.t(300);
     ok("11 calendar opened: says to finish saving there (no 'reminder set')", (await x.p.textContent("#remMsg")) === "Calendar opened—finish saving your reminder there.");
+    ok("step 2: after a calendar tap the button says Done, no Skip", (await x.p.textContent("#stepNext")) === "Done" && !(await x.p.$("#stepSkip")));
     // The calendar hand-off can reload the page (back from the calendar app): the tasks are still prepared
     await x.p.reload(); await x.t(700);
-    ok("after the calendar hand-off and a reload: still step 2, the date kept, the tasks prepared", (await h1(x)) === "Make it easy to return." &&
-      (await x.p.inputValue("#remDate")) === "2026-10-06" && JSON.stringify((await x.ls("prepared")).tasks) === JSON.stringify([...chosen, "Call Mum"]));
-    await click(x, "#stepNext");
+    ok("after the calendar hand-off and a reload: straight to Ready (no second step 2, no second Done), the tasks prepared", (await h1(x)) === "Ready for your first morning." &&
+      (await x.ls("onboard")).status === "done" && JSON.stringify((await x.ls("prepared")).tasks) === JSON.stringify([...chosen, "Call Mum"]));
     ok("ready: one screen with the copy, Begin my morning and Edit setup (no separate 'Done for now' step)", (await h1(x)) === "Ready for your first morning." &&
       (await text(x)).includes("When you wake, open Mornward first.") && !(await x.p.$("#setupDone")) && !(await x.p.$("#beginNow")) &&
       (await x.p.textContent("#begin")) === "Begin my morning" && (await x.p.textContent("#setupEdit")) === "Edit setup");
     ok(`ready: few words besides the tasks (≤ ${BUDGET.ready})`, (await words(x)) <= BUDGET.ready, "words: " + await words(x));
     ok("ready: the prepared tasks are shown", JSON.stringify(await x.p.$$eval("#prepList li", (l) => l.map((e) => e.textContent))) === JSON.stringify([...chosen, "Call Mum"]));
-    ok("ready: the reminder status says what's known (the date, and to check the calendar saved it)", /^Tuesday, October 6 at 7:00.*\. Check your calendar saved it\.$/.test(await x.p.textContent("#remStatus")));
+    ok("ready: the reminder status says what's known (the date, and to check the calendar saved it)", /^Monday, October 5 at 7:00.*\. Check your calendar saved it\.$/.test(await x.p.textContent("#remStatus")));
     ok("ready: no sun, circles, count, timeline, %, streak, 'complete' claim or 'tomorrow'", !(await x.p.$(".sunrise")) && !(await x.p.$(".progress")) && !(await x.p.$(".dot")) &&
       !/%|streak|reset complete|resets completed|tomorrow/i.test(await text(x)));
     ok("11 ready: no claim that a reminder is set", !/reminder (is )?(set|saved|on)\b|you'll be reminded/i.test(await text(x)));
@@ -272,15 +263,15 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     ok("10 ...Retry finishes setup", (await h1(x)) === "Ready for your first morning." && (await x.ls("onboard")).status === "done");
     await x.c.close(); }
 
-  // 11: a calendar hand-off that fails doesn't trap anyone; a downloaded file isn't a saved reminder
+  // 11: a calendar hand-off that fails doesn't trap anyone; an opened calendar file isn't a saved reminder
   { const x = await open(); await x.c.unroute(/calendar\.google\.com/); await x.c.route(/calendar\.google\.com/, (r) => r.abort());
     await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext");
     const pages = x.c.pages().length;
     await x.p.click("#remGoogle"); await x.t(500);
     ok("11 Google Calendar couldn't open: the setup page still works", (await h1(x)) === "Make it easy to return." && !!(await x.p.$("#stepNext")));
     for (const p of x.c.pages().slice(pages)) await p.close();
-    await x.p.click("#remMore summary"); const dl = x.p.waitForEvent("download"); await x.p.click("#remIcsAlt"); await dl;
-    ok("11 calendar file: 'downloaded—open it to add your reminder'", (await x.p.textContent("#remMsg")) === "Calendar file downloaded—open it to add your reminder.");
+    await x.p.click("#remMore summary"); await x.p.click("#remIcsAlt"); await x.t(300);
+    ok("11 calendar file: opened from a link, nothing about a download", (await x.p.textContent("#remMsg")) === "Calendar opened—finish saving your reminder there." && (await h1(x)) === "Make it easy to return.");
     await click(x, "#stepNext");
     ok("11 ...setup finishes, without claiming a reminder", (await h1(x)) === "Ready for your first morning." && !/reminder (is )?(set|saved|on)\b/i.test(await text(x)));
     await x.c.close(); }
@@ -387,27 +378,57 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
   { const x = await open(); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext");
     await x.p.click('[data-rem-quick="06:30"]'); await x.p.click("#remGoogle"); await x.t(300);
     for (const p of x.c.pages().slice(1)) await p.close();
-    await click(x, "#stepNext"); await click(x, "#setupEdit"); await click(x, "#stepNext");
-    ok("B Edit setup after adding a reminder: it shows the reminder, doesn't ask again", (await x.p.textContent("#remDoneWhen")) === "6:30 AM, every morning" &&
-      !(await x.p.isVisible("#remAt")) && !(await x.p.isVisible("#remGoogle")) && !(await x.p.$("#stepSkip")));
-    ok("B ...no claim that it's saved in the calendar (it says what was added from here)", !/saved|is set|will remind/i.test(await x.p.textContent("#remDone")));
-    await x.p.click("#remChange"); await x.t(200);
-    ok("B Change: the controls come back, with a note to delete the old event", await x.p.isVisible("#remAt") && await x.p.isVisible("#remOld"));
-    await click(x, "#stepNext");
-    ok("B ...Continue still finishes setup and keeps the reminder", (await h1(x)) === "Ready for your first morning." && (await x.ls("remPlan")).at === "06:30");
+    await click(x, "#stepNext"); await x.t(3000); await click(x, "#setupEdit"); await click(x, "#stepNext");
+    ok("B Edit setup after adding a reminder: step 2 isn't asked again (tasks saved → Ready), the reminder kept", (await h1(x)) === "Ready for your first morning." &&
+      !(await x.p.$("#remAt")) && (await x.ls("remPlan")).at === "06:30");
     await jump(x, MON); await S.begin(x); await S.skipBreathing(x); await S.keep(x); await S.finish(x);
     await x.p.click("#remindSec summary"); await x.t(200);
     ok("B Today: Morning reminder shows the added reminder instead of asking", (await x.p.textContent("#remDoneWhen")) === "6:30 AM, every morning" && !(await x.p.isVisible("#remAt")));
+    ok("B ...no claim that it's saved in the calendar (it says what was added from here)", !/saved|is set|will remind/i.test(await x.p.textContent("#remDone")));
+    await x.p.click("#remChange"); await x.t(200);
+    ok("B Change: the controls come back, with a note to delete the old event", await x.p.isVisible("#remAt") && await x.p.isVisible("#remOld"));
     await x.c.close(); }
 
-  // The suggested first date is the next morning, worked out from the real date and time
-  for (const [when, want, label] of [["2026-10-05T06:00:00", "2026-10-06", "setting up at 6 AM suggests tomorrow"],
-    ["2026-10-05T01:30:00", "2026-10-05", "setting up at 1:30 AM suggests the morning about to come"],
-    ["2026-12-31T21:00:00", "2027-01-01", "New Year's Eve suggests January 1 (with the year)"]]) {
+  // Option 2: already done → "All set to return" (both), or a tick for the home screen (only that)
+  for (const [label, init, expect] of [
+    ["both done", () => { localStorage.setItem("fl.homeAdded", JSON.stringify({ how: "self", on: "2026-10-04" })); localStorage.setItem("fl.remPlan", JSON.stringify({ at: "06:30", first: "2026-10-05" })); }, "all"],
+    ["only on the home screen", () => { localStorage.setItem("fl.homeAdded", JSON.stringify({ how: "self", on: "2026-10-04" })); }, "home"],
+    ["only the reminder", () => { localStorage.setItem("fl.remPlan", JSON.stringify({ at: "06:30", first: "2026-10-05" })); }, "rem"]]) {
+    const x = await open({ device: "iPhone 14", init }); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext");
+    if (expect === "all") {
+      ok(`all set (${label}): one card, two ticks, Done only`, (await x.p.textContent("#allSet")) === "All set to return" &&
+        JSON.stringify(await x.p.$$eval(".setlist li", (l) => l.map((e) => e.textContent.trim()))) === '["Calendar reminder: 6:30 AM, every morning","On your home screen"]' &&
+        !(await x.p.isVisible("#remAt")) && !(await x.p.$("#addSec")) && !(await x.p.$("#homeTick")) && !(await x.p.$("#stepSkip")) && (await x.p.textContent("#stepNext")) === "Done");
+      await x.p.click("#remChange"); await x.t(200);
+      ok(`all set (${label}): "Change the reminder" brings the controls back`, await x.p.isVisible("#remAt") && !(await x.p.isVisible("#remDone")));
+      await click(x, "#stepNext");
+      ok(`all set (${label}): Continue goes to Ready`, (await h1(x)) === "Ready for your first morning.");
+    } else if (expect === "home") {
+      ok(`home only: a tick instead of the add steps; the reminder card as usual`, (await x.p.textContent("#homeTick")).trim() === "On your home screen" && !(await x.p.$("#addSec")) &&
+        await x.p.isVisible("#remAt") && !!(await x.p.$("#stepSkip")));
+    } else {
+      ok(`reminder only: no step 2 at all, straight to Ready`, (await h1(x)) === "Ready for your first morning." && !(await x.p.$("#remSetup")));
+    }
+    await x.c.close();
+  }
+
+  // iPhone, added from Safari's Share menu (Safari can't see it): "Already on my home screen" says so, once
+  { const x = await open({ device: "iPhone 14" }); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext");
+    await x.p.click("#addSec summary"); await x.p.click("#addHave"); await x.t(200);
+    ok("home row: 'Already on my home screen' turns the row into a tick, remembered on the phone", !(await x.p.$("#addSec")) && !!(await x.p.$("#homeTick")) && (await x.ls("homeAdded")).how === "self");
+    await click(x, "#stepNext"); await x.t(3000); await click(x, "#begin"); await S.skipBreathing(x); await S.keep(x); await S.finish(x);
+    ok("home row: ...no add-to-home-screen offer on Today afterwards", !(await x.p.$("[data-install-add]")) && !(await x.p.$("#addSec")));
+    await x.c.close(); }
+
+  // The first reminder is the next morning, worked out from the real date and time
+  for (const [when, want, label] of [["2026-10-05T06:00:00", "2026-10-05", "setting up at 6 AM (reminder at 7): later this morning"],
+    ["2026-10-05T08:00:00", "2026-10-06", "setting up at 8 AM: tomorrow"],
+    ["2026-10-05T01:30:00", "2026-10-05", "setting up at 1:30 AM: the morning about to come"],
+    ["2026-12-31T21:00:00", "2027-01-01", "New Year's Eve: January 1 (with the year)"]]) {
     const x = await open({ when }); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext");
     const [y, m, d] = want.split("-").map(Number);
     const words = new Date(y, m - 1, d).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
-    ok(`step 2: ${label}`, (await x.p.inputValue("#remDate")) === want && (await x.p.textContent("#remWhen")).startsWith(`First reminder: ${words}`), await x.p.textContent("#remWhen"));
+    ok(`step 2: ${label}`, (await x.p.textContent("#remWhen")).startsWith(`First reminder: ${words}`), await x.p.textContent("#remWhen"));
     if (want === "2027-01-01") ok("step 2: ...the year is written out", /2027/.test(await x.p.textContent("#remWhen")));
     await x.c.close();
   }

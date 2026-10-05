@@ -222,7 +222,8 @@ and `testers.first_day` is the first event of any kind. Use `legacy_retention_re
 - **Google Calendar:** opening the template link can create one new event per tap. Google doesn't take an id from
   the link, so a second tap can mean a second event. Google ignores the link's alert and uses the calendar's default
   notification, so the app asks people to set it to "At time of event".
-- **Calendar file:** it has one UID per phone (random, not the stats id), with `SEQUENCE` going up per file and
+- **Calendar file:** a static file per time, `cal/HHMM.ics`, linked from the page (not made on the phone), so iPhone
+  shows Apple Calendar's add sheet. One UID per time (`mornward-HHMM@mornward.app`), the same for everyone, no ID,
   `METHOD:PUBLISH`. Whether Apple Calendar updates the existing event or adds a second one isn't verified.
 - **Repeats:** every morning until deleted (`RRULE:FREQ=DAILY`, no end), so it's added once.
 - **Times:** floating local times (07:00 wherever the phone is).

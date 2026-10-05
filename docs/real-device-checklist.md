@@ -33,9 +33,9 @@ passes, treat it as **unverified**.
       notification setting (default vs "At time of event"). Note whether a notification appears at the time, and what
       opens when you tap it.
 - [ ] **Android:** tap Add to Google Calendar twice. Note whether two events now exist.
-- [ ] **iPhone, Apple Calendar:** Add to Apple Calendar. Note what Safari shows (a preview with "Add All", or a
-      download). Add it. Check the alert is "At time of event", and that an alert appears 3 minutes later.
-- [ ] **iPhone:** make the file again and add it. Note whether Calendar updates the event or adds a second one.
+- [ ] **iPhone, Apple Calendar:** Add to Apple Calendar. Safari should show Apple Calendar's add sheet, not a download.
+      Note what it shows, then tap Add. Check the alert is "At time of event", and that an alert appears 3 minutes later.
+- [ ] **iPhone:** tap Add to Apple Calendar again for the same time and add it. Note whether Calendar updates the event or adds a second one.
 - [ ] **iPhone, Shortcut:** follow the four steps with the copied link. Set an alarm 2 minutes ahead and stop it.
       Note whether Mornward opens in Safari, and whether "Run Immediately" exists on this iOS version.
 - [ ] Both: delete the event or automation. Nothing fires the next morning.
@@ -81,3 +81,6 @@ passes, treat it as **unverified**.
 - [ ] **Reminder repeats (both phones):** add the reminder once; check the event repeats every morning with no end
       date, and the alert fires at the time on the second morning too. Then Edit setup: it shows "Your calendar
       reminder", not the controls.
+- [ ] **Added once (both phones):** add Mornward to the home screen, tap "I've added it" (iPhone), then open
+      mornward.app in Safari / Chrome again: no "Add to home screen" box, row or steps anywhere. Android: open it once
+      from the icon, then in Chrome: no box.

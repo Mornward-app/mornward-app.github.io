@@ -39,12 +39,12 @@ const failing = () => {
     await x.c.close();
   }
 
-  // Journey 2: the last step's time and date were lost on reload and at midnight
+  // Journey 2: the last step's time was lost on reload and at midnight
   { const x = await open({ when: "2026-10-04T23:58:30" }); await x.goto(); await toReturn(x);
-    await x.p.fill("#remAt", "06:15"); await x.p.fill("#remDate", "2026-10-07"); await x.p.dispatchEvent("#remDate", "change");
+    await x.p.fill("#remAt", "06:15"); await x.p.dispatchEvent("#remAt", "change");
     await x.p.reload(); await x.t(700);
-    ok("reload on the return step: time and first date kept", (await x.p.inputValue("#remAt")) === "06:15" && (await x.p.inputValue("#remDate")) === "2026-10-07" &&
-      /Wednesday, October 7 at 6:15/.test(await x.p.textContent("#remWhen")));
+    ok("reload on the return step: time kept, first reminder the next morning", (await x.p.inputValue("#remAt")) === "06:15" &&
+      /Monday, October 5 at 6:15/.test(await x.p.textContent("#remWhen")), await x.p.textContent("#remWhen"));
     await x.t(120000); // past midnight
     ok("midnight on the return step: the screen isn't redrawn; choices kept", (await x.p.inputValue("#remAt")) === "06:15" && (await h1(x)) === "Make it easy to return.");
     await x.c.close(); }
@@ -150,20 +150,24 @@ const failing = () => {
     ok("...tapping it again skips, and nothing declined was saved", (await h1(x)) === "Make it easy to return." && !(await x.ls("prepared")) && (await x.ls("onboard")).tasksSkipped === true);
     await x.c.close(); }
 
-  // Round 2: a planned date next year says the year; a cleared time doesn't leave a stale date
+  // Round 2: a cleared time doesn't leave a stale date
   { const x = await open(); await x.goto(); await toReturn(x);
-    await x.p.fill("#remDate", "2027-03-01"); await x.p.dispatchEvent("#remDate", "change");
-    ok("a first reminder next year shows the year", /March 1, 2027/.test(await x.p.textContent("#remWhen")), await x.p.textContent("#remWhen"));
     await x.p.fill("#remAt", ""); await x.p.dispatchEvent("#remAt", "input");
-    ok("a cleared time: no stale date in words, no calendar link", /Pick a time/.test(await x.p.textContent("#remWhen")) && !(await x.p.getAttribute("#remGoogle", "href")));
+    ok("a cleared time: no stale date in words, no calendar link", /Pick a time/.test(await x.p.textContent("#remWhen")) && !(await x.p.getAttribute("#remGoogle", "href")) && !(await x.p.getAttribute("#remIcs", "href")));
     await x.c.close(); }
 
-  // Review: Skip reminder kept an old "planned first morning"
+  // Review: Skip reminder kept an old "planned first morning". After a calendar tap there's no Skip (just Done);
+  // skipping without a tap stores no plan
+  { const x = await open(); await x.goto(); await toReturn(x);
+    await click(x, "#stepSkip");
+    ok("Skip for now without a calendar tap: no planned date stored or shown", !(await x.p.$("#planned")) && !(await x.ls("remPlan")));
+    await x.c.close(); }
   { const x = await open(); await x.goto(); await toReturn(x);
     await x.p.click("#remGoogle"); await x.t(300);
     for (const p of x.c.pages().slice(1)) await p.close();
-    await click(x, "#stepSkip");
-    ok("Skip for now after a calendar tap: no planned date shown", !(await x.p.$("#planned")) && !(await x.ls("remPlan")));
+    ok("after a calendar tap: Done, and no Skip", (await x.p.textContent("#stepNext")) === "Done" && !(await x.p.$("#stepSkip")));
+    await click(x, "#stepNext");
+    ok("...Done finishes setup with the plan kept", (await h1(x)) === "Ready for your first morning." && !!(await x.ls("remPlan")));
     await x.c.close(); }
 
   // Review risk: tasks_saved carries `prepared` only when setup tasks were offered (older databases accept it)

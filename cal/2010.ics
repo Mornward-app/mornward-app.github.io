@@ -1,0 +1,23 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Mornward//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:mornward-2010@mornward.app
+SEQUENCE:0
+DTSTAMP:20261005T000000Z
+DTSTART:20261001T201000
+DURATION:PT5M
+RRULE:FREQ=DAILY
+SUMMARY:Mornward: three breaths\, one mini task
+DESCRIPTION:Before the scroll: https://mornward.app/?via=calendar\nThree br
+ eaths\, one mini task. About a minute.
+URL:https://mornward.app/?via=calendar
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Before the scroll: one mini task
+TRIGGER:PT0M
+END:VALARM
+END:VEVENT
+END:VCALENDAR

@@ -46,15 +46,25 @@ words: task names (shuffled per phone), folded sections and screen-reader-only t
 - **More options** (step 2 and Today's Morning reminder): the iPhone / Android switch, what to do in the calendar
   ("At time of event"), "Use a calendar file instead", the iPhone alarm Shortcut, and "Repeats every morning until
   you delete it in your calendar. Mornward never asks for notification permission."
-- **The reminder card:** the time with quick picks (6:00 to 8:00), then the first morning as the next three days to
-  tap, with **Other** opening the phone's date picker. Each on its own row, so nothing squeezes.
+- **The reminder card:** the time with quick picks (6:00 to 8:00), and the first reminder in words. No day to pick:
+  the event repeats every morning, so the first one is simply the next time it comes round.
+- **Apple Calendar:** a real link to a file on the site, `cal/HHMM.ics` (one per minute of the day, made by
+  `tools/make-calendar-files.py`). iPhone Safari shows Apple Calendar's own add sheet; nothing is downloaded to Files.
+  The same time is the same file for everyone, so it carries no ID.
+- **The button:** "Continue" (with Skip for now) until a calendar is opened, then "Done" with no Skip, there and on
+  the "All set to return" card.
+- **No second step 2:** once a reminder was added, step 2 isn't shown again (back from the calendar, a reload, or
+  Edit setup): it goes straight to Ready. The one exception is "All set to return" (reminder and home screen both
+  done). The reminder can still be changed from Today's Morning reminder.
+- **Already on my home screen:** in the home-screen row. Safari can't see the home screen, so someone who added
+  it from the Share menu taps this once; the row becomes a tick and no add offer shows again on that phone.
 - **Added once, never asked again:** the calendar event repeats every morning until deleted (the alert is at the
   event's time, so the phone notifies each morning). After a calendar tap, step 2 (Edit setup) and Today's Morning
   reminder show "Your calendar reminder · 7:00 AM, every morning" with "Change it or add it again" instead of the
   controls; there's no Skip, nothing to skip. Changing the time says to delete the old event first. It's what was
   added from this phone; Mornward can't see the calendar.
-- **Suggested first date:** the next morning, worked out from the real date each time it's shown. That's tomorrow,
-  or between midnight and 4 AM, the morning about to come. Both can be changed. No setup screen says "tomorrow".
+- **First reminder:** the next time the chosen time comes round, worked out from the real date and time each time
+  it's shown (6 AM with 7:00 → later this morning; 8 AM → tomorrow). No setup screen says "tomorrow".
 - **Personalize** (folded on Ready and Prepared; "Morning preferences" in Today): "Where does your scroll start?
   Stays on this phone. Mornward doesn't block or watch apps." Exactly one named app gives the invitation "Before
   Instagram, take a minute for yourself."; anything else, none.
@@ -71,6 +81,21 @@ phone (iPhone or Android, from the browser; switchable). On Android, when Chrome
 **Add to home screen** button sits on top. **Later** closes it. It opens once per phone (`fl.qrGuide`), never in the
 installed app, never on a computer, and never over an existing user's Begin. It agrees to nothing and sends nothing.
 Checked by `tests/e2e/qr-guide.test.js`.
+
+## Once it's on the home screen
+
+`fl.homeAdded` (`{ how, on }`, on the phone only) means Mornward is on this phone's home screen. After that, every
+add offer stays away for good: the box on Begin and Today, the quiet row, setup's "Add to home screen · optional",
+and the QR arrival steps. It's set when Mornward is opened from the icon (`opened`; on Android the icon shares this
+storage with Chrome), when Chrome reports the install (`installed`) or lists it as installed (`detected`), or when
+someone taps **I've added it** in the steps (`self`; on iPhone Safari can't see the icon). New visitors and
+browsers without it see the offer as before. It's never sent; only Chrome's own install is counted (`app_installed`).
+
+**Step 2 when it's already done.** If the reminder was added and Mornward is on the home screen, step 2 shows one
+card: "✓ All set to return", "✓ Calendar reminder: 6:30 AM, every morning", "✓ On your home screen", a "Change the
+reminder" link, and **Continue** (no Skip). If only the home screen is done, the add row becomes "✓ On your home
+screen" and the reminder card shows as usual. If only the reminder is done, the saved reminder shows and the add
+row is still offered.
 
 ## State model (on the phone only)
 
@@ -170,10 +195,10 @@ Every result below is from Chromium with phone emulation, not a physical phone.
 | 8 | Existing users (beta-2 storage; this version's history): Begin, history and tasks kept | Pass |
 | 9 | Counts off: the whole journey works; nothing sent or queued; no ID made | Pass |
 | 10 | Failed saves (prepared tasks; finishing setup): message, Retry, input kept, no "Ready" | Pass |
-| 11 | Calendar opened but not saved: "Calendar opened—finish saving your reminder there."; tasks and date survive a reload after the hand-off; a blocked calendar doesn't trap setup; no reminder-success claim | Pass |
+| 11 | Calendar opened but not saved: "Calendar opened—finish saving your reminder there."; tasks and the reminder survive a reload after the hand-off; a blocked calendar doesn't trap setup; no reminder-success claim | Pass |
 | 12 | Computer: the code beside Welcome before any choice (no setup state or event yet); "Installs nothing"; "Choices made here stay here"; the QR decodes to `https://mornward.app/?from=qr`; Prepare my morning goes straight to step 1. Beside the app: a slim card (≤ 240 px), the code centred, and "What is Mornward?" in ten words above it. Phones never show the code | Pass |
 | 13 | 320 px, dark mode, reduced motion and 200% text: every setup and morning screen fits the phone's width (checked against the screen, not the stretched viewport); keyboard; focus to the heading; labelled toggle groups; 44 px targets | Pass (emulated) |
-| — | Suggested first date: 6 AM → tomorrow; 1:30 AM → that morning; December 31 → January 1, 2027 with the year | Pass |
+| — | First reminder: 6 AM (7:00) → that morning; 8 AM → tomorrow; 1:30 AM → that morning; December 31 → January 1, 2027 with the year | Pass |
 
 Also covered:
 
@@ -186,8 +211,7 @@ Also covered:
 See `docs/real-device-checklist.md` ("Setup"):
 
 - iPhone Safari and Android Chrome, each through Welcome → setup → next morning.
-- The date picker on both phones.
-- Google Calendar and Apple Calendar with a chosen first date.
+- Google Calendar, and Apple Calendar's add sheet from the linked file (no download).
 - The home-screen icon added during setup, which should open on the prepared screen on iPhone.
 - VoiceOver and TalkBack through setup.
 - iOS Dynamic Type / Android font size at the largest setting.
