@@ -20,7 +20,8 @@ Open it again the same day and you see today's mini task. The next day it offers
 earlier tasks stay on your phone, listed by date. A calendar reminder is optional, on the screen after you finish. It never asks for notification permission.
 Light and dark: it follows your phone, or pick one under Appearance.
 Begin and the screen after Finish show an "Add to home screen" box (Chrome's one-tap install on Android, Apple's
-Share steps on iPhone) and a week strip: each morning you did it is a sun, and tomorrow waits as an outline.
+Share steps on iPhone) and a week strip over the last 7 days: a full routine (3 breaths and mini tasks) is a sun, a
+morning with a step skipped is a small mark, and tomorrow waits as an outline.
 
 Design reasoning: [`docs/mornward-ui-ux-rationale.md`](docs/mornward-ui-ux-rationale.md).
 
@@ -28,11 +29,12 @@ Design reasoning: [`docs/mornward-ui-ux-rationale.md`](docs/mornward-ui-ux-ratio
 
 - No account, no sign-up.
 - Everything you write stays on your phone.
-- During the beta it sends a few anonymous counts (like whether you finished the routine, never what you wrote) so we can tell whether it's working. You can turn this off under "Privacy and your data" after any routine.
+- During the beta it sends a few counts (like whether you finished the routine, never what you wrote), linked only by a random ID, so we can tell whether it's working. You can turn this off before you begin, or under "Privacy and your data" after any routine.
 
 Details: [terms and privacy](https://mornward.app/terms.html). Questions: mornward@proton.me
 
 ## For developers
 
 One self-contained `index.html`, with no framework and no build step, hosted on GitHub Pages.
-Your mini tasks are stored in `localStorage`. The optional anonymous stats go to Supabase; see `supabase/ANALYTICS.md`.
+Your mini tasks are stored in `localStorage`. The optional stats go to Supabase; see `supabase/ANALYTICS.md` and
+`supabase/METRICS.md` (definitions). Tests: `tests/README.md`.

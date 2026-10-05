@@ -33,6 +33,12 @@
     "health"
   ],
   "prefer_related_applications": false,
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://mornward.app/manifest.webmanifest"
+    }
+  ],
   "orientation": "portrait",
   "screenshots": [
     {

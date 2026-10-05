@@ -1,5 +1,9 @@
 # Mornward: UI/UX rationale for the one-minute routine
 
+> **Note (5 Oct 2026):** the reliability pass renamed `intention_*` events to `tasks_*`, tightened what counts as a
+> completed routine, and changed the week strip to count full routines over the last 7 days. Current definitions:
+> [`supabase/METRICS.md`](../supabase/METRICS.md); findings: [`reliability-audit.md`](reliability-audit.md).
+
 **Objective:** before the scroll, one clear intention.
 **Flow:** Begin → three breaths → one intention → Finish. Android first, iPhone supported equally.
 

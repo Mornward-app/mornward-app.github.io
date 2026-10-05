@@ -284,6 +284,9 @@
     background: var(--bg); display: grid; place-items: center; }
   .week .done .dot { background: var(--sun); border-color: var(--sun); color: #18222F; }
   .week .done .dot .i { width: 20px; height: 20px; }
+  /* Reached the end but skipped a step (or a day from before steps were recorded): a small mark, not a sun */
+  .week .part .dot { border-color: var(--sun); }
+  .week .part .dot::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--sun); }
   .week .now .dot { border-color: var(--sun); border-width: 3px; }
   .week .next .dot { border-style: dashed; border-color: var(--text-2); }
   /* Days before the first morning: quieter, but solid, so the track doesn't show through */
@@ -468,14 +471,25 @@
   // ---------- the routine ----------
   // Breathing pace: one breath is a full in and out. No holds.
   const BREATH = { inMs: 4000, outMs: 6000, count: 3 };
+  // One mini task's length, in characters (the typed field's limit too)
   const MAX_INTENTION = 200;
   // A routine started shortly before midnight can still be finished after it
   const CARRY_OVER_MS = 3 * 3600e3;
 
-  // { day, run, phase: breathe|choose|finish|done, breaths, breathing, intention, startedAt }
+  // States, as the screen sees them:
+  //   ready          no routine for today (Begin)
+  //   breathing      phase "breathe", timer running      paused: phase "breathe", timer stopped (always after a reload)
+  //   task selection phase "choose"
+  //   finish pending phase "finish": the Finish screen, Finish not tapped yet
+  //   completed      phase "done": Today
+  // { day, run, rid, phase, breaths, breathing: null|completed|skipped, tasks: null|saved|skipped, startedAt, finishedAt }
+  // `tasks` is only what happened in this run's task step; edits after it never change it. `rid` tells two runs apart
+  // even where their run numbers collide (the iPhone icon and Safari keep separate storage).
   const PHASES = ["breathe", "choose", "finish", "done"];
   const isRoutine = (v) => typeof v === "object" && isDay(v.day) && PHASES.includes(v.phase) && Number.isInteger(v.run);
-  let routine = store.get("routine", null, isRoutine);
+  // A routine saved by the previous version (beta-4) has `intention` instead of `tasks`
+  const upgradeRoutine = (r) => (r && r.tasks === undefined && r.intention !== undefined ? { ...r, tasks: r.intention } : r);
+  let routine = upgradeRoutine(store.get("routine", null, isRoutine));
   const saveRoutine = () => store.set("routine", routine);
 
   // Intentions keep the earlier version's key ("intent:YYYY-MM-DD"), so old ones show up, dated
@@ -491,15 +505,35 @@
     if (!store.set(intentKey(day), text)) return false;
     return store.get(intentKey(day), null, isText) === text;
   }
-  const cleanIntention = (raw) => raw.replace(/\s+/g, " ").trim().slice(0, MAX_INTENTION);
+  // One task as typed: spaces tidied, at most MAX_INTENTION characters (whole characters, so an emoji isn't cut in
+  // half). The " · " that joins saved tasks can't appear inside one, or a single typed task would read back as several;
+  // a "·" inside a word (Catalan "col·laborar") is left alone.
+  const cleanIntention = (raw) => Array.from(String(raw).normalize("NFC").replace(/\s+·\s+/g, ", ").replace(/\s+/g, " ").trim())
+    .slice(0, MAX_INTENTION).join("").trim();
+  // The one check used by every save (the routine and Edit): ticked chips plus the typed task, cleaned, empty ones
+  // dropped, repeats dropped whatever their capitals (the first wording is kept), at most PICK_MAX.
+  function normalizeTasks(picked, typed) {
+    const tasks = [], seen = new Set();
+    for (const raw of [...picked, typed]) {
+      const t = cleanIntention(raw || "");
+      const k = t.toLocaleLowerCase();
+      if (t && !seen.has(k)) { seen.add(k); tasks.push(t); }
+    }
+    return { tasks, error: !tasks.length ? "empty" : tasks.length > PICK_MAX ? "too_many" : null };
+  }
 
-  // Days you did the routine, kept on the phone for the week strip. Filled in once from earlier versions' data.
+  // Days kept on the phone for the week strip and the mini-task rotation. Filled in once from earlier versions' data.
+  //   days:     days a routine reached the end (Finish screen), whatever was skipped
+  //   fullDays: days with a full routine: all three breaths AND mini tasks saved in the routine (recorded from beta-5;
+  //             earlier days are never guessed into it)
   const isDayList = (v) => Array.isArray(v) && v.every(isDay);
   const doneDays = () => new Set(store.get("days", [], isDayList));
-  function markDone(day) {
-    const d = store.get("days", [], isDayList);
-    if (!d.includes(day)) store.set("days", [...d, day].sort().slice(-120));
+  const fullDays = () => new Set(store.get("fullDays", [], isDayList));
+  function markDay(key, day) {
+    const d = store.get(key, [], isDayList);
+    if (!d.includes(day)) store.set(key, [...d, day].sort().slice(-120));
   }
+  const markDone = (day) => markDay("days", day);
   (() => {
     if (store.get("days", null, isDayList) !== null) return;
     const days = new Set();
@@ -516,7 +550,7 @@
   const STATS = {
     url: "https://cnwwyucolebrcbydbfej.supabase.co/rest/v1/events",
     key: "sb_publishable_XpdHaGbjKX5CC0LRYiWBxQ_O8xO2oCs",
-    version: "beta-4"
+    version: "beta-5"
   };
   // Where questions and data requests go (also on terms.html)
   const CONTACT = "mornward@proton.me";
@@ -524,7 +558,8 @@
   // beta-2: contact, US storage consent, retention and data rights (Thailand PDPA)
   // beta-3: also counted which onboarding screens a new person reached
   // beta-4: the one-minute routine; counts its steps instead (see supabase/ANALYTICS.md)
-  const TERMS_VERSION = "beta-4";
+  // beta-5: also counts reminder setup taps; links no longer carry the anonymous ID (see supabase/METRICS.md)
+  const TERMS_VERSION = "beta-5";
   const hasAgreed = () => {
     const a = store.get("agreed", null, (v) => typeof v === "object");
     return !!a && a.version === TERMS_VERSION;
@@ -535,6 +570,7 @@
       <li>A random ID made on this phone, not linked to your name, email or any account.</li>
       <li>The date, and which steps happened: started, breathing finished or skipped, mini tasks saved or skipped (how many, and whether you kept the suggested ones), finished.</li>
       <li>Whether you opened it from the home screen, whether you added it there, and which link you came from (like "reddit"), if the link says so.</li>
+      <li>Whether you tapped to set up a morning reminder (not whether it was saved or went off).</li>
     </ul>`;
   const NOT_SENT = `<ul>
       <li>Your mini tasks, or anything else you write. Not a single word.</li>
@@ -542,44 +578,73 @@
       <li>Anything at all once you turn the counts off.</li>
     </ul>`;
 
+  const uuid = () => (crypto.randomUUID ? crypto.randomUUID()
+    : "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) =>
+      (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)));
+  const isUuid = (v) => typeof v === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(v);
   function deviceId() {
     let id = store.get("deviceId", null, (v) => typeof v === "string" && /^[0-9a-f-]{36}$/.test(v));
-    if (!id) {
-      id = crypto.randomUUID ? crypto.randomUUID()
-        : "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) =>
-          (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16));
-      store.set("deviceId", id);
-    }
+    if (!id) { id = uuid(); store.set("deviceId", id); }
     return id;
   }
+  // Every row gets its own event_id when it's queued, and the database skips an event_id it already has (a trigger;
+  // see supabase/migrations/20261005000000_reliability_metrics.sql). So a send whose reply was lost can be retried
+  // safely. Rows queued by older versions have none; they get one the first time this version sees them.
+  // `columns` makes every row in a batch use the same columns, even rows queued by an older version.
+  const ROW_KEYS = ["event_id", "device_id", "day", "kind", "data", "app_version"];
+  const asRow = (r) => (r && typeof r === "object" ? { event_id: isUuid(r.event_id) ? r.event_id : uuid(), device_id: r.device_id,
+    day: r.day, kind: r.kind, data: r.data && typeof r.data === "object" ? r.data : {}, app_version: r.app_version ?? null } : null);
+  const INGEST = STATS.url + "?columns=" + ROW_KEYS.join(",");
   let flushing = false;
-  // "viewbox" held screen views from the previous version; anything still waiting there is sent once
+  // "viewbox" held screen views from an earlier version; anything still waiting there is sent once
   const QUEUES = ["outbox", "viewbox"];
+  async function post(rows) {
+    try {
+      const res = await fetch(INGEST, {
+        method: "POST",
+        keepalive: true,
+        headers: { apikey: STATS.key, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify(rows)
+      });
+      // "sent" (stored, or skipped as already there); "conflict" (409: a copy of a row arrived at the same instant, so
+      // it is stored); "rejected" for good (bad data, never retried); "later" (offline, busy)
+      if (res.ok) return "sent";
+      if (res.status === 409) return "conflict";
+      return res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429 ? "rejected" : "later";
+    } catch { return "later"; }
+  }
+  // Removes only the rows that were sent, by event_id: the queue may have changed while a request was out
+  // (new rows, or emptied by turning the counts off)
+  const dropSent = (q, ids) => store.set(q, store.get(q, [], Array.isArray).filter((r) => !(r && ids.has(r.event_id))));
   async function flushStats() {
     if (flushing || !statsOn() || !navigator.onLine) return;
     flushing = true;
     let again = false;
     for (const q of QUEUES) {
-      const rows = store.get(q, [], Array.isArray);
+      const raw = store.get(q, [], Array.isArray);
+      if (!raw.length) continue;
+      const rows = raw.map(asRow).filter(Boolean);
+      store.set(q, rows); // older rows keep the event_id they were just given, so a retry reuses it
       if (!rows.length) continue;
-      try {
-        const res = await fetch(STATS.url, {
-          method: "POST",
-          keepalive: true,
-          headers: { apikey: STATS.key, "Content-Type": "application/json", Prefer: "return=minimal" },
-          body: JSON.stringify(rows)
-        });
-        // Sent, or rejected for good (bad data): either way don't retry these rows forever
-        if (res.ok || (res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429)) {
-          const now = store.get(q, [], Array.isArray).slice(rows.length);
-          store.set(q, now);
-          // Rows queued while this request was out go now, not on the next visit
-          if (now.length) again = true;
+      let res = await post(rows);
+      const done = new Set();
+      if (res === "sent" || (res === "conflict" && rows.length === 1)) rows.forEach((r) => done.add(r.event_id));
+      // One bad (or clashing) row fails the whole batch: try each row once on its own, so only that one is dropped
+      else if ((res === "rejected" || res === "conflict") && rows.length > 1) {
+        for (const r of rows) {
+          if (!statsOn()) break;
+          res = await post([r]);
+          if (res !== "later") done.add(r.event_id);
         }
-      } catch { /* offline or blocked: keep them for next time */ }
+      } else if (res === "rejected") done.add(rows[0].event_id);
+      if (done.size) {
+        dropSent(q, done);
+        // Rows queued while this request was out go now, not on the next visit
+        if (store.get(q, [], Array.isArray).length) again = true;
+      }
     }
     flushing = false;
-    if (again) flushStats();
+    if (again && statsOn()) flushStats();
   }
   const onHomeScreen = navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
   // Your own test devices: open mornward.app/?test=1 once on each (?test=0 undoes it). Their rows say test: true.
@@ -590,25 +655,26 @@
   })();
   // Each step is counted once per routine, however often the screen redraws, the page reloads or a send retries.
   // The key is the routine's day and run number, so a second routine on the same day is its own run.
-  function queueRow(key, kind, day, run, data) {
+  // Nothing is queued while the counts are off, so turning them back on never sends what happened in between.
+  function queueRow(key, kind, day, run, data, rid) {
     const sent = store.get("sent", [], Array.isArray);
     if (sent.includes(key)) return;
-    store.set("sent", sent.concat([key]).slice(-60));
-    const row = { device_id: deviceId(), day, kind,
-      data: { run, home_screen: onHomeScreen, ...(store.get("test", false) === true ? { test: true } : {}), ...data },
+    const row = { event_id: uuid(), device_id: deviceId(), day, kind,
+      data: { run, ...(rid ? { rid } : {}), home_screen: onHomeScreen, ...(store.get("test", false) === true ? { test: true } : {}), ...data },
       app_version: STATS.version };
-    store.set("outbox", store.get("outbox", [], Array.isArray).concat([row]).slice(-50));
+    if (!store.set("outbox", store.get("outbox", [], Array.isArray).concat([row]).slice(-50))) return;
+    store.set("sent", sent.concat([key]).slice(-60));
     flushStats();
   }
   function emit(kind, data = {}) {
     if (!statsOn() || !routine) return;
-    queueRow(`${routine.day}#${routine.run}#${kind}`, kind, routine.day, routine.run, data);
+    queueRow(`${routine.day}#${routine.rid || routine.run}#${kind}`, kind, routine.day, routine.run, data, routine.rid);
   }
-  // Not tied to a routine (adding to the home screen): once per day per kind, run 0
-  function emitDay(kind, data = {}) {
+  // Not tied to a routine (adding to the home screen, reminder taps): once per day per kind (and `part`), run 0
+  function emitDay(kind, data = {}, part = "") {
     if (!statsOn()) return;
     const day = dayKey();
-    queueRow(`${day}#0#${kind}`, kind, day, 0, data);
+    queueRow(`${day}#0#${kind}${part ? "#" + part : ""}`, kind, day, 0, data);
   }
   window.addEventListener("online", flushStats);
 
@@ -726,11 +792,12 @@
     const today = dayKey();
     const first = store.get("everStarted", false) !== true;
     const run = routine && routine.day === today ? routine.run + 1 : 1;
-    routine = { day: today, run, phase: "breathe", breaths: 0, breathing: null, intention: null, startedAt: nowMs() };
+    routine = { day: today, run, rid: uuid().slice(0, 8), phase: "breathe", breaths: 0, breathing: null, tasks: null, startedAt: nowMs() };
     saveRoutine();
     store.set("everStarted", true);
     emit("routine_started", { ...(via ? { via } : {}), ...(first ? { first: true, from: store.get("from", null) } : {}) });
-    renderBreathe(false);
+    // Opened in the background (a restored tab): wait for a tap instead of breathing unseen
+    renderBreathe(document.hidden);
   }
 
   // ---------- 2. Breathe ----------
@@ -784,6 +851,14 @@
   }
   function phaseDone() {
     if (!br) return;
+    // A breath never counts while the app is out of sight, even if the hide event was missed
+    if (document.hidden) {
+      pauseBreathing();
+      // Resume starts this breath again from "in"
+      const orb = $("#orb"); if (orb) delete orb.dataset.phase;
+      br.phase = "in"; br.left = BREATH.inMs;
+      return;
+    }
     if (br.phase === "in") { setPhase("out", BREATH.outMs); return; }
     routine.breaths += 1;
     saveRoutine();
@@ -834,8 +909,9 @@
       setPhase("in", BREATH.inMs);
     }
   }
-  // Pause when the phone locks or another app comes to the front
+  // Pause when the phone locks or another app comes to the front. Coming back stays paused until Resume is tapped.
   document.addEventListener("visibilitychange", () => { if (document.hidden) pauseBreathing(); });
+  window.addEventListener("pagehide", pauseBreathing);
 
   // ---------- 3. Choose ----------
   // Mini tasks: chips you tap (ten at most). Two come ticked; people keep them or change them. Their own recent
@@ -957,7 +1033,7 @@
       if (!kept) msg("This phone isn't saving drafts right now. Keep this page open.", true);
       else if ($("#imsg").classList.contains("err")) msg("");
     };
-    const total = () => sel.length + (cleanIntention(field.value) ? 1 : 0);
+    const total = () => normalizeTasks(sel, field.value).tasks.length;
     const redraw = () => {
       card.querySelectorAll("[data-idea]").forEach((b) => b.setAttribute("aria-pressed", String(sel.includes(options[b.dataset.idea]))));
       $("#isave").textContent = label();
@@ -980,40 +1056,59 @@
     field.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); save(); } });
     // Keep Save in view once the keyboard opens
     field.addEventListener("focus", () => setTimeout(() => { const b = $("#isave"); if (b) b.scrollIntoView({ block: "nearest" }); }, 350));
+    // Save (or "Keep these") is the only thing that confirms tasks; opening this screen confirms nothing.
+    // In the routine it's this run's task step. As an edit (after the routine) it changes the saved tasks and
+    // nothing else: no event, no change to what the routine recorded.
+    let saving = false;
     const save = () => {
+      if (saving) return;
       const typed = cleanIntention(field.value);
-      const tasks = [...sel, typed].filter(Boolean).filter((x, i, a) => a.indexOf(x) === i);
-      if (!tasks.length) { msg("Write a few words or pick one, or skip for today.", true); return; }
-      if (tasks.length > PICK_MAX) { msg(`Up to ${PICK_MAX}. Untick one first.`, true); return; }
-      const text = tasks.join(SEP).slice(0, MAX_INTENTION * PICK_MAX);
+      const { tasks, error } = normalizeTasks(sel, typed);
+      if (error === "empty") { msg("Write a few words or pick one, or skip for today.", true); return; }
+      if (error === "too_many") { msg(`Up to ${PICK_MAX}. Untick one first.`, true); return; }
+      saving = true;
+      const text = tasks.join(SEP);
       if (!saveIntention(day, text)) {
+        saving = false;
         keepDraft();
         msg("Couldn't save it on this phone. Your words are still here. Try again.", true);
         return;
       }
       store.del(draftKey(day)); store.del(picksKey(day));
-      const firstSave = routine.intention !== "saved";
-      routine.intention = "saved";
-      if (routine.phase === "choose") routine.phase = "finish";
-      saveRoutine();
-      if (firstSave) {
-        // Counts only: how many, whether the suggested pair was kept as it was, whether they wrote their own
-        emit("intention_saved", { count: tasks.length, kept_defaults: !touched && !saved, own: !!typed || tasks.some((x) => !POOL.has(x)) });
-        if (routine.breathing === "completed") emit("core_routine_completed");
-      }
-      if (editing && back) back(touched ? "Saved." : "");
-      else renderFinish();
+      if (editing && back) { back(touched ? "Saved." : ""); return; }
+      // Counts only: how many, whether the suggested pair was kept as it was, whether they wrote their own
+      emit("tasks_saved", { count: tasks.length, kept_defaults: !touched && !saved, own: !!typed || tasks.some((x) => !POOL.has(x)) });
+      reachFinish("saved");
     };
     $("#isave").onclick = save;
     $("#iskip").onclick = () => {
       if (editing && back) { store.del(draftKey(day)); store.del(picksKey(day)); back(""); return; }
-      // Skipping never removes something already saved today
-      if (routine.intention !== "saved") routine.intention = saved ? "saved" : "skipped";
-      routine.phase = "finish";
-      saveRoutine();
-      if (!saved) emit("intention_skipped");
-      renderFinish();
+      // Skipping never removes tasks already saved today, but this run's task step counts as skipped
+      emit("tasks_skipped", { had_earlier: !!saved });
+      reachFinish("skipped");
     };
+  }
+
+  // The end of the routine, recorded once per run (however often the Finish screen is drawn or the page reloads).
+  // routine_finished: the end was reached, skips included. core_routine_completed: all three breaths AND tasks saved
+  // in this run's task step (definition 2, from beta-5).
+  const CORE_DEF = 2;
+  function reachFinish(tasks) {
+    if (routine.phase === "choose") {
+      routine.tasks = tasks;
+      routine.phase = "finish";
+    }
+    if (!routine.finishedAt) {
+      routine.finishedAt = nowMs();
+      saveRoutine();
+      const core = routine.breathing === "completed" && routine.tasks === "saved";
+      markDone(routine.day);
+      if (core) markDay("fullDays", routine.day);
+      emit("routine_finished", { breathing: routine.breathing || "skipped", tasks: routine.tasks || "skipped", core, def: CORE_DEF,
+        seconds: Math.round((routine.finishedAt - routine.startedAt) / 1000) });
+      if (core) emit("core_routine_completed", { def: CORE_DEF });
+    } else saveRoutine();
+    renderFinish();
   }
 
   // ---------- 4. Finish ----------
@@ -1040,13 +1135,10 @@
       <div class="push">
         <button class="primary" id="finish" type="button">Finish</button>
       </div>`, "You're ready.");
-    markDone(routine.day);
-    emit("routine_finished", { breathing: routine.breathing || "skipped", intention: text ? "saved" : "skipped",
-      seconds: Math.round((nowMs() - routine.startedAt) / 1000) });
     ($("#iedit") || $("#iadd")).onclick = () => renderChoose(true, renderFinish);
+    // Finish only moves to Today: everything was recorded when this screen was reached, so extra taps change nothing
     $("#finish").onclick = () => {
-      routine.phase = "done";
-      saveRoutine();
+      if (routine.phase === "finish") { routine.phase = "done"; saveRoutine(); }
       renderToday();
     };
   }
@@ -1155,6 +1247,14 @@
     emitDay("app_installed");
     refreshHome();
   });
+  // Chrome on Android can say whether this site is already installed (manifest related_applications, platform
+  // "webapp"), so the box stays away for someone who installed it but opened the browser. Elsewhere the answer is
+  // "unknown", never "not installed": the box only offers, it never says Mornward isn't there. Nothing is counted.
+  if (navigator.getInstalledRelatedApps) {
+    navigator.getInstalledRelatedApps().then((apps) => {
+      if (Array.isArray(apps) && apps.length && !installed) { installed = true; installPrompt = null; refreshHome(); }
+    }).catch(() => {});
+  }
   // Browser detection is best effort: Instagram, Facebook, TikTok and others name themselves; Reddit often doesn't
   const inAppBrowser = /Instagram|FBAN|FBAV|FB_IAB|TikTok|musical_ly|Snapchat|Line\/|Twitter|LinkedInApp|reddit/i.test(ua);
   const iosVersion = (() => { const m = ua.match(/Version\/(\d+)/); return m ? Number(m[1]) : 0; })();
@@ -1406,29 +1506,36 @@
   // ---------- the week strip: the last few mornings, and tomorrow ----------
   // Shows that this is something you come back to, without a streak to lose: done days fill with a sun,
   // tomorrow waits as an outline.
+  // What it counts (also in supabase/METRICS.md, "Week strip"):
+  //   window      the last 7 local calendar days, today included (a rolling window, not Monday to Sunday)
+  //   sun         a full routine that day: all three breaths AND mini tasks saved in the routine
+  //   small mark  the routine reached the end but a step was skipped (or the day is from before steps were recorded)
+  //   ring / %    full-routine days in the window ÷ 7
   function weekStrip(doneToday) {
-    const today = dayKey(), done = doneDays();
+    const today = dayKey(), done = doneDays(), full = fullDays();
     // The seven days that count, plus tomorrow once today is done, so the suns always match the number
     const offs = doneToday ? [-6, -5, -4, -3, -2, -1, 0, 1] : [-6, -5, -4, -3, -2, -1, 0];
-    // Progress toward a full week: 7 mornings in the last seven days fill the ring. It starts at 0% and each morning
-    // adds to it. Days before the first morning are drawn quieter so they don't read as misses.
-    const start = [...done].sort()[0] || today;
-    const GOAL = 7;
-    const n = [-6, -5, -4, -3, -2, -1, 0].filter((o) => done.has(addDays(today, o))).length, den = GOAL;
-    const pct = Math.round((100 * n) / GOAL);
+    // Days before the first routine are drawn quieter so they don't read as misses
+    const start = [...done, ...full].sort()[0] || today;
+    const WINDOW = 7;
+    const inWindow = [-6, -5, -4, -3, -2, -1, 0].map((o) => addDays(today, o));
+    const n = inWindow.filter((d) => full.has(d)).length, den = WINDOW;
+    const parts = inWindow.filter((d) => done.has(d) && !full.has(d)).length;
+    const pct = Math.round((100 * n) / den);
     let prevDone = false;
     const slots = offs.map((o) => {
       const d = addDays(today, o);
       const [y, m, dd] = d.split("-").map(Number);
       const wd = new Date(y, m - 1, dd).toLocaleDateString([], { weekday: "narrow" });
-      const isDone = done.has(d);
-      const cls = [isDone ? "done" : o === 1 ? "next" : o === 0 ? "now" : d < start ? "pre" : "",
-        isDone && prevDone ? "joined" : "", o === 1 && prevDone ? "tonext" : ""].filter(Boolean).join(" ");
-      prevDone = isDone;
-      return `<li class="${cls}"><span class="dot">${isDone ? icon("sun") : ""}</span><span class="wd">${o === 0 ? "Today" : o === 1 ? "Next" : esc(wd)}</span></li>`;
+      const isFull = full.has(d), isPart = !isFull && done.has(d);
+      const cls = [isFull ? "done" : isPart ? "part" : o === 1 ? "next" : o === 0 ? "now" : d < start ? "pre" : "",
+        isFull && prevDone ? "joined" : "", o === 1 && prevDone ? "tonext" : ""].filter(Boolean).join(" ");
+      prevDone = isFull;
+      return `<li class="${cls}"><span class="dot">${isFull ? icon("sun") : ""}</span><span class="wd">${o === 0 ? "Today" : o === 1 ? "Next" : esc(wd)}</span></li>`;
     }).join("");
     const tail = doneToday ? "See you tomorrow" : "Today's is next";
-    const label = `${n} of ${den} ${den === 1 ? "morning" : "mornings"} this week, ${pct} percent. ${tail}.`;
+    const label = `Full routine, 3 breaths and mini tasks, on ${n} of the last ${den} days, ${pct} percent.` +
+      `${parts ? ` Reached the end with a step skipped on ${parts} more.` : ""} ${tail}.`;
     // A small ring fills with the share of mornings done
     const C = 2 * Math.PI * 21;
     return `<div class="week" role="img" aria-label="${esc(label)}">
@@ -1437,7 +1544,7 @@
           <svg class="ring" viewBox="0 0 52 52"><circle class="rt" cx="26" cy="26" r="21"/>
             ${pct ? `<circle class="rf" cx="26" cy="26" r="21" stroke-dasharray="${((C * pct) / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 26 26)"/>` : ""}
             <text x="26" y="30" text-anchor="middle">${pct}%</text></svg>
-          <p><b>${n} of ${den} ${den === 1 ? "morning" : "mornings"}</b><span>this week · ${esc(tail.toLowerCase())}</span></p>
+          <p><b>${n} of the last ${den} days</b><span>full routine: 3 breaths + mini tasks</span></p>
         </div>
       </div>`;
   }
@@ -1457,14 +1564,17 @@
   }
   const icsLocal = (d) => `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}T${pad2(d.getHours())}${pad2(d.getMinutes())}00`;
   const REMIND_TITLE = "Mornward: three breaths, one mini task";
-  // The link carries this phone's anonymous ID and choices after "#", which never reaches a server. A page opened
-  // inside Reddit or Instagram keeps its own storage; without this the reminder would open as a new person.
+  // Continuity token, for one place only: the iPhone home-screen icon's start address (prepareIconStart). The icon
+  // gets its own, empty storage; this lets it keep the same random ID, the terms version and the counts choice, so
+  // one person isn't counted as two. It sits after "#" (never sent to a server) and holds no tasks, link source or
+  // alarm time. With the counts off it carries no ID at all. Links that leave the phone (calendar events, the alarm
+  // Shortcut, copied links) carry nothing: Google receives a calendar link's text, and calendars sync.
   function carryState() {
-    const r = { v: 1, i: deviceId(), a: store.get("alarmAt", null, isAlarmTime), f: store.get("from", null),
-      t: hasAgreed() ? TERMS_VERSION : null, s: store.get("noStats", false) === true ? 1 : 0 };
+    const off = store.get("noStats", false) === true;
+    const r = { v: 1, ...(off ? {} : { i: deviceId() }), t: hasAgreed() ? TERMS_VERSION : null, s: off ? 1 : 0 };
     return encodeURIComponent(JSON.stringify(r));
   }
-  const carryLink = () => "https://mornward.app/?via=calendar#r=" + carryState();
+  const carryLink = () => "https://mornward.app/?via=calendar";
   const reminderText = (link) => `Before the scroll: ${link}\nThree breaths, one mini task. About a minute.`;
   const icsEsc = (t) => t.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
   // Calendar files want lines of at most 75 bytes; longer ones continue on the next line after a space
@@ -1478,12 +1588,19 @@
     out.push(cur);
     return out.join("\r\n ");
   };
+  // The event keeps one UID per phone (a random value, not the stats ID), with SEQUENCE going up each time a file is
+  // made, so a calendar that supports it can update the event instead of adding a second one. Whether it does is up
+  // to the calendar app (see supabase/METRICS.md, "Reminders"). The time is "floating": 07:00 wherever the phone is.
   function calendarFile(v, link) {
     const start = nextAlarm(v);
     const made = new Date(); // the real moment the file is made, even in a preview
-    const stamp = `${made.getUTCFullYear()}${pad2(made.getUTCMonth() + 1)}${pad2(made.getUTCDate())}T${pad2(made.getUTCHours())}${pad2(made.getUTCMinutes())}00Z`;
-    return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Mornward//EN", "CALSCALE:GREGORIAN", "BEGIN:VEVENT",
-      `UID:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}@mornward.app`,
+    const stamp = `${made.getUTCFullYear()}${pad2(made.getUTCMonth() + 1)}${pad2(made.getUTCDate())}T${pad2(made.getUTCHours())}${pad2(made.getUTCMinutes())}${pad2(made.getUTCSeconds())}Z`;
+    let uid = store.get("remUid", null, (x) => typeof x === "string" && /^[0-9a-f]{32}$/.test(x));
+    if (!uid) { uid = uuid().replace(/-/g, ""); store.set("remUid", uid); }
+    const seq = store.get("remSeq", -1, Number.isInteger) + 1;
+    store.set("remSeq", seq);
+    return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Mornward//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "BEGIN:VEVENT",
+      `UID:${uid}@mornward.app`, `SEQUENCE:${seq}`,
       `DTSTAMP:${stamp}`, `DTSTART:${icsLocal(start)}`, "DURATION:PT5M", `RRULE:FREQ=DAILY;COUNT=${REMIND_DAYS}`,
       `SUMMARY:${icsEsc(REMIND_TITLE)}`, `DESCRIPTION:${icsEsc(reminderText(link))}`, `URL:${link}`,
       "BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${icsEsc("Before the scroll: one mini task")}`, "TRIGGER:PT0M", "END:VALARM",
@@ -1503,8 +1620,8 @@
   //   iPhone:  an Apple Calendar event with an alert (a calendar file made on the phone), or, better for the minute
   //            after the alarm, a Shortcuts automation: "when my alarm stops, open Mornward". A website can't create
   //            that automation, so the app shows the steps and copies the link to paste.
-  // None of these can be confirmed from here, so nothing says "set" and nothing is counted.
-  const alarmLink = () => "https://mornward.app/?via=alarm#r=" + carryState();
+  // None of these can be confirmed from here, so nothing says "set". The tap is counted (reminder_setup), as a tap.
+  const alarmLink = () => "https://mornward.app/?via=alarm";
   function reminderSection() {
     const at = store.get("alarmAt", "", isAlarmTime) || "07:00";
     const os = isIOS ? "ios" : "android";
@@ -1517,13 +1634,15 @@
         <label class="flabel" for="remAt">Time</label>
         <input type="time" id="remAt" value="${esc(at)}">
         <div class="rempane" data-pane="android"${os === "android" ? "" : " hidden"}>
-          <p>A Google Calendar event pops up at this time for the next ${REMIND_DAYS} mornings.</p>
+          <p>Opens Google Calendar with an event at this time for the next ${REMIND_DAYS} mornings. Save it there, and set its notification to “At time of event”.</p>
           <a class="button secondary" id="remGoogle" href="#" target="_blank" rel="noopener">Add to Google Calendar</a>
           <button class="link start" id="remIcsAlt" type="button">Use a calendar file instead</button>
+          <p class="support">To stop it, delete the event in your calendar. It ends by itself after ${REMIND_DAYS} mornings.</p>
         </div>
         <div class="rempane" data-pane="ios"${os === "ios" ? "" : " hidden"}>
-          <p>An Apple Calendar alert pops up at this time for the next ${REMIND_DAYS} mornings.</p>
+          <p>Makes an event with an alert at this time for the next ${REMIND_DAYS} mornings. Add it, then check the alert in Calendar.</p>
           <button class="secondary" id="remIcs" type="button">Add to Apple Calendar</button>
+          <p class="support">To stop it, delete the event in Calendar. It ends by itself after ${REMIND_DAYS} mornings.</p>
           <details class="cantfind" id="remShortcut"><summary>Better: open Mornward when your alarm stops</summary>
             <p>Apple's Shortcuts app can do this every morning. It takes a minute, once.</p>
             <ol class="vsteps four">
@@ -1537,7 +1656,7 @@
               <a class="link" id="remShortcuts" href="shortcuts://">Open Shortcuts</a>
             </div>
             <input type="text" readonly aria-label="Mornward link for Shortcuts" id="remField" hidden>
-            <p class="support">Steps can differ a little between iOS versions.</p>
+            <p class="support">Steps can differ a little between iOS versions. To stop it, delete it under Automation in Shortcuts.</p>
           </details>
         </div>
         <p role="status" id="remMsg"></p>
@@ -1566,6 +1685,7 @@
       point();
       // We can only hand it over, not confirm it was saved
       msg("Google Calendar opened. Save the event there to keep it.");
+      emitDay("reminder_setup", { action: "google_link" }, "google_link");
     };
     const file = () => {
       if (!check()) return;
@@ -1575,6 +1695,7 @@
       document.body.appendChild(a); a.click(); a.remove();
       msg(isIOS ? "Tap Add to Calendar on the next screen. If a file downloaded instead, open it from Downloads."
         : "Open the downloaded file to add it to your calendar.");
+      emitDay("reminder_setup", { action: "calendar_file" }, "calendar_file");
     };
     $("#remIcs").onclick = file;
     $("#remIcsAlt").onclick = file;
@@ -1582,6 +1703,7 @@
       const url = alarmLink();
       try { await navigator.clipboard.writeText(url); msg("Copied. Paste it in the Open URLs step."); }
       catch { const f = $("#remField"); f.value = url; f.hidden = false; f.focus(); f.select(); msg("Copy this link, then paste it in the Open URLs step."); }
+      emitDay("reminder_setup", { action: "shortcut_link" }, "shortcut_link");
     };
   }
 
@@ -1602,7 +1724,7 @@
         : `<p>No stats have been sent from this phone.</p>`}
         <button class="link start" type="button" id="wipeLocal" aria-expanded="false" aria-controls="wipeAsk">Delete everything on this phone</button>
         <div class="ask" id="wipeAsk" hidden>
-          <p><b>Delete your tasks and settings on this phone?</b> This can't be undone.${id ? " If you also want your stats deleted, email your ID first." : ""}</p>
+          <p><b>Delete your tasks and settings on this phone?</b> This can't be undone.${id ? " It doesn't delete counts already sent: those are on Supabase, under the ID above, and this phone forgets that ID. To have them deleted too, email the ID first." : ""}</p>
           <div class="btnrow"><button class="danger" type="button" id="wipeYes">Delete everything</button>
             <button class="secondary" type="button" id="wipeNo">Cancel</button></div>
         </div>
@@ -1641,8 +1763,9 @@
     if (!m) return;
     try { history.replaceState(null, "", location.pathname + location.search); } catch {}
     if (store.get("deviceId", null) !== null) return;
-    // Only the home-screen icon or the calendar reminder may carry an ID in. A copied browser address can carry
-    // one too, and a friend opening it must not become the same anonymous person.
+    // Only the home-screen icon may carry an ID in, plus reminder links made by earlier versions (beta-4 and before put
+    // it in calendar events). A copied browser address can carry one too, and a friend opening it must not become
+    // the same anonymous person.
     if (!onHomeScreen && !viaCalendar) return;
     let r;
     try { r = JSON.parse(decodeURIComponent(m[1])); } catch { return; }
@@ -1683,9 +1806,11 @@
     if (known && updateAddress) { try { history.replaceState(null, "", rel); } catch {} }
   }
   prepareIconStart();
+  // The "Copy link" in the add guide: the link source only. (An ID here was never accepted by the browser it's pasted
+  // into, and a copied link can end up anywhere.)
   function shareUrl() {
     const from = store.get("from", null);
-    return "https://mornward.app/" + (from ? "?from=" + encodeURIComponent(from) : "") + (hasAgreed() ? "#r=" + carryState() : "");
+    return "https://mornward.app/" + (from ? "?from=" + encodeURIComponent(from) : "");
   }
 
   // ---------- which screen to show ----------

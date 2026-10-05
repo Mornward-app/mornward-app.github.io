@@ -2,109 +2,76 @@
 
 Mornward sends small anonymous records to Supabase so you can see whether the beta works.
 
-## Routine metrics (beta-4)
+## Routine metrics (beta-5)
 
-From app version `beta-4` the app is a one-minute routine: Begin → three breaths → one intention → Finish.
-**Apply [`migrations/20261004000000_intention_routine.sql`](migrations/20261004000000_intention_routine.sql) before this
-version goes live** (or re-run `setup.sql`, which includes it). Until then the database rejects the new kinds, and the
-app drops rejected rows rather than retrying them, so those routines are lost from the stats.
+**Exact definitions of every event, cohort, date rule and metric: [`METRICS.md`](METRICS.md).** This section is the
+short version.
 
-### Events
+**Order of deployment.** Apply [`migrations/20261004000000_intention_routine.sql`](migrations/20261004000000_intention_routine.sql),
+then [`migrations/20261005000000_reliability_metrics.sql`](migrations/20261005000000_reliability_metrics.sql) (or
+re-run `setup.sql`, which includes both), **before** the beta-5 app goes live. Beta-5 sends an `event_id` column; without
+the second migration every beta-5 row is rejected and dropped. To re-run something later, re-run only the newest
+migration (the older one's kind list is narrower and fails once newer rows exist; its transaction then changes
+nothing). Rollback: [`rollback/20261005000000_reliability_metrics.down.sql`](rollback/20261005000000_reliability_metrics.down.sql).
 
-| Kind | Sent when | `data` |
-| --- | --- | --- |
-| `routine_started` | Begin is tapped | `first: true` and `from` (link source; `qr` = scanned from the computer card) on a device's first routine ever; `via: "calendar"` when opened from the calendar reminder, `via: "alarm"` from the iPhone alarm Shortcut |
-| `breathing_completed` | The third full breath (in + out) ends | — |
-| `breathing_skipped` | Skip breathing is tapped | `breaths_done` (0–2) |
-| `intention_saved` | Mini tasks are saved and read back from the phone's storage (the first save of a routine) | `count` (1–3), `kept_defaults` (the two pre-ticked tasks saved unchanged), `own` (wrote or reused their own) — never the text |
-| `intention_skipped` | Skip for today is tapped and nothing was saved for that day | — |
-| `routine_finished` | The Finish screen is reached, whatever was skipped | `breathing`: completed / skipped, `intention`: saved / skipped, `seconds` |
-| `core_routine_completed` | An intention is saved in a routine whose breathing was completed | — |
-| `install_prompt` | Someone answers Chrome's own "Add to home screen" dialog (Android) | `outcome`: accepted / dismissed; `run: 0` |
-| `app_installed` | Chrome confirms Mornward was added to the home screen (Android) | `run: 0` |
+**Events:** `routine_started`, `breathing_completed`, `breathing_skipped`, `tasks_saved`, `tasks_skipped`,
+`routine_finished` (the end was reached, skips included), `core_routine_completed` (all three breaths **and** tasks
+saved in the routine's own task step; `def: 2`), `install_prompt`, `app_installed`, `reminder_setup` (a setup tap,
+not a working reminder). Edits after the task step send nothing. Beta-4's `intention_*` kinds are still accepted and
+read as `tasks_*`.
 
-Install events aren't tied to a routine (`run: 0`, today's date) and are sent at most once per day each. iPhones give
-a website no install signal, so iPhone installs show up only as later routines with `home_screen: true`.
+**Deduplication.** Every row has a random `event_id`. The database skips an `event_id` it already has, so a send
+whose reply was lost can be retried without being counted twice. The phone also records each `(day, routine, kind)`
+once (`fl.sent`). Reports count routines by `(device, day, rid)` and days by `(device, day)`. Sent rows are removed
+from the queue by `event_id`, so rows queued while a request is out are never dropped.
 
-Every row also has `run` (1 = the day's first routine, 2 = "Do the routine again", …), `home_screen`, and
-`test: true` on devices opened once with `?test=1`. `day` is the phone's local date **when the routine started**,
-so one started at 23:59 and finished after midnight belongs to the first date.
+**Payload checks.** New rows' `data` must match the known shapes per kind (constraint `events_payload_ok`):
+beta-4/5 kinds have an exact key list; older kinds allow only booleans, small numbers, null and short lowercase
+identifiers. Free text can't be stored. Existing rows aren't re-checked.
 
-**Not sent:** the intention text, drafts, edits, earlier intentions, alarm time, anything typed. Editing an
-intention after saving sends nothing. Taps on Finish, Edit, the calendar reminder and the privacy controls send nothing; the home-screen box sends only
-the two install events in the table above.
+**Consent.** Nothing is sent before the first tap on Begin. Turning the counts off (before Begin, or under Privacy)
+empties the queue; nothing is queued while they're off, so turning them back on never sends that period.
 
-**`reminder_opt_in` is not implemented, on purpose.** The only reminder is a calendar event handed to Google
-Calendar or a calendar file; the app can't tell whether the person saved it, so it would count intent, not a
-working reminder. Mornward has no push notifications and never asks for notification permission.
+**Reports** (dashboard only; the app's key can't read them): `retention_report` (every metric with numerator,
+denominator and devices not yet eligible), `week1_frequency`, `report_exclusions`, `routine_daily`, and
+`legacy_retention_report` for the beta-2 app, plus the building blocks `routine_cohort`, `routine_days`,
+`routine_runs`, `test_devices`. The beta-4 `routine_metrics` view is replaced by `retention_report`.
 
-**Deduplication.** The phone records each `(day, run, kind)` once (stored as `fl.sent`), so redraws, reloads and
-re-opening a screen send nothing new. A send that reached the server but whose reply was lost can arrive twice;
-the views use `bool_or` / `count(distinct …)`, so a duplicate row never counts twice. Clearing browser data, or
-the separate storage of the iPhone home-screen icon, gives a new device id (see "Storage and identity" below).
-
-**Consent.** Nothing is sent before the first tap on Begin. New people (and anyone who agreed to an older version)
-see a short note under Begin linking the terms; tapping Begin stores `agreed: beta-4`. Turning the counts off empties
-the queue and stops everything.
-
-### Definitions (views)
-
-All views are dashboard-only (the app's key can't read them). Windows count as complete **two days after** the
-local day they cover, so every time zone has finished that day before `current_date` (UTC) reaches it.
-
-| Metric | Definition | Denominator |
-| --- | --- | --- |
-| First-routine completion | The device's first beta-4 routine (first day, lowest run) has `routine_finished`; the stricter version has `core_routine_completed` | All new devices |
-| Next-local-day return | A `routine_started` on `first_day + 1` | New devices with `first_day + 3 <= current_date` |
-| Repeat core completion within 7 days | `core_routine_completed` on any day from `first_day + 1` to `first_day + 7` | New devices with `first_day + 9 <= current_date` |
-| Exact day-7 retention | A `routine_started` on exactly `first_day + 7` | Same as above |
-
-"New devices" leaves out test devices (`test: true`, or listed in `excluded_devices`) and devices that sent events
-from an earlier version (they're returning people, not new ones). Both groups are counted in their own columns.
-
-| View | Answers |
-| --- | --- |
-| `routine_metrics` | One row: every metric above as a **count and a percentage**, how many devices are still inside an incomplete window, how many test / earlier-version devices were left out, and home-screen use (`used_home_screen`: opened from the icon at least once; `install_confirmed`: Chrome confirmed an install) |
-| `routine_cohort` | One row per device: first day, flags for each metric, whether its windows are complete |
-| `routine_runs` | One row per routine (device, day, run) with which steps happened |
-| `routine_daily` | Per day: devices that started, finished breathing / skipped, saved / skipped, finished, core-completed (first run each day, tests left out) |
-
-Leave your own phones out (your ID is under **Privacy and your data** in the app):
+Leave your own phones out (your ID is under **Privacy and your data** in the app), or open `mornward.app/?test=1`
+once on each:
 
 ```sql
 insert into public.excluded_devices (device_id, note) values ('YOUR-ID-HERE', 'my phone');
 ```
 
-**Pre-ticked tasks.** Two of the day's ten mini tasks come ticked (the ten change each routine day, from a bank of 39), so many people will keep them. `kept_defaults` shows how often; read any "which task" interest with that in mind. (Which tasks were picked is not sent at all.)
+**Pre-ticked tasks.** Two of the day's ten mini tasks come ticked, so many people will keep them. `kept_defaults` shows
+how often. Which tasks were picked is not sent at all.
 
 **Reading the numbers honestly.** With tens of devices, one person moves a percentage by several points: read the
-counts first. `routine_metrics` covers only the beta-4 routine. **Don't compare it with `testers` / `pass_rules`,**
-which measure the old 5-step morning (see the audit below). The calendar reminder isn't measured, so these numbers
-can't say whether reminders cause returns; `via: "calendar"` only shows that a routine was opened from one.
+counts first. Correct counting doesn't mean retention improved.
 
 ### Storage and identity
 
 Everything lives in the browser's `localStorage` under keys starting `fl.`: `routine` (today's progress),
-`intent:YYYY-MM-DD` (one intention per local date, the same key the earlier version used), `draft:YYYY-MM-DD`,
-`agreed`, `deviceId`, `noStats`, `outbox`, `sent`, and `taskSeed` (a random number that orders the mini-task bank for this phone; never sent). Nothing is fingerprinted; the device id is a random UUID.
+`intent:YYYY-MM-DD` (mini tasks per local date, the same key earlier versions used), `draft:` / `picks:` (unsaved
+typing and ticks), `days` and `fullDays` (for the week strip), `agreed`, `deviceId`, `noStats`, `outbox`, `sent`,
+`taskSeed` (orders the mini-task bank; never sent), `remUid` / `remSeq` (the calendar file's event id; never sent).
+Nothing is fingerprinted; the device id is a random UUID. Identity limits (iPhone icon, in-app browsers, reminder
+links, cleared data) are listed in [`METRICS.md`](METRICS.md#identity).
 
-- **Android (Chrome):** an installed home-screen app shares Chrome's storage, so the intention, history and device
-  id are the same in both.
-- **iPhone:** a home-screen icon gets its own, empty storage. When the person opens the install steps, the icon's
-  start address is set to carry the anonymous id, consent version, stats choice and link source after `#` (never
-  sent to a server), so the icon isn't counted as a new person. **Intentions and history are not carried**: they
-  would sit in an address. So on iPhone, the browser and the icon each keep their own history. Not tested on a
-  real iPhone.
-- **In-app browsers** (Reddit, Instagram) also keep separate storage; the calendar reminder link carries the id
-  the same way.
-- **Time zones:** a routine belongs to the local date it started on. If the date changes (midnight, or travel),
-  the next open shows that date's Begin, and the earlier routine appears under "Earlier intentions" with its own
-  date. A routine still in progress shortly after midnight (under 3 hours old) can be finished first.
+- **Links don't carry the id (beta-5).** Calendar events, the alarm Shortcut link and copied links are plain
+  `mornward.app` links. Before beta-5 they carried the id after `#`; the Google Calendar link sent it to Google
+  inside the event text. Older links are still accepted when opened.
+- **iPhone icon:** the one exception. Its start address carries the id, terms version and counts choice after `#`
+  (on the phone only; no id at all if counts are off), so the icon isn't counted as a new person. Tasks are never
+  carried. Not tested on a real iPhone.
+- **Time zones:** see [`METRICS.md`](METRICS.md#dates).
 
 ### Audit of the earlier retention numbers (beta-3 and before)
 
 The "about 15 setups, 0% came back" figure came from `testers` / `pass_rules` and the ad-hoc "came back" query
-below. They have these problems, so treat that figure as unverified:
+below. They have these problems, so treat that figure as unverified (items 1–3 are confirmed by seeded tests in
+`tests/db/metrics_test.sql`; for the beta-2 data, use `legacy_retention_report` instead):
 
 1. **`testers.first_day` is the first event of any kind**, including `screen_view` and `setup_done`, while
    "mornings" count only non-practice `morning_done`. A first-visit reset is a practice run, so a device's first
@@ -191,6 +158,12 @@ select created_at, day, kind, data from public.events where device_id = 'THEIR-I
 ```
 
 Then reply: "Done. Every record with that ID has been deleted." Keep a one-line note of the date and the request.
+
+**Who is asking.** The ID is the only link to the records, and anyone who has it could send it. It isn't a password:
+reply only to the address the request came from, and for a copy of the data, send it only there.
+
+**Nothing is automatic.** Requests and the end-of-beta deletion are done by hand with the SQL here; there is no
+scheduled job. Keep the dates in your notes so the 30-day and 90-day promises are kept.
 
 **When the beta ends:** export anything you need, then delete all rows within 90 days (the terms promise this):
 
