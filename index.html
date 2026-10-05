@@ -40,6 +40,7 @@
     --button: #25374D;
     --button-text: #FFFFFF;
     --sun: #F2D77A;
+    --hl: #9A4A0C;
     --field: #FFFFFF;
     /* Field edge and placeholder: at least 3:1 and 4.5:1 against white */
     --field-line: #6B7F94;
@@ -61,7 +62,7 @@
     :root:not([data-theme="light"]) {
       color-scheme: dark;
       --bg: #0F1B2A; --text: #E8EFF7; --text-2: #A9B9CA; --button: #F2D77A; --button-text: #18222F;
-      --sun: #F2D77A; --field: #182A3D; --field-line: #7F93A8; --placeholder: #93A5B8; --rule: #2A3E55;
+      --sun: #F2D77A; --hl: #F4B465; --field: #182A3D; --field-line: #7F93A8; --placeholder: #93A5B8; --rule: #2A3E55;
       --error: #FFA394; --chip: #182A3D; --chip-line: #5E7894; --track: #2A3E55; --focus: #F2D77A;
       --pick-bg: #2E3A3A; --pick-line: #F2D77A;
     }
@@ -69,7 +70,7 @@
   :root[data-theme="dark"] {
     color-scheme: dark;
     --bg: #0F1B2A; --text: #E8EFF7; --text-2: #A9B9CA; --button: #F2D77A; --button-text: #18222F;
-    --sun: #F2D77A; --field: #182A3D; --field-line: #7F93A8; --placeholder: #93A5B8; --rule: #2A3E55;
+    --sun: #F2D77A; --hl: #F4B465; --field: #182A3D; --field-line: #7F93A8; --placeholder: #93A5B8; --rule: #2A3E55;
     --error: #FFA394; --chip: #182A3D; --chip-line: #5E7894; --track: #2A3E55; --focus: #F2D77A;
       --pick-bg: #2E3A3A; --pick-line: #F2D77A;
   }
@@ -140,6 +141,8 @@
   .support { font-size: 0.875rem; line-height: 1.25rem; color: var(--text-2); }
   .center { text-align: center; }
   .wordmark { font-size: 1.0625rem; font-weight: 600; letter-spacing: 0.01em; margin: 0; }
+  /* A few key words in the sunrise's amber (never whole sentences) */
+  .hl { color: var(--hl); font-style: normal; }
   .dateline { font-size: 0.75rem; line-height: 1rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-2); margin: 0; }
   a { color: var(--text); text-underline-offset: 2px; }
 
@@ -333,11 +336,11 @@
   .tdgrid button { min-height: 48px; padding: 8px 10px; font-size: 0.9375rem; }
 
   /* ---------- sunrise ---------- */
-  .sunrise { display: block; width: min(200px, 56%); height: auto; margin: 4px 0; }
+  .sunrise { display: block; width: min(240px, 72%); height: auto; margin: 4px 0; }
   .sunrise.mid { margin-inline: auto; }
-  .sunrise .disc { fill: var(--sun); }
-  .sunrise .ray { stroke: var(--sun); stroke-width: 6; stroke-linecap: round; }
-  .sunrise .horizon { stroke: var(--text); stroke-opacity: .28; stroke-width: 2; }
+  .sunrise .sky { fill: #151A3D; }
+  .sunrise .stars { fill: #C8D0F2; opacity: .75; }
+  .sunrise .horizon { stroke: #B8946A; stroke-opacity: .75; stroke-width: 1.5; }
   /* Finish: the sun lifts out of the horizon, then its rays appear */
   .sunrise.rise .sunbody { animation: rise 1.4s cubic-bezier(.2, .7, .2, 1) both; }
   .sunrise.rise .rays { animation: rays 1.8s ease-out both; }
@@ -809,18 +812,27 @@
   const icon = (k) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${ICON[k]}</svg>`;
 
   // A sun on the horizon (rising) or above it (risen). `animate` lifts it out of the horizon on Finish. Decorative.
+  // The Mornward mark: a sun on the horizon in a night-blue sky, with its glow, a few stars and three fading
+  // reflections. `risen` lifts the sun clear of the horizon (the end of the routine); `animate` lifts it into place.
   function SUN(risen, animate = false, centered = false) {
-    const cy = risen ? 60 : 96, r = risen ? 26 : 40;
-    const rays = [-60, -30, 0, 30, 60].map((a) => {
-      const t = (a - 90) * Math.PI / 180, p = (d) => [(120 + Math.cos(t) * d).toFixed(1), (cy + Math.sin(t) * d).toFixed(1)];
-      const [x1, y1] = p(r + 10), [x2, y2] = p(r + 22);
-      return `<line class="ray" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
-    }).join("");
-    const id = "sky" + (risen ? 1 : 0);
-    return `<svg class="sunrise${animate ? " rise" : ""}${centered ? " mid" : ""}" viewBox="0 0 240 104" aria-hidden="true" focusable="false">
-      <defs><clipPath id="${id}"><rect width="240" height="95"/></clipPath></defs>
-      <g clip-path="url(#${id})"><g class="sunbody"><circle class="disc" cx="120" cy="${cy}" r="${r}"/></g><g class="rays">${rays}</g></g>
-      <line class="horizon" x1="8" y1="96" x2="232" y2="96"/>
+    const cy = risen ? 46 : 72, r = risen ? 24 : 31;
+    const id = "mw" + (risen ? 1 : 0);
+    const stars = [[34, 22, 1.6], [58, 44, 1.1], [196, 20, 1.5], [178, 40, 1], [224, 50, 1.2], [92, 16, 0.9]]
+      .map(([x, y, rr]) => `<circle cx="${x}" cy="${y}" r="${rr}"/>`).join("");
+    return `<svg class="sunrise${animate ? " rise" : ""}${centered ? " mid" : ""}" viewBox="0 0 260 120" aria-hidden="true" focusable="false">
+      <defs>
+        <radialGradient id="${id}g"><stop offset="0" stop-color="#F7C47C" stop-opacity=".42"/><stop offset="1" stop-color="#F7C47C" stop-opacity="0"/></radialGradient>
+        <radialGradient id="${id}s" cx="50%" cy="72%" r="72%"><stop offset="0" stop-color="#FFF3D9"/><stop offset=".5" stop-color="#F6C46E"/><stop offset="1" stop-color="#E8924A"/></radialGradient>
+        <clipPath id="${id}c"><rect width="260" height="78"/></clipPath>
+      </defs>
+      <rect class="sky" width="260" height="120" rx="20"/>
+      <g class="stars">${stars}</g>
+      <g clip-path="url(#${id}c)"><g class="sunbody"><circle cx="130" cy="${cy}" r="${r * 2.4}" fill="url(#${id}g)"/>
+        <circle class="disc" cx="130" cy="${cy}" r="${r}" fill="url(#${id}s)"/></g></g>
+      <line class="horizon" x1="14" y1="78" x2="246" y2="78"/>
+      <g class="rays"><rect x="94" y="86" width="72" height="6" rx="3" fill="#E9B062" opacity=".95"/>
+        <rect x="106" y="97" width="48" height="5.5" rx="2.75" fill="#C9935A" opacity=".7"/>
+        <rect x="118" y="107" width="24" height="5" rx="2.5" fill="#8F7458" opacity=".6"/></g>
     </svg>`;
   }
   // A short buzz at each in/out change, so breathing works with eyes closed (Android; iPhones ignore it)
@@ -835,7 +847,7 @@
     const seen = [...doneDays(), ...fullDays(), ...(routine && isDay(routine.day) ? [routine.day] : [])].filter((d) => d < today).sort();
     const back = seen.length > 0 && seen[seen.length - 1] < addDays(today, -1);
     show(`
-      <p class="wordmark">mornward</p>
+      <p class="wordmark">Mornward</p>
       ${SUN(false)}
       <h1>${back ? "Welcome back." : "Before the scroll,<br>a few mini tasks."}</h1>
       ${personalLine() ? `<p class="body" id="invite">${esc(personalLine())}</p>` : ""}
@@ -941,9 +953,9 @@
   const stepTop = (n) => `<div class="steptop"><button class="link back" id="stepBack" type="button">${icon("back")}<span>Back</span></button>
         ${n ? `<span class="stepbars" aria-hidden="true">${SETUP_STEPS.map((_, i) => `<i${i < n ? ' class="on"' : ""}></i>`).join("")}</span><p class="stepnum sr-only">Step ${n} of ${SETUP_STEPS.length}</p>` : ""}</div>`;
   // The promise, in one line: what the minute gives back (Welcome and the prepared screen)
-  const PROMISE = "Start your day on purpose, not on a feed.";
+  const PROMISE = 'Start your day <em class="hl">on purpose</em>, not on a feed.';
   // What Mornward is, in ten words: above the phone card on a computer
-  const WHAT_IT_IS = "A one-minute morning routine: three breaths, then your chosen tasks.";
+  const WHAT_IT_IS = 'A <em class="hl">one-minute</em> morning routine: three breaths, then your chosen tasks.';
   // Three breaths → mini tasks → ready, as icons: the routine at a glance (Welcome, Prepared, Begin)
   const flowRow = () => `<ol class="flow" id="flowRow" aria-label="Three breaths, a few mini tasks, then you're ready">
         <li>${icon("breath")}<span>3 breaths</span></li>
@@ -953,9 +965,9 @@
 
   function renderWelcome() {
     show(`
-      <p class="wordmark">mornward</p>
+      <p class="wordmark">Mornward</p>
       ${SUN(false)}
-      <h1>A calmer start, before the scroll.</h1>
+      <h1>A <em class="hl">calmer start</em>, before the scroll.</h1>
       <p class="lede promise" id="promise">${PROMISE}</p>
       ${flowRow()}
       <div class="push">
@@ -1118,9 +1130,9 @@
     const p = preparedTasks();
     const head = justSet ? "Ready for your first morning." : "A minute before the scroll.";
     show(`
-      <p class="wordmark">mornward</p>
+      <p class="wordmark">Mornward</p>
       ${justSet ? "" : SUN(false)}
-      <h1>${head}</h1>
+      <h1>${justSet ? 'Ready for your <em class="hl">first morning</em>.' : '<em class="hl">A minute</em> before the scroll.'}</h1>
       ${justSet ? `<p class="lede">When you wake, open Mornward first.</p>` : `<p class="lede promise" id="promise">${PROMISE}</p>`}
       <p class="body" id="invite"${personalLine() ? "" : " hidden"}>${esc(personalLine())}</p>
       ${justSet ? "" : flowRow()}
@@ -1506,7 +1518,7 @@
   // What the end of the routine says, from what this run actually recorded (never from an edit afterwards)
   function finishWords(r) {
     if (r.breathing === "completed" && r.tasks === "saved")
-      return [r.firstFull ? "Your first reset.<br>Complete." : "Morning reset complete.", ""];
+      return [r.firstFull ? 'Your first reset.<br><em class="hl">Complete.</em>' : 'Morning reset <em class="hl">complete</em>.', ""];
     if (r.tasks === "saved") return ["Your mini tasks are saved.", "Breathing skipped today."];
     if (r.breathing === "completed") return ["Three breaths taken.", "No mini tasks today."];
     return ["You're set for today.", "Breathing and mini tasks skipped."];
@@ -1517,7 +1529,7 @@
     const text = intentionFor(routine.day);
     const [head, sub] = finishWords(routine);
     show(`
-      <p class="wordmark center">mornward</p>
+      <p class="wordmark center">Mornward</p>
       ${SUN(true, !note, true)}
       <p class="dateline center">${esc(fmtDay(routine.day))}</p>
       <h1 class="center">${head}</h1>
@@ -1527,7 +1539,7 @@
       ${progressSection()}
       <div class="push">
         <button class="primary" id="finish" type="button">Done</button>
-      </div>`, head.replace("<br>", " "));
+      </div>`, head.replace("<br>", " ").replace(/<[^>]+>/g, ""));
     ($("#iedit") || $("#iadd")).onclick = () => renderChoose(true, renderFinish);
     // Done only moves to Today: everything was recorded when this screen was reached, so extra taps change nothing
     $("#finish").onclick = () => {
@@ -1541,7 +1553,7 @@
     if (!routine || routine.day !== dayKey()) { renderBegin(); return; }
     const text = intentionFor(routine.day);
     show(`
-      <div class="row"><p class="wordmark">mornward</p><p class="support">${esc(fmtDay(routine.day))}</p></div>
+      <div class="row"><p class="wordmark">Mornward</p><p class="support">${esc(fmtDay(routine.day))}</p></div>
       <h1>Done for today.</h1>
       ${text ? intentionBlock(text) : `<p class="body">No task today.</p>${addButton}`}
       <p class="msg ok" role="status">${esc(note)}</p>
