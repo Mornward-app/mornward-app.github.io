@@ -26,7 +26,7 @@ words: task names (shuffled per phone), folded sections and screen-reader-only t
 | Morning tasks | 25 | ~20 | Six chips; one short hint |
 
 - **The promise** (Welcome and Prepared, under the heading): "Start your day on purpose, not on a feed."
-- **What it is, in ten words** (computer only, a box under the phone code, from Welcome on): "What is Mornward?" / "A one-minute
+- **What it is, in ten words** (computer only, a box above the phone code, from Welcome on): "What is Mornward?" / "A one-minute
   morning routine: three breaths, then your chosen tasks."
 - **The phone code beside the app** (computers, from Welcome on) is a slim column, 236 px, with the code centred in its card, so someone on a computer can open Mornward on their phone and add it to the home screen there.
 
@@ -155,7 +155,7 @@ Every result below is from Chromium with phone emulation, not a physical phone.
 | 9 | Counts off: the whole journey works; nothing sent or queued; no ID made | Pass |
 | 10 | Failed saves (prepared tasks; finishing setup): message, Retry, input kept, no "Ready" | Pass |
 | 11 | Calendar opened but not saved: "Calendar opened—finish saving your reminder there."; tasks and date survive a reload after the hand-off; a blocked calendar doesn't trap setup; no reminder-success claim | Pass |
-| 12 | Computer: the code beside Welcome before any choice (no setup state or event yet); "Installs nothing"; "Choices made here stay here"; the QR decodes to `https://mornward.app/?from=qr`; Prepare my morning goes straight to step 1. Beside the app: a slim card (≤ 240 px), the code centred, and "What is Mornward?" in ten words under it. Phones never show the code | Pass |
+| 12 | Computer: the code beside Welcome before any choice (no setup state or event yet); "Installs nothing"; "Choices made here stay here"; the QR decodes to `https://mornward.app/?from=qr`; Prepare my morning goes straight to step 1. Beside the app: a slim card (≤ 240 px), the code centred, and "What is Mornward?" in ten words above it. Phones never show the code | Pass |
 | 13 | 320 px, dark mode, reduced motion and 200% text: every setup and morning screen fits the phone's width (checked against the screen, not the stretched viewport); keyboard; focus to the heading; labelled toggle groups; 44 px targets | Pass (emulated) |
 | — | Suggested first date: 6 AM → tomorrow; 1:30 AM → that morning; December 31 → January 1, 2027 with the year | Pass |
 

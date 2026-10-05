@@ -274,7 +274,7 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
   // 12: computer → phone: offered before any personal choice; opening isn't installing; nothing moves
   { const x = await ctx(b, site.url, { when: SUN_EVE, device: "Desktop Chrome" }); await x.p.setViewportSize({ width: 1280, height: 800 }); await x.goto();
     ok("12 computer, Welcome: Prepare my morning, no choices yet", (await x.p.textContent("#setupGo")) === "Prepare my morning" && !(await x.p.$("#prepIntent")));
-    ok("12 computer, Welcome: the phone code beside the app, with 'What is Mornward?' under it", !!(await x.p.$("#handoffSlot #handoff .qr")) && (await x.p.textContent("#aboutTitle")) === "What is Mornward?");
+    ok("12 computer, Welcome: the phone code beside the app, with 'What is Mornward?' above it", !!(await x.p.$("#handoffSlot #handoff .qr")) && (await x.p.textContent("#aboutTitle")) === "What is Mornward?");
     const wgeo = await x.p.evaluate(() => { const c = document.querySelector("#handoffSlot #handoff").getBoundingClientRect(), q = document.querySelector("#handoffSlot .qr").getBoundingClientRect();
       return { w: c.width, q: q.width, off: Math.abs((q.left + q.right) / 2 - (c.left + c.right) / 2) }; });
     ok("12 computer, Welcome: the card is slim, the code centred and still scannable", wgeo.w <= 240 && wgeo.q >= 120 && wgeo.off < 2, wgeo);
@@ -297,10 +297,10 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
       return { w: c.width, q: q.width, off: Math.abs((q.left + q.right) / 2 - (c.left + c.right) / 2) }; });
     ok("12 ...the card is slim and the code is centred in it, still scannable", geo.w <= 240 && geo.q >= 120 && geo.off < 2, geo);
     const about = (await x.p.textContent("#aboutBox p")).trim();
-    ok("12 ...under it, 'What is Mornward?' in ten words", (await x.p.textContent("#aboutTitle")) === "What is Mornward?" && about.split(/\s+/).length === 10 &&
+    ok("12 ...above it, 'What is Mornward?' in ten words", (await x.p.textContent("#aboutTitle")) === "What is Mornward?" && about.split(/\s+/).length === 10 &&
       about === "A one-minute morning routine: three breaths, then your chosen tasks.", about);
-    const below = await x.p.evaluate(() => document.querySelector("#aboutBox").getBoundingClientRect().top >= document.querySelector("#handoffSlot #handoff").getBoundingClientRect().bottom);
-    ok("12 ...the box sits under the code card", below);
+    const above = await x.p.evaluate(() => document.querySelector("#aboutBox").getBoundingClientRect().bottom <= document.querySelector("#handoffSlot #handoff").getBoundingClientRect().top);
+    ok("12 ...the box sits above the code card", above);
     ok("12 ...no Appearance section any more", !(await x.p.$("#themeSec")));
     await x.c.close(); }
   for (const device of ["Pixel 7", "iPhone 13"]) {

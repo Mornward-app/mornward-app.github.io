@@ -272,11 +272,13 @@
   .horow { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; }
   .horow .secondary { width: auto; min-height: 44px; padding: 8px 14px; font-size: 0.9375rem; }
   @media (max-width: 420px) { .handoff { flex-direction: column; align-items: flex-start; } .handoff .qr { width: 160px; } }
-  .about { margin-top: 16px; padding: 16px 18px; border-radius: 20px; background: var(--field); border: 1.5px solid var(--chip-line); }
+  .about { margin: 24px 0 16px; padding: 16px 18px; border-radius: 20px; background: var(--field); border: 1.5px solid var(--chip-line); }
   .about h2 { margin: 0 0 6px; font-size: 1rem; line-height: 1.375rem; }
   .about p { margin: 0; font-size: 0.9375rem; line-height: 1.375rem; color: var(--text); }
-  /* Beside the app on wide screens: a slim column, the code centred in its card, "What is Mornward?" under it */
+  .about + .handoff { margin-top: 0; }
+  /* Beside the app on wide screens: a slim column, "What is Mornward?" on top, then the code centred in its card */
   @media (min-width: 1000px) {
+    #handoffSlot .about { margin-top: 0; }
     #handoffSlot { position: fixed; top: 96px; left: calc(50% + 264px); width: 236px; max-height: calc(100vh - 120px); overflow: auto; }
     .handoff { margin: 0; padding: 16px; flex-direction: column; align-items: stretch; gap: 12px; }
     .handoff .qr { width: 128px; align-self: center; }
@@ -940,7 +942,7 @@
         ${n ? `<span class="stepbars" aria-hidden="true">${SETUP_STEPS.map((_, i) => `<i${i < n ? ' class="on"' : ""}></i>`).join("")}</span><p class="stepnum sr-only">Step ${n} of ${SETUP_STEPS.length}</p>` : ""}</div>`;
   // The promise, in one line: what the minute gives back (Welcome and the prepared screen)
   const PROMISE = "Start your day on purpose, not on a feed.";
-  // What Mornward is, in ten words: under the phone card on a computer
+  // What Mornward is, in ten words: above the phone card on a computer
   const WHAT_IT_IS = "A one-minute morning routine: three breaths, then your chosen tasks.";
   // Three breaths → mini tasks → ready, as icons: the routine at a glance (Welcome, Prepared, Begin)
   const flowRow = () => `<ol class="flow" id="flowRow" aria-label="Three breaths, a few mini tasks, then you're ready">
@@ -1851,7 +1853,7 @@
   const PHONE_URL = "https://mornward.app/?from=qr";
   function handoffHtml() {
     if (!computerView()) return "";
-    return `<aside class="handoff" id="handoff" aria-labelledby="hoTitle">
+    return `${aboutHtml()}<aside class="handoff" id="handoff" aria-labelledby="hoTitle">
         <div class="qr" role="img" aria-label="QR code that opens mornward.app">${QR_SVG}</div>
         <div class="hotext">
           <h2 id="hoTitle">Set up where you’ll use it.</h2>
@@ -1864,7 +1866,7 @@
           <input type="text" readonly aria-label="Link to Mornward" id="hoField" hidden>
           <p class="support" role="status" id="hoMsg"></p>
         </div>
-      </aside>${aboutHtml()}`;
+      </aside>`;
   }
   const aboutHtml = () => `
       <aside class="about" id="aboutBox" aria-labelledby="aboutTitle">
