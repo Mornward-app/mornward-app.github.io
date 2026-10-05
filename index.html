@@ -457,8 +457,24 @@
   .steptop .back { width: auto; min-height: 44px; padding: 0 4px 0 0; gap: 4px; }
   .stepnum { font-size: 0.8125rem; line-height: 1rem; font-weight: 600; color: var(--text-2); margin: 0; white-space: nowrap; }
   .lede { font-size: 1.125rem; line-height: 1.625rem; color: var(--text); margin: 0; }
-  .remtime { display: flex; flex-wrap: wrap; gap: 12px; }
-  .remtime > div { flex: 1 1 140px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+  /* The reminder: one card, a row each for the time and the first morning (they never squeeze side by side) */
+  .remcard { background: var(--field); border: 1.5px solid var(--chip-line); border-radius: 20px; padding: 14px;
+    display: flex; flex-direction: column; gap: 10px; }
+  .remrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .remrow .flabel { flex: 1 1 auto; margin: 0; }
+  .remic { flex: none; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: var(--chip); }
+  .remic .i { width: 18px; height: 18px; color: var(--hl); }
+  /* The box takes the rest of the row; on a narrow screen or with large text it drops to its own line, full width */
+  .remrow input[type="time"], .remrow input[type="date"] { flex: 1 1 8.5rem; width: auto; min-width: 0; max-width: 100%;
+    min-height: 44px; padding: 6px 10px; -webkit-appearance: none; appearance: none; text-align: center; font-weight: 600; background: var(--bg); }
+  .remrow input::-webkit-date-and-time-value { text-align: center; }
+  .remquick { gap: 6px; flex-wrap: wrap; }
+  /* Equal widths on one line when they fit; with large text they keep their words and wrap instead */
+  .remquick .chip { flex: 1 0 auto; min-width: 44px; padding: 6px 8px; justify-content: center; font-size: 0.875rem; }
+  .remother { position: relative; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; }
+  .remother input[type="date"] { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; padding: 0; border: 0;
+    opacity: 0; cursor: pointer; -webkit-appearance: none; appearance: none; }
+  .remother:focus-within { outline: 3px solid var(--focus); outline-offset: 3px; }
   .remwhen { font-weight: 600; color: var(--text); margin: 0; }
   .planned { color: var(--text-2); margin: 0; }
   .setupcard { background: var(--field); border-radius: var(--radius); padding: 14px 18px; display: flex; flex-direction: column; gap: 4px; }
@@ -2063,6 +2079,10 @@
   // In setup the first date suggested is the next morning: tomorrow (or, after midnight and before 4 AM, the
   // morning about to come). Worked out from the real date each time, never stored as "tomorrow".
   const nextMorning = () => (now().getHours() < 4 ? dayKey() : addDays(dayKey(), 1));
+  // Quick picks for the time: one tap instead of the picker
+  const REM_QUICK = ["06:00", "06:30", "07:00", "07:30", "08:00"];
+  const quickLabel = (t) => { const [h, m] = t.split(":").map(Number); return new Date(2026, 0, 1, h, m).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).replace(/\s?[AaPp]\.?[Mm]\.?$/, ""); };
+  const dayChip = (d) => { const [y, m, dd] = d.split("-").map(Number); return new Date(y, m - 1, dd).toLocaleDateString([], { weekday: "short", day: "numeric" }); };
   function reminderControls(setup = false) {
     const at = store.get("alarmAt", "", isAlarmTime) || "07:00";
     const os = isIOS ? "ios" : "android";
@@ -2070,13 +2090,23 @@
     const first = nextAlarm(at, store.get("remDate", null, isDay) || (setup ? nextMorning() : null));
     const S = (g, t) => `<li><span class="g">${GLYPH[g]}</span><span>${t}</span></li>`;
     // One calendar button for this phone; the other phone, instructions and the Shortcut are folded under More options
-    return `<div class="remtime">
-          <div><label class="flabel" for="remAt">Time</label>
+    // One card: the time (with quick picks), then the first morning, each on its own row, then the first reminder
+    // The first morning: the next three, by tap (the date picker sits under "Other" for anything later)
+    const base = setup ? nextMorning() : dayKey(nextAlarm(at));
+    const days = [0, 1, 2].map((n) => addDays(base, n)).map((d) => `<button class="chip pick" type="button" data-rem-day="${d}"><span>${esc(dayChip(d))}</span></button>`).join("");
+    const quick = REM_QUICK.map((t) => `<button class="chip pick" type="button" data-rem-quick="${t}" aria-pressed="${t === at}"><span>${esc(quickLabel(t))}</span></button>`).join("");
+    return `<div class="remcard">
+          <div class="remrow"><span class="remic" aria-hidden="true">${icon("clock")}</span>
+            <label class="flabel" for="remAt">Time</label>
             <input type="time" id="remAt" value="${esc(at)}"></div>
-          <div><label class="flabel" for="remDate">First morning</label>
-            <input type="date" id="remDate" value="${esc(dayKey(first))}" min="${esc(dayKey())}"></div>
+          <div class="chips remquick" role="group" aria-label="Quick times">${quick}</div>
+          <div class="remrow"><span class="remic" aria-hidden="true">${icon("cal")}</span>
+            <p class="flabel" id="remDayLbl">First morning</p></div>
+          <div class="chips remquick" role="group" aria-labelledby="remDayLbl">${days}
+            <label class="chip pick remother" id="remOther"><span id="remOtherLbl">Other</span>
+              <input type="date" id="remDate" aria-label="Another first morning" value="${esc(dayKey(first))}" min="${esc(dayKey())}"></label></div>
+          <p class="remwhen" id="remWhen" aria-live="polite">First reminder: ${esc(whenText(first))}</p>
         </div>
-        <p class="remwhen" id="remWhen" aria-live="polite">First reminder: ${esc(whenText(first))}</p>
         <div class="rempane" data-pane="android"${os === "android" ? "" : " hidden"}>
           <a class="button secondary" id="remGoogle" href="#" target="_blank" rel="noopener">${icon("cal")}<span>Add to Google Calendar</span></a>
         </div>
@@ -2136,13 +2166,21 @@
       if (dateTouched && dayKey(first) !== dateField.value) { dateTouched = false; store.del("remDate"); return point(); }
       if (dayKey(first) !== dateField.value) dateField.value = dayKey(first);
       dateField.min = dayKey();
+      // The chip for that date is picked; a later date shows on "Other"
+      let onChip = false;
+      card.querySelectorAll("[data-rem-day]").forEach((b) => { const on = b.dataset.remDay === dateField.value; onChip = onChip || on; b.setAttribute("aria-pressed", String(on)); });
+      const other = $("#remOther");
+      if (other) { other.setAttribute("aria-pressed", String(!onChip)); $("#remOtherLbl").textContent = onChip ? "Other" : dayChip(dateField.value); }
       $("#remWhen").textContent = `First reminder: ${whenText(first)}`;
       g.href = googleCalendarLink(time(), carryLink(), date());
     };
     point();
-    const keepTime = () => { if (isAlarmTime(time())) store.set("alarmAt", time()); point(); };
+    const syncQuick = () => card.querySelectorAll("[data-rem-quick]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.remQuick === time())));
+    const keepTime = () => { if (isAlarmTime(time())) store.set("alarmAt", time()); point(); syncQuick(); };
+    card.querySelectorAll("[data-rem-quick]").forEach((b) => (b.onclick = () => { $("#remAt").value = b.dataset.remQuick; keepTime(); }));
     $("#remAt").addEventListener("input", keepTime);
     $("#remAt").addEventListener("change", keepTime);
+    card.querySelectorAll("[data-rem-day]").forEach((b) => (b.onclick = () => { dateField.value = b.dataset.remDay; dateField.dispatchEvent(new Event("change")); }));
     dateField.addEventListener("change", () => {
       dateTouched = isDay(dateField.value);
       if (dateTouched) store.set("remDate", dateField.value); else store.del("remDate");

@@ -81,6 +81,20 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     ok("step 2: one visually primary action (Continue); calendar and home screen are secondary", (await x.p.$$("#card .primary")).length === 1 &&
       (await x.p.textContent("#card .primary")) === "Continue" && !!(await x.p.$("#addSec")));
     ok("step 2: no hard-coded 'tomorrow'", !/tomorrow/i.test(await text(x)));
+    // One card: tap a time, tap a day
+    await x.p.click('[data-rem-quick="06:30"]'); await x.t(100);
+    ok("step 2: a quick time sets the time and the first reminder", (await x.p.inputValue("#remAt")) === "06:30" &&
+      /at 6:30/.test(await x.p.textContent("#remWhen")) && (await x.p.getAttribute('[data-rem-quick="06:30"]', "aria-pressed")) === "true");
+    ok("step 2: three days to tap, starting with the suggested one", JSON.stringify(await x.p.$$eval("[data-rem-day]", (l) => l.map((e) => e.dataset.remDay))) === '["2026-10-05","2026-10-06","2026-10-07"]' &&
+      (await x.p.getAttribute('[data-rem-day="2026-10-05"]', "aria-pressed")) === "true");
+    await x.p.click('[data-rem-day="2026-10-07"]'); await x.t(100);
+    ok("step 2: tapping a day sets the first morning", (await x.p.inputValue("#remDate")) === "2026-10-07" && /^First reminder: Wednesday, October 7 at 6:30/.test(await x.p.textContent("#remWhen")));
+    await x.p.fill("#remDate", "2026-10-12"); await x.p.dispatchEvent("#remDate", "change"); await x.t(100);
+    ok("step 2: a later date (Other) shows on the Other button", (await x.p.getAttribute("#remOther", "aria-pressed")) === "true" && (await x.p.textContent("#remOtherLbl")) !== "Other" &&
+      !(await x.p.$('[data-rem-day][aria-pressed="true"]')));
+    ok("step 2: the time and day rows don't squeeze (each box inside the card)", await x.p.evaluate(() => { const c = document.querySelector(".remcard").getBoundingClientRect();
+      return [...document.querySelectorAll(".remcard input[type=time], .remcard .chip")].every((e) => { const r = e.getBoundingClientRect(); return r.left >= c.left - 1 && r.right <= c.right + 1; }); }));
+    await x.p.click('[data-rem-quick="07:00"]'); await x.t(100);
     // Choose Tuesday 07:00 instead, then open Google Calendar (never saved there)
     await x.p.fill("#remDate", "2026-10-06"); await x.p.dispatchEvent("#remDate", "change");
     ok("step 2: the first date can be moved", /^First reminder: Tuesday, October 6 at 7:00/.test(await x.p.textContent("#remWhen")));
