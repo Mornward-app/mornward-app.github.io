@@ -81,6 +81,12 @@ storage with Chrome), when Chrome reports the install (`installed`) or lists it 
 someone taps **I've added it** in the steps (`self`; on iPhone Safari can't see the icon). New visitors and
 browsers without it see the offer as before. It's never sent; only Chrome's own install is counted (`app_installed`).
 
+**Step 2 when it's already done.** If the reminder was added and Mornward is on the home screen, step 2 shows one
+card: "✓ All set to return", "✓ Calendar reminder: 6:30 AM, every morning", "✓ On your home screen", a "Change the
+reminder" link, and **Continue** (no Skip). If only the home screen is done, the add row becomes "✓ On your home
+screen" and the reminder card shows as usual. If only the reminder is done, the saved reminder shows and the add
+row is still offered.
+
 ## State model (on the phone only)
 
 Routing never reads the stats, so it works offline and with counts off.

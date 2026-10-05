@@ -476,6 +476,11 @@
     opacity: 0; cursor: pointer; -webkit-appearance: none; appearance: none; }
   .remother:focus-within { outline: 3px solid var(--focus); outline-offset: 3px; }
   .remwhen { font-weight: 600; color: var(--text); margin: 0; }
+  /* Already done: ticks instead of steps */
+  .setlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .setlist li, .hometick { display: flex; align-items: center; gap: 10px; font-weight: 600; color: var(--text); margin: 0; }
+  .setlist .i, .hometick .i, #remDone .remic .i { width: 20px; height: 20px; color: var(--hl); flex: none; }
+  .hometick { padding: 4px 2px; }
   .planned { color: var(--text-2); margin: 0; }
   .setupcard { background: var(--field); border-radius: var(--radius); padding: 14px 18px; display: flex; flex-direction: column; gap: 4px; }
   .setupcard h2 { font-size: 1.0625rem; line-height: 1.5rem; margin: 0; }
@@ -1118,10 +1123,13 @@
 
   // Step 2: a way back in the morning. A reminder (optional), then the home screen (optional, quieter).
   function renderRemind(editing) {
+    // Already on the home screen: a tick instead of the steps. With the reminder added too, one "All set" card.
+    const home = homeKnown() && !computerView();
+    const allSet = home && !!savedReminder();
     show(`${stepTop(2)}
       <h1>Make it easy to return.</h1>
-      <div class="remsetup" id="remSetup">${reminderBlock(true)}</div>
-      ${installOptional()}
+      <div class="remsetup" id="remSetup">${reminderBlock(true, home)}</div>
+      ${allSet ? "" : home ? `<p class="hometick" id="homeTick">${GLYPH.ok}<span>On your home screen</span></p>` : installOptional()}
       <div class="actions sticky">
         <button class="primary" id="stepNext" type="button">Continue</button>
         ${savedReminder() ? "" : `<button class="link" id="stepSkip" type="button">Skip for now</button>`}
@@ -2167,10 +2175,21 @@
   const savedReminder = () => store.get("remPlan", null, (v) => typeof v === "object" && isAlarmTime(v.at) && isDay(v.first));
   const clock = (t) => { const [h, m] = t.split(":").map(Number); return new Date(2026, 0, 1, h, m).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); };
   // Once added, the reminder isn't asked for again: its time, and "Change" for a new time or to add it again
-  function reminderBlock(setup = false) {
+  // home: Mornward is already on the home screen too, so there's nothing left to do: one "All set" card
+  function reminderBlock(setup = false, home = false) {
     const p = savedReminder();
     const ctl = reminderControls(setup);
     if (!p) return ctl;
+    if (home) return `<div class="remcard" id="remDone">
+          <div class="remrow"><span class="remic" aria-hidden="true">${GLYPH.ok}</span><p class="flabel" id="allSet">All set to return</p></div>
+          <ul class="setlist">
+            <li>${GLYPH.ok}<span id="remDoneWhen">Calendar reminder: ${esc(clock(p.at))}, every morning</span></li>
+            <li>${GLYPH.ok}<span>On your home screen</span></li>
+          </ul>
+          <button class="link start" id="remChange" type="button">Change the reminder</button>
+          <p class="msg err" id="remDoneMsg" role="status"></p>
+        </div>
+        <div id="remCtl" hidden><p class="support" id="remOld">Changing the time? Delete the old event in your calendar, so you don't get two.</p>${ctl}</div>`;
     return `<div class="remcard" id="remDone">
           <div class="remrow"><span class="remic" aria-hidden="true">${icon("cal")}</span><p class="flabel">Your calendar reminder</p></div>
           <p class="remwhen" id="remDoneWhen">${esc(clock(p.at))}, every morning</p>

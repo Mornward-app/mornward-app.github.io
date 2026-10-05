@@ -400,6 +400,29 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     ok("B Today: Morning reminder shows the added reminder instead of asking", (await x.p.textContent("#remDoneWhen")) === "6:30 AM, every morning" && !(await x.p.isVisible("#remAt")));
     await x.c.close(); }
 
+  // Option 2: already done → "All set to return" (both), or a tick for the home screen (only that)
+  for (const [label, init, expect] of [
+    ["both done", () => { localStorage.setItem("fl.homeAdded", JSON.stringify({ how: "self", on: "2026-10-04" })); localStorage.setItem("fl.remPlan", JSON.stringify({ at: "06:30", first: "2026-10-05" })); }, "all"],
+    ["only on the home screen", () => { localStorage.setItem("fl.homeAdded", JSON.stringify({ how: "self", on: "2026-10-04" })); }, "home"],
+    ["only the reminder", () => { localStorage.setItem("fl.remPlan", JSON.stringify({ at: "06:30", first: "2026-10-05" })); }, "rem"]]) {
+    const x = await open({ device: "iPhone 14", init }); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext");
+    if (expect === "all") {
+      ok(`all set (${label}): one card, two ticks, Continue only`, (await x.p.textContent("#allSet")) === "All set to return" &&
+        JSON.stringify(await x.p.$$eval(".setlist li", (l) => l.map((e) => e.textContent.trim()))) === '["Calendar reminder: 6:30 AM, every morning","On your home screen"]' &&
+        !(await x.p.isVisible("#remAt")) && !(await x.p.$("#addSec")) && !(await x.p.$("#homeTick")) && !(await x.p.$("#stepSkip")) && (await x.p.textContent("#stepNext")) === "Continue");
+      await x.p.click("#remChange"); await x.t(200);
+      ok(`all set (${label}): "Change the reminder" brings the controls back`, await x.p.isVisible("#remAt") && !(await x.p.isVisible("#remDone")));
+      await click(x, "#stepNext");
+      ok(`all set (${label}): Continue goes to Ready`, (await h1(x)) === "Ready for your first morning.");
+    } else if (expect === "home") {
+      ok(`home only: a tick instead of the add steps; the reminder card as usual`, (await x.p.textContent("#homeTick")).trim() === "On your home screen" && !(await x.p.$("#addSec")) &&
+        await x.p.isVisible("#remAt") && !!(await x.p.$("#stepSkip")));
+    } else {
+      ok(`reminder only: the saved reminder, and the home-screen row still offered`, (await x.p.textContent("#remDoneWhen")) === "6:30 AM, every morning" && !!(await x.p.$("#addSec")) && !(await x.p.$("#allSet")));
+    }
+    await x.c.close();
+  }
+
   // The suggested first date is the next morning, worked out from the real date and time
   for (const [when, want, label] of [["2026-10-05T06:00:00", "2026-10-06", "setting up at 6 AM suggests tomorrow"],
     ["2026-10-05T01:30:00", "2026-10-05", "setting up at 1:30 AM suggests the morning about to come"],
