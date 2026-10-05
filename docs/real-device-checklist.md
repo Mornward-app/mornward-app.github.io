@@ -75,3 +75,6 @@ passes, treat it as **unverified**.
 - [ ] **A computer:** Welcome shows the code ("Set up where you’ll use it.") beside the app. Scanning the code
       opens mornward.app in the phone's browser on Welcome (nothing carried over, nothing installed). Prepare my
       morning on the computer goes straight to the tasks.
+- [ ] **QR arrival (both phones):** on a computer, scan the code on mornward.app. The phone opens Safari / Chrome, and
+      the home-screen steps open over Welcome for that phone. Android: "Add to home screen" opens Chrome's dialog.
+      Reload: the steps don't open again.
