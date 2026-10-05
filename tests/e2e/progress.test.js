@@ -21,8 +21,7 @@ async function full(x) { await S.begin(x); await S.breatheAll(x); await S.keep(x
   { const x = await ctx(b, site.url, { when: "2026-10-04T07:10:00" }); await x.goto();
     ok("before any routine: no progress section on Begin", !(await x.p.$(".progress")));
     await full(x);
-    ok("Sun: 'Your first reset. Complete.' + 'Three breaths taken. Mini tasks chosen.'", (await x.p.innerText("h1")).replace(/\s+/g, " ") === "Your first reset. Complete." &&
-      (await x.p.textContent("#finishSub")) === "Three breaths taken. Mini tasks chosen.");
+    ok("Sun: 'Your first reset. Complete.' and nothing more to read", (await x.p.innerText("h1")).replace(/\s+/g, " ") === "Your first reset. Complete." && !(await x.p.$("#finishSub")));
     ok("Sun: the date above the heading", /Sunday, October 4/i.test(await x.p.textContent(".dateline")));
     ok("Sun: timeline shows Sun 4 only, highlighted, marked Today", (await labels(x)) === "Sun 4" && (await fulls(x)) === "Sun 4" && (await slots(x))[0].today === "Today");
     ok("Sun: one day, no connector", await x.p.$eval(".progress li", (li) => getComputedStyle(li, "::before").content === "none"));
@@ -61,7 +60,7 @@ async function full(x) { await S.begin(x); await S.breatheAll(x); await S.keep(x
         conns.push({ startsAfterPrev: left >= dots[i - 1].right - 0.5, endsBeforeThis: right <= dots[i].left + 0.5, style: st.borderTopStyle, top: r.top + parseFloat(st.top) - dots[i].top });
       }
       return { sizes: new Set(dots.map((d) => Math.round(d.width))).size, gaps: new Set(gaps).size, leftAligned: Math.abs(lis[0].getBoundingClientRect().left - sec.left) < 1, conns,
-        widthOk: document.scrollingElement.scrollWidth <= innerWidth };
+        widthOk: document.scrollingElement.scrollWidth <= Math.min(innerWidth, screen.width) };
     });
     ok("circles all the same size, evenly spaced, left-aligned", g.sizes === 1 && g.gaps === 1 && g.leftAligned, g);
     ok("connectors are dotted and run from circle edge to circle edge", g.conns.every((c) => c.startsAfterPrev && c.endsBeforeThis && c.style === "dotted"), g.conns);
@@ -79,7 +78,7 @@ async function full(x) { await S.begin(x); await S.breatheAll(x); await S.keep(x
     ok("Mon 12: the latest 7 dates, Tue 6 to Mon 12", (await labels(x)) === "Tue 6, Wed 7, Thu 8, Fri 9, Sat 10, Sun 11, Mon 12");
     ok("Mon 12: 'Last 7 days' label and 'Total: 4 morning resets completed' (Sun 4, Mon 5 still count)", (await x.p.textContent(".progress .window")) === "Last 7 days" &&
       (await count(x)) === "Total: 4 morning resets completed");
-    ok("Mon 12: 7 slots fit without sideways scrolling", await x.p.evaluate(() => document.scrollingElement.scrollWidth <= innerWidth));
+    ok("Mon 12: 7 slots fit without sideways scrolling", await x.p.evaluate(() => document.scrollingElement.scrollWidth <= Math.min(innerWidth, screen.width)));
     // Reopen later the same day: Today, no replayed celebration
     await jump(x, "2026-10-12T12:00:00");
     ok("reopen later: Today, no sunrise animation, same progress", !!(await x.p.$("#again")) && !(await x.p.$(".sunrise.rise")) && (await count(x)) === "Total: 4 morning resets completed");
@@ -91,7 +90,7 @@ async function full(x) { await S.begin(x); await S.breatheAll(x); await S.keep(x
     await x.p.reload(); await x.t(700); await full(x);
     ok("320 px: 7 slots, no sideways scroll, labels don't overlap", await x.p.evaluate(() => {
       const w = [...document.querySelectorAll(".progress .wd")].map((e) => e.getBoundingClientRect());
-      return document.scrollingElement.scrollWidth <= innerWidth && w.length === 7 && w.every((r, i) => i === 0 || r.left >= w[i - 1].right - 0.5);
+      return document.scrollingElement.scrollWidth <= Math.min(innerWidth, screen.width) && w.length === 7 && w.every((r, i) => i === 0 || r.left >= w[i - 1].right - 0.5);
     }));
     await x.c.close(); }
 

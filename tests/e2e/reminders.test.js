@@ -37,11 +37,14 @@ function icalParse(file) {
   const x = await ctx(b, site.url, { when: "2026-10-05T07:10:00+07:00", timezoneId: "Asia/Bangkok" }); await x.goto();
   await S.begin(x); await S.skipBreathing(x); await S.keep(x); await S.finish(x);
   await x.p.click("#remindSec summary");
+  ok("one calendar button for this phone; the rest folded under More options", (await x.p.$$("#remindSec .rempane:not([hidden]) #remGoogle, #remindSec .rempane:not([hidden]) #remIcs")).length === 1 && !(await x.p.$("#remMore[open]")));
+  await x.p.click("#remMore summary");
 
   // Copy says what happens, and no more
-  const android = await x.p.textContent('[data-pane="android"]'), ios = await x.p.textContent('[data-pane="ios"]');
-  ok("copy: Google — finish saving it there, set the notification; how to stop it", /Finish saving it there/.test(android) && /At time of event/.test(android) && /To stop it, delete the event/.test(android));
-  ok("copy: Apple — open it to add it, check the alert; how to stop it", /Open it to add it to Calendar/.test(ios) && /check the alert/.test(ios) && /To stop it, delete the event/.test(ios) && !/pops up/.test(ios + android));
+  const more = await x.p.textContent("#remMore");
+  const android = await x.p.$$eval('#remMore [data-pane="android"]', (l) => l[0].textContent), ios = await x.p.$$eval('#remMore [data-pane="ios"]', (l) => l[0].textContent);
+  ok("copy: Google — save it there, set the notification; how to stop it", /Save it there/.test(android) && /At time of event/.test(android) && /To stop sooner, delete the event/.test(more));
+  ok("copy: Apple — open it to add it, check the alert; how to stop it", /Open it to add it to Calendar/.test(ios) && /check the alert/.test(ios) && !/pops up/.test(ios + android));
   ok("copy: the first reminder is stated as a real date and time", /^First reminder: \w+day, \w+ \d+ at /.test(await x.p.textContent("#remWhen")));
   ok("copy: the Shortcut — how to remove it", /delete it under Automation in Shortcuts/.test(await x.p.textContent("#remShortcut")));
 

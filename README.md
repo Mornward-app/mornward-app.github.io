@@ -9,12 +9,10 @@ Three breaths, then up to three small things for this morning. Then get on with 
 
 ## How it works
 
-**First visit: prepare now, practise in the morning.** Welcome ("A calmer start, before the scroll.", with an
-optional folded preview) → mini tasks for your first morning ("Save my morning plan", or choose in the morning) →
-"Make it easy to return." (a calendar reminder and the home screen, both optional) → "Ready for your first morning."
-Where your scroll starts is an optional, folded "Personalize your morning invitation". On a computer, the phone is
-offered first ("Set up where you’ll use it."). Setup starts no routine. Already up? "Begin now" goes straight to the
-routine. Details: [`docs/onboarding.md`](docs/onboarding.md).
+**First visit: prepare now, practise in the morning.** Welcome ("A calmer start, before the scroll." and three icons)
+→ pick your morning tasks → "Make it easy to return." (a calendar reminder and the home screen, both optional) →
+"Ready for your first morning." Each screen keeps to a small word budget. On a computer, the phone is offered first.
+Setup starts no routine. Up already? "Begin now" goes straight to the routine. Details: [`docs/onboarding.md`](docs/onboarding.md).
 
 **Each morning:**
 
@@ -22,7 +20,7 @@ routine. Details: [`docs/onboarding.md`](docs/onboarding.md).
 | --- | --- |
 | Begin | One button: 3 breaths → mini tasks → ready. About one minute. (Before the first routine: "A minute before the scroll.") |
 | Breathe | Three slow breaths (4 seconds in, 6 out), with Pause and Skip |
-| Choose | "What matters this morning?" Ten mini tasks (a fresh ten each routine day), two ticked: change them or add your own (up to three), then Save my tasks |
+| Choose | "What matters this morning?" Six mini tasks (a fresh six each routine day), two ticked: change them or add your own (up to three), then Save my tasks |
 | Done | "Morning reset complete." The sun rises; your mini tasks (with Edit) and your progress |
 
 Open it again the same day and you see today's mini task. The next day it offers the routine again;

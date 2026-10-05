@@ -9,7 +9,7 @@ const h1 = (x) => x.p.innerText("h1").then((t) => t.replace(/\s+/g, " ").trim())
 const click = async (x, sel) => { await x.p.click(sel); await x.t(700); };
 async function drain(x) { for (let i = 0; i < 40 && ((await x.ls("outbox")) || []).length; i++) { await x.t(100); await x.p.waitForTimeout(50); } }
 async function jump(x, when) { await x.p.clock.setSystemTime(new Date(when)); await x.p.reload(); await x.t(700); }
-// To the last step ("Make it easy to return."): Prepare my morning → Save my morning plan
+// To the last step ("Make it easy to return."): Prepare my morning → Save my plan
 const toReturn = async (x) => { await click(x, "#setupGo"); await click(x, "#stepNext"); };
 const failing = () => {
   const set = Storage.prototype.setItem;
@@ -94,7 +94,7 @@ const failing = () => {
     await x.p.evaluate(() => { window.__fail = ["prepared"]; }); await S.keep(x);
     await x.p.evaluate(() => { window.__fail = []; });
     await S.finish(x); await jump(x, "2026-10-06T07:00:00"); await S.begin(x); await S.skipBreathing(x);
-    ok("setup tasks can't be marked used: they're removed instead, not offered again", /Two picked to start/.test(await x.p.textContent("#pickHint")));
+    ok("setup tasks can't be marked used: they're removed instead, not offered again", /Two picked/.test(await x.p.textContent("#pickHint")));
     await x.c.close(); }
 
   // Review 1: an older link (no `e`) from someone with counts off sent them into setup
@@ -144,7 +144,7 @@ const failing = () => {
   // Round 2: Retry after a failed skip doesn't save what was declined
   { const x = await open({ init: failing }); await x.goto(); await click(x, "#setupGo");
     await x.p.evaluate(() => { window.__fail = ["onboard"]; }); await click(x, "#stepSkip");
-    ok("task step skip can't save: the Save button stays 'Save my morning plan', the message points to Skip", (await x.p.textContent("#stepNext")) === "Save my morning plan" && /Choose in the morning/.test(await x.p.textContent("#imsg")));
+    ok("task step skip can't save: the Save button stays 'Save my plan', the message points to Skip", (await x.p.textContent("#stepNext")) === "Save my plan" && /Choose later/.test(await x.p.textContent("#imsg")));
     await x.p.evaluate(() => { window.__fail = []; }); await click(x, "#stepSkip");
     ok("...tapping it again skips, and nothing declined was saved", (await h1(x)) === "Make it easy to return." && !(await x.ls("prepared")) && (await x.ls("onboard")).tasksSkipped === true);
     await x.c.close(); }
@@ -181,7 +181,7 @@ const failing = () => {
     const clipped = await x.p.$$eval(".seg button", (l) => l.filter((e) => e.scrollWidth > e.clientWidth + 1).map((e) => e.textContent));
     ok("...the iPhone / Android switch isn't cut off", clipped.length === 0, clipped);
     await click(x, "#stepNext"); await click(x, "#setupDone"); await x.t(1300); await S.begin(x); await S.skipBreathing(x); await S.keep(x); await S.finish(x);
-    ok("...Today fits without sideways scrolling", await x.p.evaluate(() => document.scrollingElement.scrollWidth <= innerWidth + 1));
+    ok("...Today fits without sideways scrolling", await x.p.evaluate(() => document.scrollingElement.scrollWidth <= Math.min(innerWidth, screen.width) + 1));
     await x.c.close(); }
   { const x = await open(); await x.goto(); await toReturn(x);
     const tops = await x.p.$$eval("#card .seg button", (l) => l.map((e) => Math.round(e.getBoundingClientRect().top)));

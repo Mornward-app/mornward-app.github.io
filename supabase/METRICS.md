@@ -131,11 +131,11 @@ plus routines started. Test devices are left out.
 
 Setup is preparation, not use. It's measured on its own and never feeds the routine cohorts. A device with only
 setup events appears in no routine report. Setup answers (apps, tasks, reminder time and date) are never sent.
-Opening the Welcome preview ("See what your morning looks like") sends nothing and changes nothing on the phone.
+Viewing Welcome sends nothing and changes nothing on the phone.
 
 | Stage | Signal |
 | --- | --- |
-| 1. Observed setup participation | `setup_started`: the first tap on "Prepare my morning" (on a computer, "Continue on this device"). Only with the counts on. People who only view Welcome, the preview or the computer's phone step aren't visible. |
+| 1. Observed setup participation | `setup_started`: the first tap on "Prepare my morning" (on a computer, "Continue on this device"). Only with the counts on. People who only view Welcome or the computer's phone step aren't visible. |
 | 2. Setup completion | `setup_completed`: the end of the last step (Continue or Skip for now) |
 | 3. First routine start | the device's first `routine_started` on or after the day setup finished |
 | 4. First full routine | the device's first `core_routine_completed` def 2 on or after the day setup finished |
@@ -156,8 +156,8 @@ Opening the Welcome preview ("See what your morning looks like") sends nothing a
   rows 2–4 but not row 1. "Begin now" visitors send no setup events and appear only in the routine cohorts.
 - **"By day 1" and "by day 7"** are local calendar dates, not hours. Day 0 is the phone's local date when setup
   finished; day 1 is the next local date. Sunday 21:00 setup → Sunday is day 0 and a Monday-morning routine is day 1.
-  Setup at 00:30 on Monday → Monday is day 0, so a Monday-morning routine is day 0. "Starting your day now? Begin your
-  reset" on the setup day counts as day 0. Routines dated before the setup day aren't counted (in practice there are
+  Setup at 00:30 on Monday → Monday is day 0, so a Monday-morning routine is day 0. "Up already? Begin now" on the Ready
+  screen counts as day 0. Routines dated before the setup day aren't counted (in practice there are
   none: anyone with a routine is never sent through setup).
 - **Denominators** are only devices whose whole window is final (next point). `numerator`, `denominator` and `pct`
   cover only those. Devices whose window is still open are in `not_yet_eligible`, never in the denominator, so
@@ -212,7 +212,6 @@ and `testers.first_day` is the first event of any kind. Use `legacy_retention_re
 - **The completion screen** (shown once, right after the task step; reopening the same day shows Today):
   - First ever full routine: "Your first reset. Complete."
   - Any later full routine: "Morning reset complete."
-  - Both say "Three breaths taken. Mini tasks chosen."
   - Partial routines say what was done ("Your mini tasks are saved.", "Three breaths taken.").
   - After a missed day, Begin says "Welcome back."
 

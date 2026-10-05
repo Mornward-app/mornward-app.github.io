@@ -54,23 +54,21 @@ passes, treat it as **unverified**.
 
 ## Setup (setup-first onboarding)
 
-- [ ] **Both phones:** a fresh visit shows Welcome. Open "See what your morning looks like" and close it: nothing
-      starts. Then Prepare my morning → Save my morning plan → Make it easy to return → Continue → "Ready for your
-      first morning." → Done for now. Kill the browser and reopen: "A minute before the scroll." appears with the
+- [ ] **Both phones:** a fresh visit shows Welcome with the three icons. Prepare my morning → Save my plan → Make it
+      easy to return → Continue → "Ready for your first morning." → Done for now. Kill the browser and reopen: "A minute before the scroll." appears with the
       prepared tasks. No breathing starts by itself.
 - [ ] **Both phones:** next morning, Begin my morning → breaths → the prepared tasks are ticked. Save. The progress
       shows only today and "1 morning reset completed".
 - [ ] **Both phones:** on "Make it easy to return.", the date picker opens and suggests tomorrow. Pick a later date;
       "First reminder: …" changes; the calendar event starts on that date at the local time shown.
 - [ ] **Both phones:** open the calendar from setup, switch back to the browser (or let it reload): still on the
-      same step, the date kept, the tasks prepared. "Ready" says you opened your calendar, not that a reminder is set.
-- [ ] **Both phones:** Skip for now on every optional part: setup still finishes with "Open Mornward when you start
-      your day."
+      same step, the date kept, the tasks prepared. "Ready" shows the date and "Check your calendar saved it", never that a reminder is set.
+- [ ] **Both phones:** Skip for now on every optional part: setup still finishes, with no reminder line.
 - [ ] **iPhone:** add to the home screen from "Make it easy to return.", then open the icon. It should open on the
       prepared screen without asking setup again (prepared tasks aren't carried).
 - [ ] **VoiceOver (iPhone) and TalkBack (Android):** each step reads its heading, "Step n of 2" and each choice as
-      a toggle button (selected / not selected). The preview and "Personalize your morning invitation" read as
-      expandable.
+      a toggle button (selected / not selected). "More options" and "Personalize" read as expandable; the
+      three icons read as "Three breaths, a few mini tasks, then you're ready".
 - [ ] **Largest system text size (Dynamic Type / Android font size):** every setup screen is usable, and the
       bottom buttons don't cover the inputs.
 - [ ] **Reduce Motion on (iOS) / Remove animations (Android):** Welcome, setup and the routine work.

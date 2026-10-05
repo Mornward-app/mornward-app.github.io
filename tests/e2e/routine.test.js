@@ -68,8 +68,7 @@ const todaySlot = (x) => x.p.$eval(".progress li.now", (l) => l.className.replac
     ok("1 three breaths + Save my tasks: finished with core true, and one core_routine_completed (def 2)", f && f.data.core === true && c.length === 1 && c[0].data.def === 2, x.kinds());
     ok("1 ...tasks_saved says the suggested pair was kept", of(x, "tasks_saved")[0].data.kept_defaults === true && of(x, "tasks_saved")[0].data.count === 2);
     ok("1 ...the day is a full routine", JSON.stringify(await x.ls("fullDays")) === `["${TODAY}"]`);
-    ok("1 ...the first ever: 'Your first reset. Complete.' with what was done", (await x.p.textContent("h1")) === "Your first reset.Complete." &&
-      (await x.p.textContent("#finishSub")) === "Three breaths taken. Mini tasks chosen.");
+    ok("1 ...the first ever: 'Your first reset. Complete.', no extra line", (await x.p.textContent("h1")) === "Your first reset.Complete." && !(await x.p.$("#finishSub")));
     ok("1 ...the saved tasks are on the screen, with Edit, no checkboxes", (await x.p.$$("#itext li")).length === 2 && !!(await x.p.$("#iedit")) && !(await x.p.$(".intention input, .intention [role=checkbox]")));
     ok("1 ...'1 morning reset completed', today a full circle", (await summary(x)) === "1 morning reset completed" && (await todaySlot(x)) === "full", await summary(x));
     await S.finish(x);
@@ -162,9 +161,9 @@ const todaySlot = (x) => x.p.$eval(".progress li.now", (l) => l.className.replac
     await x.goto(); await S.begin(x); await S.skipBreathing(x);
     const msg = () => x.p.textContent("#imsg");
     await S.untickAll(x); await S.keep(x);
-    ok("6 zero tasks: refused with a message, nothing saved", /Write a few words or pick one/.test(await msg()) && !(await x.ls("intent:" + TODAY)) && !!(await x.p.$("#isave")));
+    ok("6 zero tasks: refused with a message, nothing saved", /Pick one, or skip for today/.test(await msg()) && !(await x.ls("intent:" + TODAY)) && !!(await x.p.$("#isave")));
     await x.p.fill("#intent", "   \n\t  "); await S.keep(x);
-    ok("6 only spaces: refused the same way", /Write a few words or pick one/.test(await msg()) && !(await x.ls("intent:" + TODAY)));
+    ok("6 only spaces: refused the same way", /Pick one, or skip for today/.test(await msg()) && !(await x.ls("intent:" + TODAY)));
     // typing folds the chips away; they come back a moment after the field loses focus
     await x.p.fill("#intent", ""); await x.p.click("h1"); await x.t(600);
     for (const i of [0, 1, 2]) await x.p.click(`.chip.pick >> nth=${i}`);

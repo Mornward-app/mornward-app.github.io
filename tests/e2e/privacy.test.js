@@ -18,7 +18,7 @@ const SECRET = "Call mum about Sunday";
     ok("7 first visit: no request at all before Begin", x.bodies.length === 0);
     // Turned off before starting: the whole routine sends nothing
     await x.p.click("#preToggle"); await x.t(100);
-    ok("7 the choice is on the first screen and says off", /counts are off/.test(await x.p.textContent("#preStats")));
+    ok("7 the choice is on the first screen and says off", /counts off/.test(await x.p.textContent("#preStats")));
     await S.begin(x); await S.breatheAll(x); await S.untickAll(x); await x.p.fill("#intent", SECRET); await S.keep(x); await S.finish(x);
     await x.p.waitForTimeout(500);
     ok("7 off from the start: no request, nothing queued, no ID made", x.bodies.length === 0 && ((await x.ls("outbox")) || []).length === 0 && !(await x.ls("deviceId")));
@@ -63,7 +63,7 @@ const SECRET = "Call mum about Sunday";
     await x.p.click("#remindSec summary"); await x.p.fill("#remAt", "06:30");
     const g = decodeURIComponent(await x.p.getAttribute("#remGoogle", "href"));
     ok("3 Google Calendar link: no ID (Google receives this text)", !g.includes(id) && !g.includes("#r=") && g.includes("https://mornward.app/?via=calendar"));
-    await x.p.click('[data-rem-os="ios"]');
+    await x.p.click("#remMore summary"); await x.p.click('[data-rem-os="ios"]');
     const dl = x.p.waitForEvent("download"); await x.p.click("#remIcs"); const ics = fs.readFileSync(await (await dl).path(), "utf8");
     ok("3 calendar file: no ID", !ics.includes(id) && !ics.includes("#r=") && /URL:https:\/\/mornward\.app\/\?via=calendar\r\n/.test(ics));
     await x.p.click("#remShortcut summary"); await x.p.click("#remCopy"); await x.t(100);
