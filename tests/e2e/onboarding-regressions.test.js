@@ -24,15 +24,14 @@ const failing = () => {
   const open = (opt = {}) => ctx(b, site.url, { when: SUN_EVE, ...opt });
 
   // Journey 1: a slow double-tap on step 3's Continue landed on "Begin your reset" and started a routine
-  for (const device of ["iPhone 13", "Pixel 7"]) {
+  for (const device of ["iPhone 13", "Pixel 7", "iPhone SE", "Galaxy S8"]) {
     const x = await open({ device }); await x.goto(); await toStep3(x);
     const box = await x.p.locator("#stepNext").boundingBox();
     await x.p.mouse.click(box.x + box.width / 2, box.y + box.height / 2); await x.t(600);
-    await x.p.mouse.click(box.x + box.width / 2, box.y + box.height / 2); await x.t(700);
-    await x.p.mouse.click(box.x + box.width / 2, box.y + box.height / 2); await x.t(700);
-    ok(`double/triple tap on Continue (${device}): no routine starts during setup`, !(await x.ls("routine")) && !(await x.ls("startDay")) && !(await x.p.$("#bpause")));
+    for (const gap of [700, 700, 700, 500]) { await x.p.mouse.click(box.x + box.width / 2, box.y + box.height / 2); await x.t(gap); }
+    ok(`double/triple/quadruple tap on Continue (${device}): no routine starts during setup`, !(await x.ls("routine")) && !(await x.ls("startDay")) && !(await x.p.$("#bpause")));
     // (the stray taps land on "Done for now", the harmless next step; Begin there waits for a settled tap)
-    await x.t(1500); await x.p.click((await x.p.$("#beginNow")) ? "#beginNow" : "#begin"); await x.t(700);
+    await x.t(3100); await x.p.click((await x.p.$("#beginNow")) ? "#beginNow" : "#begin"); await x.t(700);
     ok(`...a deliberate tap a moment later still begins (${device})`, !!(await x.p.$("#bpause")));
     await x.c.close();
   }
@@ -110,12 +109,52 @@ const failing = () => {
       if (!href.startsWith("data:")) return null;
       const m = JSON.parse(decodeURIComponent(href.replace("data:application/manifest+json,", "")));
       return m.start_url.includes("#r=") ? JSON.parse(decodeURIComponent(m.start_url.split("#r=")[1])) : null; };
-    await toStep3(x);
+    await click(x, "#setupGo"); await click(x, "#stepNext");
     const mid = await carried();
-    ok("icon address mid-setup: o = 0 (setup not done)", mid && mid.o === 0, mid);
+    ok("icon address early in setup (step 2): o = 0, so an icon added now starts setup", mid && mid.o === 0, mid);
+    await click(x, "#stepNext");
+    const last = await carried();
+    ok("icon address on step 3, where the home screen is offered: o = 1 (the icon opens prepared)", last && last.o === 1, last);
     await click(x, "#stepNext");
     const after = await carried();
     ok("icon address right after setup (no reload): o = 1", after && after.o === 1 && after.e === 0, after);
+    await x.c.close(); }
+
+  // Round 2: the icon address after Begin now (a new iPhone visitor), and the icon opened from step 3
+  { const x = await open({ device: "iPhone 13" }); await x.goto(); await click(x, "#beginNow");
+    const href = await x.p.getAttribute('link[rel="manifest"]', "href");
+    const c = href.startsWith("data:") ? JSON.parse(decodeURIComponent(JSON.parse(decodeURIComponent(href.replace("data:application/manifest+json,", ""))).start_url.split("#r=")[1])) : null;
+    ok("Begin now on iPhone: the icon address is ready at once, with e = 1", c && c.e === 1 && !!c.i, c);
+    await x.c.close(); }
+  { const x = await open({ device: "iPhone 13" }); await x.goto(); await toStep3(x);
+    const href = await x.p.getAttribute('link[rel="manifest"]', "href");
+    const start = JSON.parse(decodeURIComponent(href.replace("data:application/manifest+json,", ""))).start_url;
+    const y = await ctx(b, site.url, { when: SUN_EVE, device: "iPhone 13", init: () => { Object.defineProperty(navigator, "standalone", { get: () => true }); } });
+    await y.p.goto(start.replace(/^https?:\/\/[^/]+\//, site.url)); await y.t(700);
+    ok("an icon added on step 3 opens on the prepared screen (not Welcome), with no second setup_started", (await h1(y)) === "A minute before the scroll." && !y.kinds().includes("setup_started"));
+    await y.c.close(); await x.c.close(); }
+
+  // Round 2: keyboard users aren't blocked by the stray-tap guard
+  { const x = await open(); await x.goto(); await toStep3(x); await click(x, "#stepNext");
+    await x.p.focus("#setupDone"); await x.p.keyboard.press("Enter"); await x.t(700);
+    await x.p.focus("#begin"); await x.p.keyboard.press("Enter"); await x.t(700);
+    ok("keyboard: Enter on Begin right after Done for now starts the routine", !!(await x.p.$("#bpause")));
+    await x.c.close(); }
+
+  // Round 2: Retry after a failed skip doesn't save what was declined
+  { const x = await open({ init: failing }); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext");
+    await x.p.evaluate(() => { window.__fail = ["onboard"]; }); await click(x, "#stepSkip");
+    ok("step 2 skip can't save: the Save button stays 'Save my tasks', the message points to Skip", (await x.p.textContent("#stepNext")) === "Save my tasks" && /Choose in the morning/.test(await x.p.textContent("#imsg")));
+    await x.p.evaluate(() => { window.__fail = []; }); await click(x, "#stepSkip");
+    ok("...tapping it again skips, and nothing declined was saved", (await h1(x)) === "Make room for your first morning." && !(await x.ls("prepared")) && (await x.ls("onboard")).tasksSkipped === true);
+    await x.c.close(); }
+
+  // Round 2: a planned date next year says the year; a cleared time doesn't leave a stale date
+  { const x = await open(); await x.goto(); await toStep3(x);
+    await x.p.fill("#remDate", "2027-03-01"); await x.p.dispatchEvent("#remDate", "change");
+    ok("a first reminder next year shows the year", /March 1, 2027/.test(await x.p.textContent("#remWhen")), await x.p.textContent("#remWhen"));
+    await x.p.fill("#remAt", ""); await x.p.dispatchEvent("#remAt", "input");
+    ok("a cleared time: no stale date in words, no calendar link", /Pick a time/.test(await x.p.textContent("#remWhen")) && !(await x.p.getAttribute("#remGoogle", "href")));
     await x.c.close(); }
 
   // Review: Skip reminder kept an old "planned first morning"
@@ -147,6 +186,9 @@ const failing = () => {
   { const x = await open(); await x.goto(); await click(x, "#setupGo");
     const narrow = await x.p.$$eval("[data-app]", (l) => l.filter((e) => e.getBoundingClientRect().width < 44).map((e) => e.textContent.trim()));
     ok("the 'X' choice is at least 44 px wide", narrow.length === 0, narrow);
+    await click(x, "#stepNext"); await click(x, "#stepNext");
+    const tops = await x.p.$$eval("#card .seg button", (l) => l.map((e) => Math.round(e.getBoundingClientRect().top)));
+    ok("normal text: the iPhone / Android switch sits on one row", tops.length === 2 && tops[0] === tops[1], tops);
     await x.c.close(); }
 
   await b.close(); await site.close();

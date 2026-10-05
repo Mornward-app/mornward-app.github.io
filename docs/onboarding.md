@@ -18,7 +18,7 @@ questions. Nothing is restricted to clock hours.
 | Step 1 of 3 | Where does your morning scroll usually start? | Choices: Instagram, TikTok, YouTube, Facebook, Reddit, X, Something else, I'm not sure (exclusive) · **Continue** · Skip · Back |
 | Step 2 of 3 | What would you like to make room for? | The routine's task chips, custom field and checks, up to 3 · **Save my tasks** (Retry after a failed save) · Choose in the morning · Back |
 | Step 3 of 3 | Make room for your first morning. | Time, first date (defaults to the next occurrence), the first reminder in words, Google Calendar / Apple Calendar / Shortcut, "Add to home screen · optional" · **Continue** · Skip reminder · Back |
-| Setup complete | You're ready for your first morning. | **Done for now** · Edit setup · Starting your day now? Begin your reset |
+| Setup complete | You're ready for your first morning. | Starting your day now? Begin your reset (under the text, away from where Continue was) · **Done for now** · Edit setup |
 | Prepared | A minute before the scroll. | **Begin my morning** · Edit setup · Appearance, Privacy |
 | Begin (returning) | Before the scroll, a few mini tasks. / Welcome back. | **Begin** |
 
@@ -69,10 +69,25 @@ Routing never reads the stats, so it works offline and with counts off.
 - **Prepared tasks are used once.** On the first morning they're offered ticked after breathing, with "The tasks you
   chose in setup are ticked. Keep them, change them, or add your own." Only Save confirms them. After that run's task
   step (saved or skipped) they're marked `used`, and every later day uses the normal daily suggestions.
-- **iPhone home-screen icon.** It has its own storage. Its start address carries only flags: the random ID and terms
-  version as before, plus `e` (had routine history) and `o` (setup done). No answers, tasks or times. So an icon
-  added during setup opens on the prepared screen without the prepared tasks ("You can choose your mini tasks then").
+- **iPhone home-screen icon.** It has its own storage. Its start address carries only these:
+  - the random ID (only with counts on), the terms version and the counts choice, as before;
+  - `e`: had routine history;
+  - `o`: setup is done, or on its last step, where the home screen is offered.
+
+  No answers, tasks or times are carried. The address is refreshed at each setup step, after setup, after the first
+  Begin and when the counts are toggled.
+  - An icon added on step 3 or later opens on the prepared screen without the prepared tasks ("You can choose your
+    mini tasks then"), and sends no second `setup_started`.
+  - An icon added on step 1 or 2 starts setup again in its own storage.
+
   Not verified on a real iPhone.
+- **Stray taps.** Every screen ignores taps for 500 ms after it appears. Buttons that start a routine ("Begin your
+  reset", and "Begin my morning" on the prepared screen) also ignore, for 3 s, a tap landing within 48 px of the tap
+  that opened the screen. That way a slow double or triple tap on Continue can never become "Begin". Keyboard and
+  switch activation, and taps elsewhere, work at once.
+- **Begin now after saving setup tasks.** Someone who saves tasks on step 2, goes Back to Welcome and taps "Begin
+  now" is offered those tasks, ticked, on that first morning, the same as after a finished setup. Setup stays
+  "started" but never shows again, because history wins.
 
 ## Events (only with the counts on; see `supabase/METRICS.md`)
 
@@ -88,7 +103,7 @@ Routing never reads the stats, so it works offline and with counts off.
   guide isn't an install, and finishing setup isn't activation.
 - **The beta-2 `setup_done`** kind is older, has a different meaning, and isn't reused.
 
-## Acceptance scenarios (automated: `tests/e2e/onboarding.test.js`, 81 checks)
+## Acceptance scenarios (automated: `tests/e2e/onboarding.test.js`, 81 checks; plus 38 regression checks in `onboarding-regressions.test.js`)
 
 | # | Scenario | Result |
 | --- | --- | --- |
@@ -122,3 +137,31 @@ See `docs/real-device-checklist.md` ("Setup"):
 - The home-screen icon added during setup, which should open on the prepared screen on iPhone.
 - VoiceOver and TalkBack through setup.
 - iOS Dynamic Type / Android font size at the largest setting.
+
+## Independent QA
+
+Two rounds, six agents in total. Each worked from the brief and could not edit the repo:
+
+- **Round 1:** code review, adversarial journeys, accessibility and layout, privacy/analytics/database.
+- **Round 2:** code review, and adversarial journeys over a full week of use.
+
+Every confirmed finding was fixed and has a check in `tests/e2e/onboarding-regressions.test.js` (or `run-all.sh` for
+the database ones). Among them:
+
+- double and triple taps into a routine (including on 320 px phones);
+- step-3 choices lost on reload or at midnight;
+- silent save failures, and Retry repeating the wrong action;
+- a trailing " ·" in a task;
+- stale tabs;
+- the iPhone icon flags and when they refresh;
+- older reminder links from people with counts off;
+- the year on far-off dates, and a cleared time;
+- layout at 200% text (sticky buttons, the switch, the Shortcut steps, Today, the desktop card, the narrow X chip);
+- re-running older SQL files with newer rows present;
+- outdated consent wording in the terms and docs.
+
+Accepted as is:
+
+- The legacy beta-2 `setup_done` kind still accepts slug answers, as the live app sends them. Tighten it once
+  beta-2 is retired.
+- 280 px screens at 200% text are below the 320 px target. The step header now wraps there.

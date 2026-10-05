@@ -208,7 +208,7 @@
   .chip.add, #again { align-self: flex-start; }
   .seg { display: flex; flex-wrap: wrap; gap: 0; border: 1.5px solid var(--chip-line); border-radius: 14px; overflow: hidden; }
   /* Large text: the options wrap instead of being cut off */
-  .seg button { flex: 1 1 auto; min-width: 0; min-height: 48px; border-radius: 0; font-size: 0.9375rem; white-space: normal; overflow-wrap: anywhere; }
+  .seg button { flex: 1 1 0; width: auto; min-width: 0; min-height: 48px; border-radius: 0; font-size: 0.9375rem; white-space: normal; overflow-wrap: anywhere; }
   .seg button + button { border-left: 1.5px solid var(--chip-line); }
   .seg button[aria-pressed="true"] { background: var(--button); color: var(--button-text); }
   .ask { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 12px; background: var(--field); color: var(--text); }
@@ -421,7 +421,7 @@
   .consent summary { cursor: pointer; text-decoration: underline; font-weight: 600; color: var(--text); min-height: 44px; display: flex; align-items: center; }
   .consent ul { margin: 0 0 8px; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
   /* ---------- setup (first visit) ---------- */
-  .steptop { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; }
+  .steptop { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0 8px; min-height: 44px; }
   .steptop .back { width: auto; min-height: 44px; padding: 0 4px 0 0; gap: 4px; }
   .stepnum { font-size: 0.8125rem; line-height: 1rem; font-weight: 600; color: var(--text-2); margin: 0; white-space: nowrap; }
   .lede { font-size: 1.125rem; line-height: 1.625rem; color: var(--text); margin: 0; }
@@ -720,19 +720,24 @@
 
   // The next screen's main button sits where the last one was, so the second half of a sleepy double-tap
   // would press it. Swallow clicks for a short moment after every screen change.
-  let tapGuardUntil = 0, shownAt = 0, lastTap = -1e9, fromTap = false;
-  const guardTaps = () => { shownAt = performance.now(); tapGuardUntil = shownAt + 500; fromTap = shownAt - lastTap < 200; };
-  // Actions that start a routine wait a little longer when a tap just brought this screen up: on the setup screens,
-  // a slow double-tap on Continue would otherwise land on "Begin your reset" in the same spot. (Opening the app is
-  // not a tap, so Begin works at once then.)
-  const settled = () => !fromTap || performance.now() - shownAt > 1200;
+  let tapGuardUntil = 0, shownAt = 0, lastTap = { at: -1e9, x: 0, y: 0 }, screenTap = null;
+  const guardTaps = () => {
+    shownAt = performance.now(); tapGuardUntil = shownAt + 500;
+    screenTap = shownAt - lastTap.at < 200 ? { ...lastTap } : null; // the tap that brought this screen up, if any
+  };
+  // Buttons that start a routine ignore a tap that lands where the tap that opened this screen landed, for a few
+  // seconds: a slow double or triple tap on Continue must never become "Begin". A tap anywhere else, a keyboard or
+  // switch activation, or a tap after a pause, works as usual. (Opening the app isn't a tap at all.)
+  const settled = (e) => !screenTap || !e || e.detail === 0 || performance.now() - shownAt > 3000 ||
+    Math.hypot(e.clientX - screenTap.x, e.clientY - screenTap.y) > 48;
   document.addEventListener("click", (e) => {
     if (performance.now() < tapGuardUntil) { e.preventDefault(); e.stopPropagation(); return; }
-    lastTap = performance.now();
+    if (e.detail > 0) lastTap = { at: performance.now(), x: e.clientX, y: e.clientY };
   }, true);
   // The bottom buttons stay in reach (sticky), unless that would cover a quarter of the screen (large text, short
   // screens): then they sit at the end of the page. Either way, focus scrolls things clear of them.
-  function fitSticky() {
+  function fitSticky(ev) {
+    if (ev && ev.type === "resize" && /^(TEXTAREA|INPUT)$/.test((document.activeElement || {}).tagName || "")) return;
     const bar = card.querySelector(".actions.sticky");
     if (!bar) { document.documentElement.style.removeProperty("--sticky-h"); return; }
     bar.classList.remove("unstick");
@@ -836,6 +841,7 @@
     saveRoutine();
     store.set("everStarted", true);
     if (!startDay()) store.set("startDay", today);
+    prepareIconStart();
     emit("routine_started", { ...(via ? { via } : {}), ...(first ? { first: true, from: store.get("from", null) } : {}) });
     // Opened in the background (a restored tab): wait for a tap instead of breathing unseen
     renderBreathe(document.hidden);
@@ -858,7 +864,7 @@
     const draw = () => {
       const off = store.get("noStats", false) === true;
       pre.innerHTML = `Anonymous usage counts are ${off ? "off" : "on"}. <button class="link inline" type="button" id="preToggle">${off ? "Turn on" : "Turn off"}</button>`;
-      $("#preToggle").onclick = () => { store.set("noStats", !off); if (!off) { store.set("outbox", []); store.set("viewbox", []); } draw(); $("#preToggle").focus(); };
+      $("#preToggle").onclick = () => { store.set("noStats", !off); if (!off) { store.set("outbox", []); store.set("viewbox", []); } prepareIconStart(); draw(); $("#preToggle").focus(); };
     };
     draw();
   }
@@ -947,6 +953,7 @@
   function renderSetup(step, editing = false) {
     const o = getOb();
     if (o && o.status === "started" && !editing) setOb({ step });
+    prepareIconStart(); // the icon's start address follows the step (see setupForIcon)
     if (step === "tasks") renderPrepTasks(editing);
     else if (step === "remind") renderRemind(editing);
     else renderScroll(editing);
@@ -976,13 +983,13 @@
     const redraw = () => card.querySelectorAll("[data-app]").forEach((b) => b.setAttribute("aria-pressed", String(sel.includes(b.dataset.app))));
     card.querySelectorAll("[data-app]").forEach((b) => (b.onclick = () => { sel = toggleApp(sel, b.dataset.app); redraw(); setOb({ apps: sel }); }));
     // Moves on only once the answer is saved; otherwise the choices stay and it offers Retry
-    const go = (apps) => {
+    const go = (apps, skipping) => {
       if (setOb({ apps })) { renderSetup("tasks", editing); return; }
-      $("#stepMsg").textContent = "Couldn't save on this phone. Your choices are still here.";
-      $("#stepNext").textContent = "Retry";
+      $("#stepMsg").textContent = skipping ? "Couldn't save on this phone. Tap Skip again." : "Couldn't save on this phone. Your choices are still here.";
+      if (!skipping) $("#stepNext").textContent = "Retry";
     };
     $("#stepNext").onclick = () => go(sel);
-    $("#stepSkip").onclick = () => go([]);
+    $("#stepSkip").onclick = () => go([], true);
     $("#stepBack").onclick = () => (editing ? renderPrepared() : renderWelcome());
   }
 
@@ -1050,7 +1057,7 @@
     };
     $("#stepNext").onclick = save;
     $("#stepSkip").onclick = () => {
-      if (!store.del("prepared") || !setOb({ tasksSkipped: true })) { retry = true; redraw(); msg("Couldn't save on this phone. Try again.", true); return; }
+      if (!setOb({ tasksSkipped: true }) || !store.del("prepared")) { msg("Couldn't save on this phone. Tap “Choose in the morning” again.", true); return; }
       store.del("prepDraft");
       renderSetup("remind", editing);
     };
@@ -1072,13 +1079,14 @@
     wireReminder();
     syncQuiet();
     const done = (skipped) => {
-      if (!setOb({ remindSkipped: skipped }) || !finishSetup()) {
+      if (setOb({ remindSkipped: skipped }) && skipped) { store.del("remPlan"); store.del("remDate"); }
+      if (!getOb() || getOb().remindSkipped !== skipped || !finishSetup()) {
         $("#remMsg").textContent = "Couldn't save your setup on this phone. Try again.";
         $("#stepNext").textContent = "Retry";
       }
     };
     $("#stepNext").onclick = () => done(false);
-    $("#stepSkip").onclick = () => { store.del("remPlan"); store.del("remDate"); done(true); };
+    $("#stepSkip").onclick = () => done(true);
     $("#stepBack").onclick = () => renderSetup("tasks", editing);
   }
   // Returns false if the phone couldn't save it (then nothing claims setup is finished)
@@ -1087,7 +1095,7 @@
     const first = !o || o.status !== "done";
     if (!setOb({ status: "done", step: null, doneOn: (o && o.doneOn) || dayKey() })) return false;
     if (first) { const p = preparedTasks(); emitSetup("setup_completed", { tasks_prepared: p ? p.tasks.length : 0 }); }
-    prepareIconStart();
+    prepareIconStart(location.hash.startsWith("#r="));
     renderSetupDone();
     return true;
   }
@@ -1107,7 +1115,7 @@
       </div>`, "You’re ready for your first morning.");
     $("#setupDone").onclick = () => home();
     $("#setupEdit").onclick = () => renderSetup("scroll", true);
-    $("#beginNow").onclick = () => { if (settled()) begin(); };
+    $("#beginNow").onclick = (e) => { if (settled(e)) begin(); };
   }
   // Setup done, no routine yet: a quiet invitation. Nothing starts until Begin; no "late" or "missed".
   function renderPrepared() {
@@ -1128,7 +1136,7 @@
         <div class="more">${themeSection()}${privacySection()}</div>
       </div>`, "A minute before the scroll.");
     // Another tab may have started a routine since this screen was drawn: then go where that leads instead
-    $("#begin").onclick = () => { if (!settled()) return; if (entryState() !== "prepared") { home(); return; } begin(); };
+    $("#begin").onclick = (e) => { if (!settled(e)) return; if (entryState() !== "prepared") { home(); return; } begin(); };
     $("#setupEdit").onclick = () => { if (entryState() !== "prepared") { home(); return; } renderSetup("scroll", true); };
     wirePre(); wireTheme(); wirePrivacy();
     renderHandoff();
@@ -1957,7 +1965,7 @@
     if (d <= now()) d.setDate(d.getDate() + 1);
     return d;
   }
-  const whenText = (d) => `${d.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })} at ${d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+  const whenText = (d) => `${d.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric", ...(d.getFullYear() !== now().getFullYear() ? { year: "numeric" } : {}) })} at ${d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
   const icsLocal = (d) => `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}T${pad2(d.getHours())}${pad2(d.getMinutes())}00`;
   const REMIND_TITLE = "Mornward: three breaths, one mini task";
   // Continuity token, for one place only: the iPhone home-screen icon's start address (prepareIconStart). The icon
@@ -1965,10 +1973,13 @@
   // one person isn't counted as two. It sits after "#" (never sent to a server) and holds no tasks, link source or
   // alarm time. With the counts off it carries no ID at all. Links that leave the phone (calendar events, the alarm
   // Shortcut, copied links) carry nothing: Google receives a calendar link's text, and calendars sync.
+  // o: 1 once setup is done, or on its last step (where the home screen is offered): an icon added there opens on the
+  // prepared screen. Earlier in setup, 0: the icon starts setup again (answers are never carried).
+  function setupForIcon() { const o = getOb() || {}; return o.status === "done" || (o.status === "started" && o.step === "remind") ? 1 : 0; }
   function carryState() {
     const off = store.get("noStats", false) === true;
     const r = { v: 1, ...(off ? {} : { i: deviceId() }), t: hasAgreed() ? TERMS_VERSION : null, s: off ? 1 : 0,
-      e: hasHistory() ? 1 : 0, o: (getOb() || {}).status === "done" ? 1 : 0 };
+      e: hasHistory() ? 1 : 0, o: setupForIcon() };
     return encodeURIComponent(JSON.stringify(r));
   }
   const carryLink = () => "https://mornward.app/?via=calendar";
@@ -2081,7 +2092,7 @@
     const date = () => (dateTouched && isDay(dateField.value) ? dateField.value : null);
     // The first reminder in words, from the real date and time (never a hard-coded "tomorrow")
     const point = () => {
-      if (!isAlarmTime(time())) return;
+      if (!isAlarmTime(time())) { $("#remWhen").textContent = "Pick a time to see your first reminder."; g.removeAttribute("href"); return; }
       const first = nextAlarm(time(), date());
       // A chosen date that's now in the past falls back to the next occurrence, and stops being "chosen"
       if (dateTouched && dayKey(first) !== dateField.value) { dateTouched = false; store.del("remDate"); }
@@ -2169,6 +2180,7 @@
       $("#statsToggle").onclick = () => {
         if (statsOn()) { store.set("noStats", true); store.set("outbox", []); store.set("viewbox", []); }
         else store.set("noStats", false);
+        prepareIconStart();
         draw();
       };
     };

@@ -5,8 +5,10 @@
 --   2. adds excluded_devices, a private list of your own/test devices to leave out of the numbers
 --   3. adds four read-only views: routine_runs, routine_cohort, routine_metrics, routine_daily
 -- It does not change or delete any row, does not touch the insert policy, and leaves row level security on.
--- Safe to run more than once. Apply it BEFORE the beta-4 app goes live: until then the database rejects
--- the new kinds and those rows are dropped by the app (it does not retry rejected rows).
+-- Safe to run more than once until 20261005000000 is applied. After that, re-run only the newest migration:
+-- 20261005 replaces these views, so re-running this file fails (its transaction rolls back and changes nothing).
+-- Apply it BEFORE the beta-4 app goes live: until then the database rejects the new kinds and those rows are dropped
+-- by the app (it does not retry rejected rows).
 --
 -- Definitions are explained in supabase/ANALYTICS.md ("Routine metrics (beta-4)").
 
@@ -19,7 +21,9 @@ alter table public.events add constraint events_kind_check check (kind in (
   'morning_start', 'morning_done', 'setup_done', 'rating', 'door_open', 'screen_view',
   -- beta-4: the one-minute routine
   'routine_started', 'breathing_completed', 'breathing_skipped', 'intention_saved', 'intention_skipped',
-  'routine_finished', 'core_routine_completed', 'install_prompt', 'app_installed'));
+  'routine_finished', 'core_routine_completed', 'install_prompt', 'app_installed',
+  -- later kinds (20261005, 20261006), listed here too so re-running this file never fails on newer rows
+  'tasks_saved', 'tasks_skipped', 'reminder_setup', 'setup_started', 'setup_completed'));
 
 -- 2. Devices to leave out (you, family, test phones) --------------------------------------------------------
 -- Add yours from the dashboard:  insert into public.excluded_devices (device_id, note) values ('<id>', 'my phone');
