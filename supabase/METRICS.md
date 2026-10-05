@@ -224,6 +224,7 @@ and `testers.first_day` is the first event of any kind. Use `legacy_retention_re
   notification, so the app asks people to set it to "At time of event".
 - **Calendar file:** it has one UID per phone (random, not the stats id), with `SEQUENCE` going up per file and
   `METHOD:PUBLISH`. Whether Apple Calendar updates the existing event or adds a second one isn't verified.
+- **Repeats:** every morning until deleted (`RRULE:FREQ=DAILY`, no end), so it's added once.
 - **Times:** floating local times (07:00 wherever the phone is).
 - **Delivery:** whether an alert appears is unverified until the real-device checks pass
   (`docs/real-device-checklist.md`).

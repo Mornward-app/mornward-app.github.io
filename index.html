@@ -1120,23 +1120,24 @@
   function renderRemind(editing) {
     show(`${stepTop(2)}
       <h1>Make it easy to return.</h1>
-      <div class="remsetup" id="remSetup">${reminderControls(true)}</div>
+      <div class="remsetup" id="remSetup">${reminderBlock(true)}</div>
       ${installOptional()}
       <div class="actions sticky">
         <button class="primary" id="stepNext" type="button">Continue</button>
-        <button class="link" id="stepSkip" type="button">Skip for now</button>
+        ${savedReminder() ? "" : `<button class="link" id="stepSkip" type="button">Skip for now</button>`}
       </div>`, `Step 2 of ${SETUP_STEPS.length}. Make it easy to return.`);
     wireReminder(true);
     syncQuiet();
     const done = (skipped) => {
       if (setOb({ remindSkipped: skipped }) && skipped) { store.del("remPlan"); store.del("remDate"); }
       if (!getOb() || getOb().remindSkipped !== skipped || !finishSetup()) {
-        $("#remMsg").textContent = "Couldn't save your setup on this phone. Try again.";
+        const shown = $("#remDone") && !$("#remDone").hidden ? $("#remDoneMsg") : $("#remMsg");
+        shown.textContent = "Couldn't save your setup on this phone. Try again.";
         $("#stepNext").textContent = "Retry";
       }
     };
     $("#stepNext").onclick = () => done(false);
-    $("#stepSkip").onclick = () => done(true);
+    if ($("#stepSkip")) $("#stepSkip").onclick = () => done(true);
     $("#stepBack").onclick = () => renderSetup("tasks", editing);
   }
   // Returns false if the phone couldn't save it (then nothing claims setup is finished)
@@ -1994,7 +1995,7 @@
   // ---------- an optional calendar reminder ----------
   // Mornward can't send notifications and never asks for permission. This hands a daily event to the person's
   // own calendar. It can't tell whether they saved it, so it never says the reminder is set, and isn't counted.
-  const REMIND_DAYS = 7;
+  // The event repeats every morning until it's deleted in the calendar: added once, never again
   const pad2 = (n) => String(n).padStart(2, "0");
   const isAlarmTime = (v) => typeof v === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
   // The first reminder: on `date` (YYYY-MM-DD) if given and still ahead, otherwise the next time `v` comes round
@@ -2054,7 +2055,7 @@
     store.set("remSeq", seq);
     return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Mornward//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "BEGIN:VEVENT",
       `UID:${uid}@mornward.app`, `SEQUENCE:${seq}`,
-      `DTSTAMP:${stamp}`, `DTSTART:${icsLocal(start)}`, "DURATION:PT5M", `RRULE:FREQ=DAILY;COUNT=${REMIND_DAYS}`,
+      `DTSTAMP:${stamp}`, `DTSTART:${icsLocal(start)}`, "DURATION:PT5M", "RRULE:FREQ=DAILY",
       `SUMMARY:${icsEsc(REMIND_TITLE)}`, `DESCRIPTION:${icsEsc(reminderText(link))}`, `URL:${link}`,
       "BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${icsEsc("Before the scroll: one mini task")}`, "TRIGGER:PT0M", "END:VALARM",
       "END:VEVENT", "END:VCALENDAR"].map(icsFold).join("\r\n") + "\r\n";
@@ -2063,7 +2064,7 @@
     const start = nextAlarm(v, date);
     const end = new Date(start.getTime() + 5 * 60000);
     const q = new URLSearchParams({ action: "TEMPLATE", text: REMIND_TITLE, details: reminderText(link),
-      dates: `${icsLocal(start)}/${icsLocal(end)}`, recur: `RRULE:FREQ=DAILY;COUNT=${REMIND_DAYS}` });
+      dates: `${icsLocal(start)}/${icsLocal(end)}`, recur: "RRULE:FREQ=DAILY" });
     try { q.set("ctz", Intl.DateTimeFormat().resolvedOptions().timeZone); } catch {}
     return "https://calendar.google.com/calendar/render?" + q.toString();
   }
@@ -2141,17 +2142,35 @@
               <p class="support">Steps can differ a little between iOS versions. To stop it, delete it under Automation in Shortcuts.</p>
             </details>
           </div>
-          <p class="support">Repeats daily for ${REMIND_DAYS} mornings, then stops. To stop sooner, delete the event. Mornward never asks for notification permission.</p>
+          <p class="support">Repeats every morning until you delete it in your calendar. Mornward never asks for notification permission.</p>
         </details>`;
+  }
+  // A reminder already handed to the calendar from this phone (Mornward can't see the calendar: this is what was tapped)
+  const savedReminder = () => store.get("remPlan", null, (v) => typeof v === "object" && isAlarmTime(v.at) && isDay(v.first));
+  const clock = (t) => { const [h, m] = t.split(":").map(Number); return new Date(2026, 0, 1, h, m).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); };
+  // Once added, the reminder isn't asked for again: its time, and "Change" for a new time or to add it again
+  function reminderBlock(setup = false) {
+    const p = savedReminder();
+    const ctl = reminderControls(setup);
+    if (!p) return ctl;
+    return `<div class="remcard" id="remDone">
+          <div class="remrow"><span class="remic" aria-hidden="true">${icon("cal")}</span><p class="flabel">Your calendar reminder</p></div>
+          <p class="remwhen" id="remDoneWhen">${esc(clock(p.at))}, every morning</p>
+          <button class="link start" id="remChange" type="button">Change it or add it again</button>
+          <p class="msg err" id="remDoneMsg" role="status"></p>
+        </div>
+        <div id="remCtl" hidden><p class="support" id="remOld">Changing the time? Delete the old event in your calendar, so you don't get two.</p>${ctl}</div>`;
   }
   function reminderSection() {
     return `<details class="section" id="remindSec"><summary><span class="sl">${icon("cal")}Morning reminder</span></summary><div class="inner">
-        ${reminderControls()}
+        ${reminderBlock()}
       </div></details>`;
   }
   function wireReminder(setup = false) {
     const g = $("#remGoogle");
     if (!g) return;
+    const change = $("#remChange");
+    if (change) change.onclick = () => { $("#remDone").hidden = true; $("#remCtl").hidden = false; $("#remAt").focus(); };
     const msg = (t) => { $("#remMsg").textContent = t; };
     const time = () => $("#remAt").value;
     const dateField = $("#remDate");

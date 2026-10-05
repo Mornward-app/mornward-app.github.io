@@ -383,6 +383,23 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
       (await x.p.textContent("#progCount")) === "1 morning reset completed");
     await x.c.close(); }
 
+  // B: once a reminder was added, Mornward doesn't ask again (setup's Edit, and Today)
+  { const x = await open(); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext");
+    await x.p.click('[data-rem-quick="06:30"]'); await x.p.click("#remGoogle"); await x.t(300);
+    for (const p of x.c.pages().slice(1)) await p.close();
+    await click(x, "#stepNext"); await click(x, "#setupEdit"); await click(x, "#stepNext");
+    ok("B Edit setup after adding a reminder: it shows the reminder, doesn't ask again", (await x.p.textContent("#remDoneWhen")) === "6:30 AM, every morning" &&
+      !(await x.p.isVisible("#remAt")) && !(await x.p.isVisible("#remGoogle")) && !(await x.p.$("#stepSkip")));
+    ok("B ...no claim that it's saved in the calendar (it says what was added from here)", !/saved|is set|will remind/i.test(await x.p.textContent("#remDone")));
+    await x.p.click("#remChange"); await x.t(200);
+    ok("B Change: the controls come back, with a note to delete the old event", await x.p.isVisible("#remAt") && await x.p.isVisible("#remOld"));
+    await click(x, "#stepNext");
+    ok("B ...Continue still finishes setup and keeps the reminder", (await h1(x)) === "Ready for your first morning." && (await x.ls("remPlan")).at === "06:30");
+    await jump(x, MON); await S.begin(x); await S.skipBreathing(x); await S.keep(x); await S.finish(x);
+    await x.p.click("#remindSec summary"); await x.t(200);
+    ok("B Today: Morning reminder shows the added reminder instead of asking", (await x.p.textContent("#remDoneWhen")) === "6:30 AM, every morning" && !(await x.p.isVisible("#remAt")));
+    await x.c.close(); }
+
   // The suggested first date is the next morning, worked out from the real date and time
   for (const [when, want, label] of [["2026-10-05T06:00:00", "2026-10-06", "setting up at 6 AM suggests tomorrow"],
     ["2026-10-05T01:30:00", "2026-10-05", "setting up at 1:30 AM suggests the morning about to come"],

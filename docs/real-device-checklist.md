@@ -78,3 +78,6 @@ passes, treat it as **unverified**.
 - [ ] **QR arrival (both phones):** on a computer, scan the code on mornward.app. The phone opens Safari / Chrome, and
       the home-screen steps open over Welcome for that phone. Android: "Add to home screen" opens Chrome's dialog.
       Reload: the steps don't open again.
+- [ ] **Reminder repeats (both phones):** add the reminder once; check the event repeats every morning with no end
+      date, and the alert fires at the time on the second morning too. Then Edit setup: it shows "Your calendar
+      reminder", not the controls.

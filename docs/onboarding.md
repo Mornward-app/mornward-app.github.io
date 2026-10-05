@@ -44,8 +44,15 @@ words: task names (shuffled per phone), folded sections and screen-reader-only t
   7:00 AM. Check your calendar saved it." With no calendar tap, no line at all. Mornward can't see the calendar, so
   it never says a reminder is saved or will alert.
 - **More options** (step 2 and Today's Morning reminder): the iPhone / Android switch, what to do in the calendar
-  ("At time of event"), "Use a calendar file instead", the iPhone alarm Shortcut, and "Repeats daily for 7 mornings,
-  then stops. To stop sooner, delete the event. Mornward never asks for notification permission."
+  ("At time of event"), "Use a calendar file instead", the iPhone alarm Shortcut, and "Repeats every morning until
+  you delete it in your calendar. Mornward never asks for notification permission."
+- **The reminder card:** the time with quick picks (6:00 to 8:00), then the first morning as the next three days to
+  tap, with **Other** opening the phone's date picker. Each on its own row, so nothing squeezes.
+- **Added once, never asked again:** the calendar event repeats every morning until deleted (the alert is at the
+  event's time, so the phone notifies each morning). After a calendar tap, step 2 (Edit setup) and Today's Morning
+  reminder show "Your calendar reminder · 7:00 AM, every morning" with "Change it or add it again" instead of the
+  controls; there's no Skip, nothing to skip. Changing the time says to delete the old event first. It's what was
+  added from this phone; Mornward can't see the calendar.
 - **Suggested first date:** the next morning, worked out from the real date each time it's shown. That's tomorrow,
   or between midnight and 4 AM, the morning about to come. Both can be changed. No setup screen says "tomorrow".
 - **Personalize** (folded on Ready and Prepared; "Morning preferences" in Today): "Where does your scroll start?
