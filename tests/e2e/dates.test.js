@@ -94,7 +94,7 @@ const summary = (x) => x.p.textContent("#progCount");
   // The preview's pretend date is ignored by the real app, even if it's left in storage
   { const x = await ctx(b, site.url, { when: "2026-10-05T07:10:00", init: () => { localStorage.setItem("fl.previewShift", String(3 * 86400000)); } });
     await x.goto(); await fullRoutine(x);
-    ok("production ignores a stored preview date shift", JSON.stringify(sentDays(x, "routine_started")) === '["2026-10-05"]' && !(await x.p.$("#tdTab")));
+    ok("production ignores a stored preview date shift", JSON.stringify(sentDays(x, "routine_started")) === '["2026-10-05"]' && !(await x.p.$("#pvNext")) && !(await x.p.$("#pvToday")));
     await x.c.close(); }
 
   await b.close(); await site.close();

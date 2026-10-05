@@ -327,6 +327,8 @@
   .tdtab { width: auto; min-height: 44px; margin: 20px auto 0; padding: 8px 16px; gap: 8px; border-radius: 999px;
     font-size: 0.875rem; color: var(--text-2); border: 1.5px dashed var(--chip-line); }
   .tdgrid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  /* Not during the minute itself */
+  .app:has(#bpause) .tdtab, .app:has(#isave) .tdtab { display: none; }
   .tdrow { display: flex; flex-direction: column; gap: 6px; }
   .tdout:empty { display: none; }
   #guideNow:empty { display: none; }
@@ -455,8 +457,24 @@
   .steptop .back { width: auto; min-height: 44px; padding: 0 4px 0 0; gap: 4px; }
   .stepnum { font-size: 0.8125rem; line-height: 1rem; font-weight: 600; color: var(--text-2); margin: 0; white-space: nowrap; }
   .lede { font-size: 1.125rem; line-height: 1.625rem; color: var(--text); margin: 0; }
-  .remtime { display: flex; flex-wrap: wrap; gap: 12px; }
-  .remtime > div { flex: 1 1 140px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+  /* The reminder: one card, a row each for the time and the first morning (they never squeeze side by side) */
+  .remcard { background: var(--field); border: 1.5px solid var(--chip-line); border-radius: 20px; padding: 14px;
+    display: flex; flex-direction: column; gap: 10px; }
+  .remrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .remrow .flabel { flex: 1 1 auto; margin: 0; }
+  .remic { flex: none; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: var(--chip); }
+  .remic .i { width: 18px; height: 18px; color: var(--hl); }
+  /* The box takes the rest of the row; on a narrow screen or with large text it drops to its own line, full width */
+  .remrow input[type="time"], .remrow input[type="date"] { flex: 1 1 8.5rem; width: auto; min-width: 0; max-width: 100%;
+    min-height: 44px; padding: 6px 10px; -webkit-appearance: none; appearance: none; text-align: center; font-weight: 600; background: var(--bg); }
+  .remrow input::-webkit-date-and-time-value { text-align: center; }
+  .remquick { gap: 6px; flex-wrap: wrap; }
+  /* Equal widths on one line when they fit; with large text they keep their words and wrap instead */
+  .remquick .chip { flex: 1 0 auto; min-width: 44px; padding: 6px 8px; justify-content: center; font-size: 0.875rem; }
+  .remother { position: relative; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; }
+  .remother input[type="date"] { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; padding: 0; border: 0;
+    opacity: 0; cursor: pointer; -webkit-appearance: none; appearance: none; }
+  .remother:focus-within { outline: 3px solid var(--focus); outline-offset: 3px; }
   .remwhen { font-weight: 600; color: var(--text); margin: 0; }
   .planned { color: var(--text-2); margin: 0; }
   .setupcard { background: var(--field); border-radius: var(--radius); padding: 14px 18px; display: flex; flex-direction: column; gap: 4px; }
@@ -1102,23 +1120,24 @@
   function renderRemind(editing) {
     show(`${stepTop(2)}
       <h1>Make it easy to return.</h1>
-      <div class="remsetup" id="remSetup">${reminderControls(true)}</div>
+      <div class="remsetup" id="remSetup">${reminderBlock(true)}</div>
       ${installOptional()}
       <div class="actions sticky">
         <button class="primary" id="stepNext" type="button">Continue</button>
-        <button class="link" id="stepSkip" type="button">Skip for now</button>
+        ${savedReminder() ? "" : `<button class="link" id="stepSkip" type="button">Skip for now</button>`}
       </div>`, `Step 2 of ${SETUP_STEPS.length}. Make it easy to return.`);
     wireReminder(true);
     syncQuiet();
     const done = (skipped) => {
       if (setOb({ remindSkipped: skipped }) && skipped) { store.del("remPlan"); store.del("remDate"); }
       if (!getOb() || getOb().remindSkipped !== skipped || !finishSetup()) {
-        $("#remMsg").textContent = "Couldn't save your setup on this phone. Try again.";
+        const shown = $("#remDone") && !$("#remDone").hidden ? $("#remDoneMsg") : $("#remMsg");
+        shown.textContent = "Couldn't save your setup on this phone. Try again.";
         $("#stepNext").textContent = "Retry";
       }
     };
     $("#stepNext").onclick = () => done(false);
-    $("#stepSkip").onclick = () => done(true);
+    if ($("#stepSkip")) $("#stepSkip").onclick = () => done(true);
     $("#stepBack").onclick = () => renderSetup("tasks", editing);
   }
   // Returns false if the phone couldn't save it (then nothing claims setup is finished)
@@ -1592,9 +1611,9 @@
   // ---------- appearance: follows the phone, or pick light or dark ----------
   const THEMES = ["auto", "light", "dark"];
   let themeSet = false; // only clear a theme this page set itself (a host page may set its own)
-  // The live app follows the phone's light or dark setting. Only the preview's Test drive picks one.
+  // Follows the phone's light or dark setting until Light or Dark is picked in Test drive
   function applyTheme() {
-    const t = PREVIEW ? store.get("theme", "auto", (v) => THEMES.includes(v)) : "auto";
+    const t = store.get("theme", "auto", (v) => THEMES.includes(v));
     const root = document.documentElement;
     if (t === "auto") { if (themeSet) root.removeAttribute("data-theme"); themeSet = false; }
     else { root.setAttribute("data-theme", t); themeSet = true; }
@@ -1976,7 +1995,7 @@
   // ---------- an optional calendar reminder ----------
   // Mornward can't send notifications and never asks for permission. This hands a daily event to the person's
   // own calendar. It can't tell whether they saved it, so it never says the reminder is set, and isn't counted.
-  const REMIND_DAYS = 7;
+  // The event repeats every morning until it's deleted in the calendar: added once, never again
   const pad2 = (n) => String(n).padStart(2, "0");
   const isAlarmTime = (v) => typeof v === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
   // The first reminder: on `date` (YYYY-MM-DD) if given and still ahead, otherwise the next time `v` comes round
@@ -2036,7 +2055,7 @@
     store.set("remSeq", seq);
     return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Mornward//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "BEGIN:VEVENT",
       `UID:${uid}@mornward.app`, `SEQUENCE:${seq}`,
-      `DTSTAMP:${stamp}`, `DTSTART:${icsLocal(start)}`, "DURATION:PT5M", `RRULE:FREQ=DAILY;COUNT=${REMIND_DAYS}`,
+      `DTSTAMP:${stamp}`, `DTSTART:${icsLocal(start)}`, "DURATION:PT5M", "RRULE:FREQ=DAILY",
       `SUMMARY:${icsEsc(REMIND_TITLE)}`, `DESCRIPTION:${icsEsc(reminderText(link))}`, `URL:${link}`,
       "BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${icsEsc("Before the scroll: one mini task")}`, "TRIGGER:PT0M", "END:VALARM",
       "END:VEVENT", "END:VCALENDAR"].map(icsFold).join("\r\n") + "\r\n";
@@ -2045,7 +2064,7 @@
     const start = nextAlarm(v, date);
     const end = new Date(start.getTime() + 5 * 60000);
     const q = new URLSearchParams({ action: "TEMPLATE", text: REMIND_TITLE, details: reminderText(link),
-      dates: `${icsLocal(start)}/${icsLocal(end)}`, recur: `RRULE:FREQ=DAILY;COUNT=${REMIND_DAYS}` });
+      dates: `${icsLocal(start)}/${icsLocal(end)}`, recur: "RRULE:FREQ=DAILY" });
     try { q.set("ctz", Intl.DateTimeFormat().resolvedOptions().timeZone); } catch {}
     return "https://calendar.google.com/calendar/render?" + q.toString();
   }
@@ -2061,6 +2080,10 @@
   // In setup the first date suggested is the next morning: tomorrow (or, after midnight and before 4 AM, the
   // morning about to come). Worked out from the real date each time, never stored as "tomorrow".
   const nextMorning = () => (now().getHours() < 4 ? dayKey() : addDays(dayKey(), 1));
+  // Quick picks for the time: one tap instead of the picker
+  const REM_QUICK = ["06:00", "06:30", "07:00", "07:30", "08:00"];
+  const quickLabel = (t) => { const [h, m] = t.split(":").map(Number); return new Date(2026, 0, 1, h, m).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).replace(/\s?[AaPp]\.?[Mm]\.?$/, ""); };
+  const dayChip = (d) => { const [y, m, dd] = d.split("-").map(Number); return new Date(y, m - 1, dd).toLocaleDateString([], { weekday: "short", day: "numeric" }); };
   function reminderControls(setup = false) {
     const at = store.get("alarmAt", "", isAlarmTime) || "07:00";
     const os = isIOS ? "ios" : "android";
@@ -2068,13 +2091,23 @@
     const first = nextAlarm(at, store.get("remDate", null, isDay) || (setup ? nextMorning() : null));
     const S = (g, t) => `<li><span class="g">${GLYPH[g]}</span><span>${t}</span></li>`;
     // One calendar button for this phone; the other phone, instructions and the Shortcut are folded under More options
-    return `<div class="remtime">
-          <div><label class="flabel" for="remAt">Time</label>
+    // One card: the time (with quick picks), then the first morning, each on its own row, then the first reminder
+    // The first morning: the next three, by tap (the date picker sits under "Other" for anything later)
+    const base = setup ? nextMorning() : dayKey(nextAlarm(at));
+    const days = [0, 1, 2].map((n) => addDays(base, n)).map((d) => `<button class="chip pick" type="button" data-rem-day="${d}"><span>${esc(dayChip(d))}</span></button>`).join("");
+    const quick = REM_QUICK.map((t) => `<button class="chip pick" type="button" data-rem-quick="${t}" aria-pressed="${t === at}"><span>${esc(quickLabel(t))}</span></button>`).join("");
+    return `<div class="remcard">
+          <div class="remrow"><span class="remic" aria-hidden="true">${icon("clock")}</span>
+            <label class="flabel" for="remAt">Time</label>
             <input type="time" id="remAt" value="${esc(at)}"></div>
-          <div><label class="flabel" for="remDate">First morning</label>
-            <input type="date" id="remDate" value="${esc(dayKey(first))}" min="${esc(dayKey())}"></div>
+          <div class="chips remquick" role="group" aria-label="Quick times">${quick}</div>
+          <div class="remrow"><span class="remic" aria-hidden="true">${icon("cal")}</span>
+            <p class="flabel" id="remDayLbl">First morning</p></div>
+          <div class="chips remquick" role="group" aria-labelledby="remDayLbl">${days}
+            <label class="chip pick remother" id="remOther"><span id="remOtherLbl">Other</span>
+              <input type="date" id="remDate" aria-label="Another first morning" value="${esc(dayKey(first))}" min="${esc(dayKey())}"></label></div>
+          <p class="remwhen" id="remWhen" aria-live="polite">First reminder: ${esc(whenText(first))}</p>
         </div>
-        <p class="remwhen" id="remWhen" aria-live="polite">First reminder: ${esc(whenText(first))}</p>
         <div class="rempane" data-pane="android"${os === "android" ? "" : " hidden"}>
           <a class="button secondary" id="remGoogle" href="#" target="_blank" rel="noopener">${icon("cal")}<span>Add to Google Calendar</span></a>
         </div>
@@ -2109,17 +2142,35 @@
               <p class="support">Steps can differ a little between iOS versions. To stop it, delete it under Automation in Shortcuts.</p>
             </details>
           </div>
-          <p class="support">Repeats daily for ${REMIND_DAYS} mornings, then stops. To stop sooner, delete the event. Mornward never asks for notification permission.</p>
+          <p class="support">Repeats every morning until you delete it in your calendar. Mornward never asks for notification permission.</p>
         </details>`;
+  }
+  // A reminder already handed to the calendar from this phone (Mornward can't see the calendar: this is what was tapped)
+  const savedReminder = () => store.get("remPlan", null, (v) => typeof v === "object" && isAlarmTime(v.at) && isDay(v.first));
+  const clock = (t) => { const [h, m] = t.split(":").map(Number); return new Date(2026, 0, 1, h, m).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); };
+  // Once added, the reminder isn't asked for again: its time, and "Change" for a new time or to add it again
+  function reminderBlock(setup = false) {
+    const p = savedReminder();
+    const ctl = reminderControls(setup);
+    if (!p) return ctl;
+    return `<div class="remcard" id="remDone">
+          <div class="remrow"><span class="remic" aria-hidden="true">${icon("cal")}</span><p class="flabel">Your calendar reminder</p></div>
+          <p class="remwhen" id="remDoneWhen">${esc(clock(p.at))}, every morning</p>
+          <button class="link start" id="remChange" type="button">Change it or add it again</button>
+          <p class="msg err" id="remDoneMsg" role="status"></p>
+        </div>
+        <div id="remCtl" hidden><p class="support" id="remOld">Changing the time? Delete the old event in your calendar, so you don't get two.</p>${ctl}</div>`;
   }
   function reminderSection() {
     return `<details class="section" id="remindSec"><summary><span class="sl">${icon("cal")}Morning reminder</span></summary><div class="inner">
-        ${reminderControls()}
+        ${reminderBlock()}
       </div></details>`;
   }
   function wireReminder(setup = false) {
     const g = $("#remGoogle");
     if (!g) return;
+    const change = $("#remChange");
+    if (change) change.onclick = () => { $("#remDone").hidden = true; $("#remCtl").hidden = false; $("#remAt").focus(); };
     const msg = (t) => { $("#remMsg").textContent = t; };
     const time = () => $("#remAt").value;
     const dateField = $("#remDate");
@@ -2134,13 +2185,21 @@
       if (dateTouched && dayKey(first) !== dateField.value) { dateTouched = false; store.del("remDate"); return point(); }
       if (dayKey(first) !== dateField.value) dateField.value = dayKey(first);
       dateField.min = dayKey();
+      // The chip for that date is picked; a later date shows on "Other"
+      let onChip = false;
+      card.querySelectorAll("[data-rem-day]").forEach((b) => { const on = b.dataset.remDay === dateField.value; onChip = onChip || on; b.setAttribute("aria-pressed", String(on)); });
+      const other = $("#remOther");
+      if (other) { other.setAttribute("aria-pressed", String(!onChip)); $("#remOtherLbl").textContent = onChip ? "Other" : dayChip(dateField.value); }
       $("#remWhen").textContent = `First reminder: ${whenText(first)}`;
       g.href = googleCalendarLink(time(), carryLink(), date());
     };
     point();
-    const keepTime = () => { if (isAlarmTime(time())) store.set("alarmAt", time()); point(); };
+    const syncQuick = () => card.querySelectorAll("[data-rem-quick]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.remQuick === time())));
+    const keepTime = () => { if (isAlarmTime(time())) store.set("alarmAt", time()); point(); syncQuick(); };
+    card.querySelectorAll("[data-rem-quick]").forEach((b) => (b.onclick = () => { $("#remAt").value = b.dataset.remQuick; keepTime(); }));
     $("#remAt").addEventListener("input", keepTime);
     $("#remAt").addEventListener("change", keepTime);
+    card.querySelectorAll("[data-rem-day]").forEach((b) => (b.onclick = () => { dateField.value = b.dataset.remDay; dateField.dispatchEvent(new Event("change")); }));
     dateField.addEventListener("change", () => {
       dateTouched = isDay(dateField.value);
       if (dateTouched) store.set("remDate", dateField.value); else store.del("remDate");
@@ -2353,7 +2412,7 @@
   // A slim tab at the bottom; tapping it slides up a panel for trying the app: light or dark, larger text, a sample
   // week of history, and plain-language views of what the phone keeps and what would be counted. Nothing is sent.
   const TEXT_SIZES = { normal: "", large: "125%", largest: "150%" };
-  const applyTextSize = () => { if (PREVIEW) document.documentElement.style.fontSize = TEXT_SIZES[store.get("previewText", "normal", (v) => v in TEXT_SIZES)]; };
+  const applyTextSize = () => { document.documentElement.style.fontSize = TEXT_SIZES[store.get("previewText", "normal", (v) => v in TEXT_SIZES)]; };
   // What a preview would have counted (with the counts on), kept on the phone so it can be shown. Never sent.
   const COUNT_WORDS = {
     routine_started: () => "Started a routine",
@@ -2371,23 +2430,7 @@
   };
   function previewNote(kind, data) {
     if (!PREVIEW || !hasAgreed() || store.get("noStats", false) === true) return;
-    store.set("previewLog", store.get("previewLog", [], Array.isArray).concat([{ kind, data }]).slice(-30));
-  }
-  // Five of the last six days: four full, one with a step skipped, one missed. Real dates; it starts no routine today.
-  function sampleWeek() {
-    const today = dayKey(), ago = (n) => addDays(today, -n);
-    const plan = [[6, "Water first · Make my bed", true], [5, "Short walk", true], [4, "Plan my top 3", false],
-      [2, "Stretch · Text someone", true], [1, "Read 10 pages · Open a window", true]];
-    const merge = (key, list) => store.set(key, [...new Set([...store.get(key, [], isDayList), ...list])].sort());
-    merge("days", plan.map(([n]) => ago(n)));
-    merge("fullDays", plan.filter((p) => p[2]).map(([n]) => ago(n)));
-    for (const [n, t] of plan) if (!store.get("intent:" + ago(n), null, isText)) store.set("intent:" + ago(n), t);
-    const s = store.get("startDay", null, isDay);
-    if (!s || s > ago(6)) store.set("startDay", ago(6));
-    store.set("everStarted", true);
-    agree("preview");
-    usePrepared();
-    home();
+    store.set("countLog", store.get("countLog", [], Array.isArray).concat([{ kind, data }]).slice(-30));
   }
   function keptHtml() {
     const days = doneDays().size, full = fullDays().size;
@@ -2405,7 +2448,7 @@
       <p class="support">Only on this phone. Your words never leave it.</p>`;
   }
   function countsHtml() {
-    const log = store.get("previewLog", [], Array.isArray);
+    const log = store.get("countLog", [], Array.isArray);
     const off = store.get("noStats", false) === true;
     const rows = log.slice(-12).reverse().map((r) => { try { return (COUNT_WORDS[r.kind] || (() => r.kind))(r.data || {}); } catch { return r.kind; } });
     return `<h3>What would be counted</h3>
@@ -2413,8 +2456,9 @@
         : `<p>Nothing yet. Do a routine, then look again.</p>`}
       <p class="support">The live app sends these as anonymous counts. This preview sends nothing.</p>`;
   }
+  // Test drive: in the live app, Theme and Text size only. The preview build also shows what the phone keeps and
+  // what would be counted, and can start over. Nothing in it makes up progress or numbers.
   function previewBar() {
-    if (!PREVIEW) return;
     const tab = document.createElement("button");
     tab.type = "button";
     tab.className = "tdtab";
@@ -2438,16 +2482,15 @@
         <div class="gsheet" role="dialog" aria-modal="true" aria-labelledby="tdTitle">
           <div class="row"><h2 id="tdTitle" tabindex="-1">Test drive</h2>
             <button class="ix" data-td-close type="button" aria-label="Close"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
-          <p class="support">Try it out. Nothing is sent from this preview.</p>
+          <p class="support">${PREVIEW ? "Try it out. Nothing is sent from this preview." : "Change how Mornward looks."}</p>
           <div class="tdrow"><span class="flabel">Theme</span>${seg("Theme", shade(), [["light", "Light"], ["dark", "Dark"]])}</div>
           <div class="tdrow"><span class="flabel">Text size</span>${seg("Text size", size(), [["normal", "Normal"], ["large", "Large"], ["largest", "Largest"]])}</div>
-          <div class="tdgrid">
-            <button type="button" class="secondary" id="pvWeek">Show a sample week</button>
+          ${PREVIEW ? `<div class="tdgrid">
             <button type="button" class="secondary" id="pvKept" aria-controls="pvOut">What this phone keeps</button>
             <button type="button" class="secondary" id="pvCounts" aria-controls="pvOut">What would be counted</button>
           </div>
           <div class="tdout" id="pvOut" role="status"></div>
-          <button type="button" class="link" id="pvReset">Start over</button>
+          <button type="button" class="link" id="pvReset">Start over</button>` : ""}
         </div>`;
       document.body.appendChild(wrap);
       wrap.querySelectorAll("[data-td-close]").forEach((x) => (x.onclick = close));
@@ -2459,10 +2502,9 @@
         store.set("previewText", b.dataset.tdTextsize); applyTextSize(); fitSticky();
         wrap.querySelectorAll("[data-td-textsize]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
       }));
-      $("#pvWeek").onclick = () => { close(); sampleWeek(); };
-      $("#pvKept").onclick = () => { $("#pvOut").innerHTML = keptHtml(); };
-      $("#pvCounts").onclick = () => { $("#pvOut").innerHTML = countsHtml(); };
-      $("#pvReset").onclick = () => { store.keys().forEach((k) => store.del(k)); location.reload(); };
+      if ($("#pvKept")) $("#pvKept").onclick = () => { $("#pvOut").innerHTML = keptHtml(); };
+      if ($("#pvCounts")) $("#pvCounts").onclick = () => { $("#pvOut").innerHTML = countsHtml(); };
+      if ($("#pvReset")) $("#pvReset").onclick = () => { store.keys().forEach((k) => store.del(k)); location.reload(); };
       $("#tdTitle").focus();
     };
     tab.onclick = open;

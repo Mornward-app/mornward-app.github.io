@@ -43,7 +43,7 @@ function icalParse(file) {
   // Copy says what happens, and no more
   const more = await x.p.textContent("#remMore");
   const android = await x.p.$$eval('#remMore [data-pane="android"]', (l) => l[0].textContent), ios = await x.p.$$eval('#remMore [data-pane="ios"]', (l) => l[0].textContent);
-  ok("copy: Google — save it there, set the notification; how to stop it", /Save it there/.test(android) && /At time of event/.test(android) && /To stop sooner, delete the event/.test(more));
+  ok("copy: Google — save it there, set the notification; how to stop it", /Save it there/.test(android) && /At time of event/.test(android) && /Repeats every morning until you delete it in your calendar/.test(more));
   ok("copy: Apple — open it to add it, check the alert; how to stop it", /Open it to add it to Calendar/.test(ios) && /check the alert/.test(ios) && !/pops up/.test(ios + android));
   ok("copy: the first reminder is stated as a real date and time", /^First reminder: \w+day, \w+ \d+ at /.test(await x.p.textContent("#remWhen")));
   ok("copy: the Shortcut — how to remove it", /delete it under Automation in Shortcuts/.test(await x.p.textContent("#remShortcut")));
@@ -54,7 +54,7 @@ function icalParse(file) {
   const one = await file(), two = await file();
   const L = lint(one.ics);
   ok("calendar file: valid lines (CRLF, ≤ 75 octets, folding), required properties, one event with one alarm", L.problems.length === 0, L.problems);
-  ok("calendar file: starts tomorrow 06:30 as floating local time, 5 minutes, daily ×7", L.get("DTSTART") === "20261006T063000" && L.get("DURATION") === "PT5M" && L.get("RRULE") === "FREQ=DAILY;COUNT=7");
+  ok("calendar file: starts tomorrow 06:30 as floating local time, 5 minutes, every morning until deleted", L.get("DTSTART") === "20261006T063000" && L.get("DURATION") === "PT5M" && L.get("RRULE") === "FREQ=DAILY");
   ok("calendar file: an alert at the event time", L.get("TRIGGER") === "PT0M" && L.get("ACTION") === "DISPLAY");
   ok("calendar file: DTSTAMP is UTC with seconds", /^\d{8}T\d{6}Z$/.test(L.get("DTSTAMP")));
   ok("calendar file: text escaped correctly", unescape(L.get("DESCRIPTION")) === "Before the scroll: https://mornward.app/?via=calendar\nThree breaths, one mini task. About a minute.", L.get("DESCRIPTION"));
@@ -63,7 +63,7 @@ function icalParse(file) {
   ok("calendar file: the UID is not the stats ID", !L.get("UID").includes((await x.ls("deviceId")).replace(/-/g, "")));
   const parsed = icalParse(one.f);
   if (parsed) ok("calendar file: an independent parser (python icalendar) reads the same event", parsed.floating && parsed.start === "2026-10-06T06:30:00" &&
-    parsed.duration_min === 5 && JSON.stringify(parsed.rrule) === '{"FREQ":["DAILY"],"COUNT":[7]}' && parsed.alarms.length === 1 && parsed.alarms[0].trigger_min === 0 && parsed.method === "PUBLISH", parsed);
+    parsed.duration_min === 5 && JSON.stringify(parsed.rrule) === '{"FREQ":["DAILY"]}' && parsed.alarms.length === 1 && parsed.alarms[0].trigger_min === 0 && parsed.method === "PUBLISH", parsed);
   else ok("calendar file: independent parse skipped (no python icalendar; set ICAL_PYTHONPATH)", true);
   await x.p.fill("#remAt", "07:30"); const later = lint((await file()).ics);
   ok("calendar file: a time still ahead today starts today", later.get("DTSTART") === "20261005T073000");
@@ -71,8 +71,8 @@ function icalParse(file) {
   // Google Calendar link
   await x.p.click('[data-rem-os="android"]'); await x.p.fill("#remAt", "06:45");
   const u = new URL(await x.p.getAttribute("#remGoogle", "href"));
-  ok("Google link: tomorrow 06:45 to 06:50, the phone's time zone, daily ×7", u.searchParams.get("dates") === "20261006T064500/20261006T065000" &&
-    u.searchParams.get("ctz") === "Asia/Bangkok" && u.searchParams.get("recur") === "RRULE:FREQ=DAILY;COUNT=7" && u.searchParams.get("action") === "TEMPLATE");
+  ok("Google link: tomorrow 06:45 to 06:50, the phone's time zone, every morning until deleted", u.searchParams.get("dates") === "20261006T064500/20261006T065000" &&
+    u.searchParams.get("ctz") === "Asia/Bangkok" && u.searchParams.get("recur") === "RRULE:FREQ=DAILY" && u.searchParams.get("action") === "TEMPLATE");
 
   // What's counted: the tap, once a day per kind of tap, never "set up" or "delivered"
   await x.p.click("#remGoogle"); await x.t(200); await x.p.click("#remGoogle"); await x.t(200);

@@ -81,6 +81,20 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     ok("step 2: one visually primary action (Continue); calendar and home screen are secondary", (await x.p.$$("#card .primary")).length === 1 &&
       (await x.p.textContent("#card .primary")) === "Continue" && !!(await x.p.$("#addSec")));
     ok("step 2: no hard-coded 'tomorrow'", !/tomorrow/i.test(await text(x)));
+    // One card: tap a time, tap a day
+    await x.p.click('[data-rem-quick="06:30"]'); await x.t(100);
+    ok("step 2: a quick time sets the time and the first reminder", (await x.p.inputValue("#remAt")) === "06:30" &&
+      /at 6:30/.test(await x.p.textContent("#remWhen")) && (await x.p.getAttribute('[data-rem-quick="06:30"]', "aria-pressed")) === "true");
+    ok("step 2: three days to tap, starting with the suggested one", JSON.stringify(await x.p.$$eval("[data-rem-day]", (l) => l.map((e) => e.dataset.remDay))) === '["2026-10-05","2026-10-06","2026-10-07"]' &&
+      (await x.p.getAttribute('[data-rem-day="2026-10-05"]', "aria-pressed")) === "true");
+    await x.p.click('[data-rem-day="2026-10-07"]'); await x.t(100);
+    ok("step 2: tapping a day sets the first morning", (await x.p.inputValue("#remDate")) === "2026-10-07" && /^First reminder: Wednesday, October 7 at 6:30/.test(await x.p.textContent("#remWhen")));
+    await x.p.fill("#remDate", "2026-10-12"); await x.p.dispatchEvent("#remDate", "change"); await x.t(100);
+    ok("step 2: a later date (Other) shows on the Other button", (await x.p.getAttribute("#remOther", "aria-pressed")) === "true" && (await x.p.textContent("#remOtherLbl")) !== "Other" &&
+      !(await x.p.$('[data-rem-day][aria-pressed="true"]')));
+    ok("step 2: the time and day rows don't squeeze (each box inside the card)", await x.p.evaluate(() => { const c = document.querySelector(".remcard").getBoundingClientRect();
+      return [...document.querySelectorAll(".remcard input[type=time], .remcard .chip")].every((e) => { const r = e.getBoundingClientRect(); return r.left >= c.left - 1 && r.right <= c.right + 1; }); }));
+    await x.p.click('[data-rem-quick="07:00"]'); await x.t(100);
     // Choose Tuesday 07:00 instead, then open Google Calendar (never saved there)
     await x.p.fill("#remDate", "2026-10-06"); await x.p.dispatchEvent("#remDate", "change");
     ok("step 2: the first date can be moved", /^First reminder: Tuesday, October 6 at 7:00/.test(await x.p.textContent("#remWhen")));
@@ -367,6 +381,23 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     ok("7d a later day: a new morning invitation (Begin, 'Welcome back.' after missed days), no setup", (await h1(x)) === "Welcome back." && !!(await x.p.$("#begin")) && !(await x.p.$("#stepNext")));
     ok("7d ...progress starts Monday (no Sunday), missed days hollow, one completed morning", JSON.stringify(await x.p.$$eval(".progress li", (l) => l.map((e) => e.className.split(" ")[0]))) === '["full","none","none","none"]' &&
       (await x.p.textContent("#progCount")) === "1 morning reset completed");
+    await x.c.close(); }
+
+  // B: once a reminder was added, Mornward doesn't ask again (setup's Edit, and Today)
+  { const x = await open(); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext");
+    await x.p.click('[data-rem-quick="06:30"]'); await x.p.click("#remGoogle"); await x.t(300);
+    for (const p of x.c.pages().slice(1)) await p.close();
+    await click(x, "#stepNext"); await click(x, "#setupEdit"); await click(x, "#stepNext");
+    ok("B Edit setup after adding a reminder: it shows the reminder, doesn't ask again", (await x.p.textContent("#remDoneWhen")) === "6:30 AM, every morning" &&
+      !(await x.p.isVisible("#remAt")) && !(await x.p.isVisible("#remGoogle")) && !(await x.p.$("#stepSkip")));
+    ok("B ...no claim that it's saved in the calendar (it says what was added from here)", !/saved|is set|will remind/i.test(await x.p.textContent("#remDone")));
+    await x.p.click("#remChange"); await x.t(200);
+    ok("B Change: the controls come back, with a note to delete the old event", await x.p.isVisible("#remAt") && await x.p.isVisible("#remOld"));
+    await click(x, "#stepNext");
+    ok("B ...Continue still finishes setup and keeps the reminder", (await h1(x)) === "Ready for your first morning." && (await x.ls("remPlan")).at === "06:30");
+    await jump(x, MON); await S.begin(x); await S.skipBreathing(x); await S.keep(x); await S.finish(x);
+    await x.p.click("#remindSec summary"); await x.t(200);
+    ok("B Today: Morning reminder shows the added reminder instead of asking", (await x.p.textContent("#remDoneWhen")) === "6:30 AM, every morning" && !(await x.p.isVisible("#remAt")));
     await x.c.close(); }
 
   // The suggested first date is the next morning, worked out from the real date and time
