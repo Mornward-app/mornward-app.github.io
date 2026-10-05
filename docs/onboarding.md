@@ -4,7 +4,8 @@ Mornward is for the start of the day. A first visit prepares the morning; the ro
 
 ```text
 First visit:  Welcome → 1 Pick tasks → 2 Make it easy to return (optional) → Ready (the same screen as Prepared)
-On a computer: the same; the phone code sits beside every screen from Welcome on
+On a computer: the same; the phone code sits beside Welcome, the ready / next-morning screen, Begin and Today
+               (not beside the two setup steps, which stay focused)
 Each morning: Begin my morning → three breaths → confirm tasks → complete → Today
 ```
 
@@ -51,7 +52,7 @@ words: task names (shuffled per phone), folded sections and screen-reader-only t
   Stays on this phone. Mornward doesn't block or watch apps." Exactly one named app gives the invitation "Before
   Instagram, take a minute for yourself."; anything else, none.
 - **The ready screen never shows** a sun, circles, a count, a timeline, a percentage, a streak or a "complete" claim. A stray tap from the last setup step can't hit Begin or Edit setup (they wait for a settled tap).
-- **Computer:** the phone code is beside Welcome, before any choice, and beside every later screen. There is no separate phone step. The QR code opens `https://mornward.app/?from=qr`, with no
+- **Computer:** the phone code is beside Welcome, before any choice, and beside the ready screen, Begin and Today (not the two setup steps). There is no separate phone step. The QR code opens `https://mornward.app/?from=qr`, with no
   ID or anything personal. Phones never show it. After setup, Prepared, Begin and Today keep the same card beside
   the app.
 
