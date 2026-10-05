@@ -432,6 +432,20 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     await x.t(3 * 3600000); await x.p.evaluate(() => document.dispatchEvent(new Event("visibilitychange"))); await x.t(100);
     ok("...a tab left open: the morning screen at 4:30 AM, without a reload", (await h1(x)) === "A minute before the scroll." && (await x.p.textContent("#begin")) === "Begin my morning");
     await x.c.close(); }
+  // Set up at 5:10 AM with a reminder at 6:30 that morning: "See you at 6:30 AM", and the morning screen at 6:30
+  { const x = await open({ when: "2026-10-05T05:10:00" }); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext");
+    await x.p.click('[data-rem-quick="06:30"]'); await x.p.click("#remGoogle"); await x.t(300);
+    for (const p of x.c.pages().slice(1)) await p.close();
+    await click(x, "#stepNext");
+    ok("set up at 5:10 AM, reminder at 6:30 today: 'See you at 6:30 AM' (not 'tomorrow')", (await x.p.textContent("#seeYou")) === "See you at 6:30 AM", await x.p.textContent("#seeYou"));
+    await x.t(81 * 60000); await x.p.evaluate(() => document.dispatchEvent(new Event("visibilitychange"))); await x.t(100);
+    ok("...at 6:31 the morning screen, with Begin my morning", (await h1(x)) === "A minute before the scroll." && (await x.p.textContent("#begin")) === "Begin my morning");
+    await x.c.close(); }
+  // Opened from the reminder: always the morning screen, even before 4 AM
+  { const x = await open(); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext"); await click(x, "#stepNext");
+    await x.goto("?via=calendar");
+    ok("opened from the calendar link the same evening: the morning screen, not See you tomorrow", (await x.p.textContent("#begin")) === "Begin my morning" && !(await x.p.$("#seeYou")));
+    await x.c.close(); }
   { const x = await open({ when: "2026-10-05T07:30:00" }); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext"); await click(x, "#stepNext");
     ok("set up in the morning: See you tomorrow, with Or try it now", (await x.p.textContent("#seeYou")) === "See you tomorrow");
     await x.t(3000); await click(x, "#begin");

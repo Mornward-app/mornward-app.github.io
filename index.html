@@ -1167,18 +1167,33 @@
   // Setup done, no routine yet: one screen. Right after setup it says "Ready for your first morning." with what's
   // known about the reminder; opened again later, "A minute before the scroll." Nothing starts until Begin (a stray
   // tap from the last setup step can't start it); no sun on the "Ready" version, no circles, counts or "tomorrow".
-  // Set up for a morning that hasn't come yet: until 4 AM after the first setup (the next day; or, for a setup
-  // between midnight and 4 AM, that same morning), the screen says "See you tomorrow" instead of starting.
-  // Editing setup later doesn't move it, so a morning edit never hides Begin.
+  // Set up for a morning that hasn't come yet: the screen says "See you tomorrow" instead of starting, until the
+  // first morning comes: 4 AM after the first setup (the next day; or, for a setup between midnight and 4 AM, that
+  // same morning), or the first reminder if that's sooner (set up at 5 AM, reminder at 6:30: 6:30). Opened from
+  // the reminder or the alarm link, it's always the morning screen. Editing setup later doesn't move it.
+  function reminderAt() {
+    const p = store.get("remPlan", null, (v) => typeof v === "object" && isAlarmTime(v.at) && isDay(v.first));
+    if (!p) return 0;
+    const [y, m, d] = p.first.split("-").map(Number), [h, mi] = p.at.split(":").map(Number);
+    return new Date(y, m - 1, d, h, mi, 0, 0).getTime();
+  }
   function firstMorningAt() {
     const o = getOb();
     if (!o || o.status !== "done" || typeof o.doneAt !== "number") return 0;
     const d = new Date(o.doneAt);
     if (d.getHours() >= 4) d.setDate(d.getDate() + 1);
     d.setHours(4, 0, 0, 0);
-    return d.getTime();
+    const r = reminderAt();
+    return r > o.doneAt && r < d.getTime() ? r : d.getTime();
   }
-  const waitingForMorning = () => nowMs() < firstMorningAt();
+  const fromReminder = () => ["calendar", "alarm"].includes(new URLSearchParams(location.search).get("via"));
+  const waitingForMorning = () => !fromReminder() && nowMs() < firstMorningAt();
+  // "See you tomorrow"; when the morning is later today, the reminder's time if it's the reminder, else "in the morning"
+  function seeYouLabel() {
+    const at = firstMorningAt();
+    if (dayKey(new Date(at)) !== dayKey()) return "See you tomorrow";
+    return at === reminderAt() ? `See you at ${new Date(at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : "See you in the morning";
+  }
   function renderPrepared(justSet = false) {
     const wait = waitingForMorning();
     justSet = justSet || wait;
@@ -1194,7 +1209,7 @@
       ${p ? taskCard("Your plan", p.tasks) : ""}
       ${justSet ? reminderStatus() : ""}
       <div class="push">
-        ${wait ? `<button class="primary" id="seeYou" type="button">${dayKey(new Date(firstMorningAt())) !== dayKey() ? "See you tomorrow" : "See you in the morning"}</button>
+        ${wait ? `<button class="primary" id="seeYou" type="button">${esc(seeYouLabel())}</button>
         <p class="hometick" id="seeYouMsg" hidden>${GLYPH.ok}<span>All set. You can close Mornward now.</span></p>
         <button class="link" id="begin" type="button">Or try it now</button>`
         : `<button class="primary" id="begin" type="button">Begin my morning</button>`}
@@ -2400,7 +2415,7 @@
   function checkDay() {
     if (document.hidden) return;
     const today = dayKey();
-    // Left open overnight on "See you tomorrow": the morning screen once the morning comes (4 AM)
+    // Left open overnight on "See you tomorrow": the morning screen once the morning comes (4 AM, or the reminder)
     if ($("#seeYou") && !waitingForMorning()) { shownFor = today; home(); return; }
     if (today === shownFor) return;
     if (br || $("#intent") || $("#prepIntent") || $(".steptop")) return;
