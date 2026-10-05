@@ -46,7 +46,7 @@
       "sizes": "540x1098",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Begin: before the scroll, a few mini tasks"
+      "label": "A calmer start, before the scroll"
     },
     {
       "src": "icons/screenshot-2-breathe.png",
@@ -60,7 +60,7 @@
       "sizes": "540x1098",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "You're ready"
+      "label": "Your first reset. Complete."
     }
   ]
 }
