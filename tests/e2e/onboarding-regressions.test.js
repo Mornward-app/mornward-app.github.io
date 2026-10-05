@@ -7,6 +7,7 @@ const { ok, done } = reporter("onboarding regressions (QA findings)");
 const SUN_EVE = "2026-10-04T20:30:00", MON = "2026-10-05T07:05:00";
 const h1 = (x) => x.p.innerText("h1").then((t) => t.replace(/\s+/g, " ").trim());
 const click = async (x, sel) => { await x.p.click(sel); await x.t(700); };
+const later = async (x) => { await x.p.reload(); await x.t(700); };
 async function drain(x) { for (let i = 0; i < 40 && ((await x.ls("outbox")) || []).length; i++) { await x.t(100); await x.p.waitForTimeout(50); } }
 async function jump(x, when) { await x.p.clock.setSystemTime(new Date(when)); await x.p.reload(); await x.t(700); }
 // To the last step ("Make it easy to return."): Prepare my morning → Save my plan
@@ -31,8 +32,9 @@ const failing = () => {
     await x.p.mouse.click(box.x + box.width / 2, box.y + box.height / 2); await x.t(600);
     for (const gap of [700, 700, 700, 500]) { await x.p.mouse.click(box.x + box.width / 2, box.y + box.height / 2); await x.t(gap); }
     ok(`double/triple/quadruple tap on Continue (${device}): no routine starts during setup`, !(await x.ls("routine")) && !(await x.ls("startDay")) && !(await x.p.$("#bpause")));
-    // (the stray taps land on "Done for now", the harmless next step; Begin there waits for a settled tap)
-    await x.t(3100); await x.p.click((await x.p.$("#beginNow")) ? "#beginNow" : "#begin"); await x.t(700);
+    ok(`...and they stay on the ready screen, not back in setup (${device})`, (await x.p.innerText("h1")).replace(/\s+/g, " ") === "Ready for your first morning.");
+    // (the stray taps land on the ready screen; its Begin waits for a settled tap)
+    await x.t(3100); await x.p.click("#begin"); await x.t(700);
     ok(`...a deliberate tap a moment later still begins (${device})`, !!(await x.p.$("#bpause")));
     await x.c.close();
   }
@@ -65,14 +67,14 @@ const failing = () => {
   { const x = await open(); await x.goto(); await click(x, "#setupGo");
     await S.untickAll(x); await x.p.click(".chip.pick >> nth=0"); await x.p.fill("#prepIntent", "Read · then nap ·"); await click(x, "#stepNext");
     ok("trailing ' ·' is cleaned", (await x.ls("prepared")).tasks[1] === "Read, then nap", (await x.ls("prepared")).tasks);
-    await click(x, "#stepNext"); await click(x, "#setupDone");
+    await click(x, "#stepNext"); await later(x);
     await jump(x, MON); await S.begin(x); await S.skipBreathing(x); await x.p.click(".chip.pick:not([aria-pressed=true]) >> nth=0"); await S.keep(x);
     const rows = await x.p.$$eval("#itext li", (l) => l.map((e) => e.textContent));
     ok("...first morning saves three clean tasks", rows.length === 3 && rows.every((r) => !r.startsWith("·") && !r.endsWith("·")), rows);
     await x.c.close(); }
 
   // Journey 5 + 6: a stale tab re-armed used setup tasks / overwrote today's routine
-  { const x = await open(); await x.goto(); await toReturn(x); await click(x, "#stepNext"); await click(x, "#setupDone");
+  { const x = await open(); await x.goto(); await toReturn(x); await click(x, "#stepNext"); await later(x);
     const tabA = x.p;
     const tabB = await x.c.newPage(); await tabB.clock.install({ time: new Date(MON) }); await tabB.goto(site.url); await tabB.clock.runFor(700);
     await x.p.clock.setSystemTime(new Date(MON));
@@ -89,7 +91,7 @@ const failing = () => {
     await x.c.close(); }
 
   // Journey 7: storage failing as the setup tasks are marked used
-  { const x = await open({ init: failing }); await x.goto(); await toReturn(x); await click(x, "#stepNext"); await click(x, "#setupDone");
+  { const x = await open({ init: failing }); await x.goto(); await toReturn(x); await click(x, "#stepNext"); await later(x);
     await jump(x, MON); await S.begin(x); await S.skipBreathing(x);
     await x.p.evaluate(() => { window.__fail = ["prepared"]; }); await S.keep(x);
     await x.p.evaluate(() => { window.__fail = []; });
@@ -136,9 +138,8 @@ const failing = () => {
 
   // Round 2: keyboard users aren't blocked by the stray-tap guard
   { const x = await open(); await x.goto(); await toReturn(x); await click(x, "#stepNext");
-    await x.p.focus("#setupDone"); await x.p.keyboard.press("Enter"); await x.t(700);
     await x.p.focus("#begin"); await x.p.keyboard.press("Enter"); await x.t(700);
-    ok("keyboard: Enter on Begin right after Done for now starts the routine", !!(await x.p.$("#bpause")));
+    ok("keyboard: Enter on Begin right after setup starts the routine", !!(await x.p.$("#bpause")));
     await x.c.close(); }
 
   // Round 2: Retry after a failed skip doesn't save what was declined
@@ -180,7 +181,7 @@ const failing = () => {
     await click(x, "#stepNext");
     const clipped = await x.p.$$eval(".seg button", (l) => l.filter((e) => e.scrollWidth > e.clientWidth + 1).map((e) => e.textContent));
     ok("...the iPhone / Android switch isn't cut off", clipped.length === 0, clipped);
-    await click(x, "#stepNext"); await click(x, "#setupDone"); await x.t(1300); await S.begin(x); await S.skipBreathing(x); await S.keep(x); await S.finish(x);
+    await click(x, "#stepNext"); await later(x); await x.t(1300); await S.begin(x); await S.skipBreathing(x); await S.keep(x); await S.finish(x);
     ok("...Today fits without sideways scrolling", await x.p.evaluate(() => document.scrollingElement.scrollWidth <= Math.min(innerWidth, screen.width) + 1));
     await x.c.close(); }
   { const x = await open(); await x.goto(); await toReturn(x);

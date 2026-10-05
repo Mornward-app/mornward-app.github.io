@@ -13,6 +13,8 @@ const text = (x) => x.p.innerText("#card");
 const ticked = (x) => x.p.$$eval('.chip.pick[aria-pressed="true"] span', (l) => l.map((e) => e.textContent));
 async function jump(x, when) { await x.p.clock.setSystemTime(new Date(when)); await x.p.reload(); await x.t(700); }
 const click = async (x, sel) => { await x.p.click(sel); await x.t(700); };
+// Coming back later (after setup): the same screen, as "A minute before the scroll."
+const later = async (x) => { await x.p.reload(); await x.t(700); };
 // Welcome → step 1 (keep the two suggestions) → step 2 (Continue) → ready, with the optional invitation (Instagram)
 async function setupAll(x, { app = "instagram" } = {}) {
   await click(x, "#setupGo");
@@ -91,11 +93,9 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     ok("after the calendar hand-off and a reload: still step 2, the date kept, the tasks prepared", (await h1(x)) === "Make it easy to return." &&
       (await x.p.inputValue("#remDate")) === "2026-10-06" && JSON.stringify((await x.ls("prepared")).tasks) === JSON.stringify([...chosen, "Call Mum"]));
     await click(x, "#stepNext");
-    ok("ready: the copy, Done for now, Edit setup (secondary), Begin now", (await h1(x)) === "Ready for your first morning." &&
-      (await text(x)).includes("When you wake, open Mornward first.") &&
-      (await x.p.textContent("#setupDone")) === "Done for now" && (await x.p.textContent("#setupEdit")) === "Edit setup" &&
-      (await x.p.getAttribute("#setupEdit", "class")) === "secondary" &&
-      (await x.p.textContent("#beginNow")) === "Up already? Begin now");
+    ok("ready: one screen with the copy, Begin my morning and Edit setup (no separate 'Done for now' step)", (await h1(x)) === "Ready for your first morning." &&
+      (await text(x)).includes("When you wake, open Mornward first.") && !(await x.p.$("#setupDone")) && !(await x.p.$("#beginNow")) &&
+      (await x.p.textContent("#begin")) === "Begin my morning" && (await x.p.textContent("#setupEdit")) === "Edit setup");
     ok(`ready: few words besides the tasks (≤ ${BUDGET.ready})`, (await words(x)) <= BUDGET.ready, "words: " + await words(x));
     ok("ready: the prepared tasks are shown", JSON.stringify(await x.p.$$eval("#prepList li", (l) => l.map((e) => e.textContent))) === JSON.stringify([...chosen, "Call Mum"]));
     ok("ready: the reminder status says what's known (the date, and to check the calendar saved it)", /^Tuesday, October 6 at 7:00.*\. Check your calendar saved it\.$/.test(await x.p.textContent("#remStatus")));
@@ -114,8 +114,8 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     ok("1 ...and no routine events: only setup_started, setup_completed, reminder_setup", JSON.stringify(x.kinds().sort()) === '["reminder_setup","setup_completed","setup_started"]', x.kinds());
     ok("setup events carry no answers", x.bodies.every((bd) => !/instagram|tiktok|Call Mum|07:00|"apps"/i.test(bd)) &&
       x.rows().find((r) => r.kind === "setup_completed").data.tasks_prepared === 2);
-    await click(x, "#setupDone");
-    ok("Done for now: the quiet prepared screen, the promise, the routine as icons", (await h1(x)) === "A minute before the scroll." && (await x.p.$$("#flowRow li")).length === 3 &&
+    await later(x);
+    ok("opened again later: the quiet prepared screen, the promise, the routine as icons", (await h1(x)) === "A minute before the scroll." && (await x.p.$$("#flowRow li")).length === 3 &&
       (await x.p.textContent("#promise")) === "Start your day on purpose, not on a feed." && !(await x.p.$("#themeSec")) &&
       (await x.p.textContent("#begin")) === "Begin my morning" && !!(await x.p.$("#setupEdit")));
     ok("prepared: the Instagram line", (await x.p.textContent("#invite")) === "Before Instagram, take a minute for yourself.");
@@ -155,7 +155,7 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     await x.c.close(); }
 
   // 3b: a partial first morning keeps its date, without full credit
-  { const x = await open(); await x.goto(); await setupAll(x); await click(x, "#setupDone");
+  { const x = await open(); await x.goto(); await setupAll(x); await later(x);
     await jump(x, MON); await S.begin(x); await S.skipBreathing(x); await S.keep(x);
     ok("3b partial first morning: 'Your mini tasks are saved.', Monday a small mark, no full count", (await h1(x)) === "Your mini tasks are saved." &&
       JSON.stringify(await x.p.$$eval(".progress li", (l) => l.map((e) => e.className))) === '["part now"]' && (await x.p.textContent("#progCount")) === "No full morning resets yet");
@@ -184,7 +184,7 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     ok("5 skip tasks and reminder (the invitation untouched): setup still finishes", (await h1(x)) === "Ready for your first morning." &&
       (await text(x)).includes("When you wake, open Mornward first.") && !(await x.p.$("#prepList")));
     ok("5 ...no reminder: no reminder line at all", !(await x.p.$("#remStatus")) && !(await x.ls("remPlan")));
-    await click(x, "#setupDone");
+    await later(x);
     ok("5 prepared screen: the plain line, no task card", !(await x.p.isVisible("#invite")) && !(await x.p.$("#prepList")));
     await jump(x, MON); await S.begin(x); await S.breatheAll(x);
     ok("5 first morning: the usual two suggestions", /Two picked/.test(await x.p.textContent("#pickHint")));
@@ -192,7 +192,7 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
 
   // Several apps or none: the plain line. Edit setup keeps answers.
   { const x = await open(); await x.goto();
-    await setupAll(x, { app: null }); await pickApps(x, ["reddit", "x"]); await click(x, "#setupDone");
+    await setupAll(x, { app: null }); await pickApps(x, ["reddit", "x"]); await later(x);
     ok("two apps: the plain line only", !(await x.p.isVisible("#invite")));
     // The invitation can also be changed on the prepared screen; the line follows straight away
     await pickApps(x, ["x"]);
@@ -201,7 +201,7 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     ok("Edit setup: starts at the tasks, the saved tasks ticked", (await h1(x)) === "Pick your morning tasks." && (await ticked(x)).length === 2);
     await click(x, "#stepNext"); await click(x, "#stepNext");
     ok("Edit setup: ready again, the invitation kept", (await h1(x)) === "Ready for your first morning." && JSON.stringify((await x.ls("onboard")).apps) === '["reddit"]');
-    await click(x, "#setupDone");
+    await later(x);
     ok("Edit setup: Reddit line", (await x.p.textContent("#invite")) === "Before Reddit, take a minute for yourself.");
     await drain(x);
     ok("Edit setup sends no second setup_completed", x.kinds().filter((k) => k === "setup_completed").length === 1);
@@ -230,7 +230,7 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
   // 9: counts off for the whole journey
   { const x = await open(); await x.goto();
     await x.p.click("#preToggle"); await x.t(100);
-    await setupAll(x); await click(x, "#setupDone");
+    await setupAll(x); await later(x);
     await jump(x, MON); await S.begin(x); await S.breatheAll(x); await S.keep(x); await S.finish(x); await x.p.waitForTimeout(400);
     ok("9 counts off: the whole journey works", (await h1(x)) === "Done for today." && (await x.ls("fullDays")).length === 1);
     ok("9 ...and nothing was sent or queued, no ID made", x.bodies.length === 0 && ((await x.ls("outbox")) || []).length === 0 && !(await x.ls("deviceId")));
@@ -278,23 +278,19 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     const wgeo = await x.p.evaluate(() => { const c = document.querySelector("#handoffSlot #handoff").getBoundingClientRect(), q = document.querySelector("#handoffSlot .qr").getBoundingClientRect();
       return { w: c.width, q: q.width, off: Math.abs((q.left + q.right) / 2 - (c.left + c.right) / 2) }; });
     ok("12 computer, Welcome: the card is slim, the code centred and still scannable", wgeo.w <= 240 && wgeo.q >= 120 && wgeo.off < 2, wgeo);
-    await click(x, "#setupGo");
-    ok("12 ...first: 'Set up where you’ll use it.' / 'Scan to open Mornward on your phone.'", (await h1(x)) === "Set up where you’ll use it." &&
-      (await text(x)).includes("Scan to open Mornward on your phone.") && !!(await x.p.$("#card #handoff .qr")));
-    ok("12 ...before any personal choice: no setup state, no setup event, no task picker", !(await x.ls("onboard")) && !(await x.p.$("#prepIntent")) && !x.kinds().includes("setup_started"));
+    ok("12 computer, Welcome: before any choice, no setup state or event yet", !(await x.ls("onboard")) && !x.kinds().includes("setup_started"));
+    ok("12 ...the card says scan to open on the phone", (await x.p.textContent("#hoTitle")) === "Set up where you’ll use it." && /Scan to open Mornward on your phone\./.test(await x.p.textContent("#handoff")));
     const note = await x.p.textContent("#hoNote");
     ok("12 ...says the code opens it in the browser and installs nothing", /Opens in your phone’s browser\. Installs nothing\./.test(note));
-    ok("12 ...says choices stay here (no sync claimed)", /Choices made here stay here/.test(note) && !/transfer|sync|carry over/i.test(await text(x)));
-    ok("12 ...'Continue on this device' is there", (await x.p.textContent("#hereGo")) === "Continue on this device");
-    ok("12 ...the phone step has no 'What is Mornward?' box (it's beside the app on other screens)", !(await x.p.$("#aboutBox")));
+    ok("12 ...says choices stay here (no sync claimed)", /Choices made here stay here/.test(note) && !/transfer|sync|carry over/i.test(await x.p.textContent("#handoffSlot")));
     await x.p.locator("#handoff .qr").screenshot({ path: "/tmp/mw-qr-onb.png" });
     let url = "";
     try { url = execFileSync("python3", ["-c", "import cv2,sys\nimg=cv2.imread(sys.argv[1]); img=cv2.resize(img,None,fx=2,fy=2,interpolation=cv2.INTER_NEAREST)\nv,_,_=cv2.QRCodeDetector().detectAndDecode(img); print(v)", "/tmp/mw-qr-onb.png"]).toString().trim(); } catch {}
     ok("12 ...the code opens the real site, with nothing personal or any ID in it", url === "https://mornward.app/?from=qr" || url === "", url || "(OpenCV not available: skipped)");
     ok("12 ...the code's address in the page has no ID either", !(await x.p.content()).match(/mornward\.app\/\?from=qr[^"'<\s]*(#|&|i=)/));
-    await click(x, "#hereGo");
-    ok("12 Continue on this device: step 1, setup started", (await h1(x)) === "Pick your morning tasks." && (await x.ls("onboard")).status === "started");
-    await click(x, "#stepNext"); await click(x, "#stepNext"); await click(x, "#setupDone");
+    await click(x, "#setupGo");
+    ok("12 Prepare my morning on a computer: straight to step 1 (no repeated code step)", (await h1(x)) === "Pick your morning tasks." && (await x.ls("onboard")).status === "started" && !(await x.p.$("#card #handoff")));
+    await click(x, "#stepNext"); await click(x, "#stepNext"); await later(x);
     ok("12 ...after setup on the computer, the phone card is still offered beside the app", !!(await x.p.$("#handoffSlot #handoff")) &&
       (await x.p.textContent("#hoTitle")) === "Set up where you’ll use it.");
     const geo = await x.p.evaluate(() => { const c = document.querySelector("#handoffSlot #handoff").getBoundingClientRect(), q = document.querySelector("#handoffSlot .qr").getBoundingClientRect();
@@ -313,7 +309,7 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     await click(x, "#setupGo"); seen.push(!!(await x.p.$("#handoff")));
     ok(`12 ${device}: Prepare my morning goes straight to step 1`, (await h1(x)) === "Pick your morning tasks.");
     await click(x, "#stepNext"); seen.push(!!(await x.p.$("#handoff"))); await click(x, "#stepNext"); seen.push(!!(await x.p.$("#handoff")));
-    await click(x, "#setupDone"); seen.push(!!(await x.p.$("#handoff")));
+    await later(x); seen.push(!!(await x.p.$("#handoff")));
     ok(`12 ${device}: never shows the phone-transfer code`, seen.every((v) => !v), seen);
     await x.c.close();
   }
@@ -325,7 +321,7 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     const res = [await fit()];
     await click(x, "#setupGo"); res.push(await fit()); await click(x, "#stepNext"); res.push(await fit());
     await click(x, "#stepNext"); res.push(await fit()); await pickApps(x, ["instagram"]); res.push(await fit());
-    await click(x, "#setupDone"); res.push(await fit());
+    await later(x); res.push(await fit());
     await jump(x, MON); await S.begin(x); res.push(await fit()); await S.skipBreathing(x); res.push(await fit());
     await S.keep(x); res.push(await fit()); await S.finish(x); res.push(await fit());
     ok(`13 ${label}: every setup and morning screen fits without sideways scrolling`, res.every(Boolean), res);
@@ -356,7 +352,7 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     await x.c.close(); }
 
   // 7 routing, all four cases on one phone: set up, not started → interrupted → finished today → a later day
-  { const x = await open(); await x.goto(); await setupAll(x); await click(x, "#setupDone");
+  { const x = await open(); await x.goto(); await setupAll(x); await later(x);
     await jump(x, MON);
     ok("7a setup done, no routine yet: the first-morning invitation", (await h1(x)) === "A minute before the scroll." && (await x.p.textContent("#begin")) === "Begin my morning");
     await S.begin(x); await x.t(2000);
@@ -386,7 +382,7 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
   }
 
   // Privacy: prepared tasks and answers never leave the phone; deleting on the phone removes them
-  { const x = await open(); await x.goto(); await setupAll(x); await click(x, "#setupDone");
+  { const x = await open(); await x.goto(); await setupAll(x); await later(x);
     await x.p.click("#privSec summary"); await x.p.click("#wipeLocal"); await x.p.click("#wipeYes"); await x.t(1200);
     ok("Delete everything on this phone removes setup too: back to Welcome", (await h1(x)) === "A calmer start, before the scroll." && !(await x.ls("onboard")) && !(await x.ls("prepared")));
     await x.c.close(); }

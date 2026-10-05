@@ -55,7 +55,7 @@ passes, treat it as **unverified**.
 ## Setup (setup-first onboarding)
 
 - [ ] **Both phones:** a fresh visit shows Welcome with the three icons. Prepare my morning → Save my plan → Make it
-      easy to return → Continue → "Ready for your first morning." → Done for now. Kill the browser and reopen: "A minute before the scroll." appears with the
+      easy to return → Continue → "Ready for your first morning." Kill the browser and reopen: "A minute before the scroll." appears with the
       prepared tasks. No breathing starts by itself.
 - [ ] **Both phones:** next morning, Begin my morning → breaths → the prepared tasks are ticked. Save. The progress
       shows only today and "1 morning reset completed".
@@ -72,6 +72,6 @@ passes, treat it as **unverified**.
 - [ ] **Largest system text size (Dynamic Type / Android font size):** every setup screen is usable, and the
       bottom buttons don't cover the inputs.
 - [ ] **Reduce Motion on (iOS) / Remove animations (Android):** Welcome, setup and the routine work.
-- [ ] **A computer:** Prepare my morning shows "Set up where you’ll use it." before any choice. Scanning the code
-      opens mornward.app in the phone's browser on Welcome (nothing carried over, nothing installed). "Continue on
-      this device" starts setup on the computer.
+- [ ] **A computer:** Welcome shows the code ("Set up where you’ll use it.") beside the app. Scanning the code
+      opens mornward.app in the phone's browser on Welcome (nothing carried over, nothing installed). Prepare my
+      morning on the computer goes straight to the tasks.

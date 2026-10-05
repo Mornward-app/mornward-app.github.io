@@ -62,7 +62,7 @@ drafts, edits, alarm time, anything typed. The database refuses rows whose `data
 | `core_routine_completed` | With `routine_finished`, when `breathing = completed` **and** `tasks = saved` | `def: 2` | — |
 | `install_prompt` | Chrome's own install dialog is answered (Android) | `outcome: accepted \| dismissed`, `run: 0` | `accepted` is not a confirmed install |
 | `app_installed` | Chrome confirms the install (Android) | `run: 0` | iPhones never send it |
-| `setup_started` | "Prepare my morning" the first time (on a computer, "Continue on this device"; once per device) | `run: 0` | A routine, a visit, or consent to anything beyond the counts |
+| `setup_started` | "Prepare my morning" the first time (once per device) | `run: 0` | A routine, a visit, or consent to anything beyond the counts |
 | `setup_completed` | Setup reaches its end the first time (once per device) | `tasks_prepared` 0–3, `run: 0` | That a routine was started, tasks were performed, or a reminder exists |
 | `reminder_setup` | A reminder setup tap, once per day per action | `action: google_link \| calendar_file \| shortcut_link`, `run: 0` | That a reminder was saved, is on, or will alert |
 
@@ -95,7 +95,7 @@ includes only devices that:
 - whose first counted routine is marked `first`;
 - whose first counted routine wasn't opened from a reminder.
 
-The terms are agreed with the first tap on "Prepare my morning" (on a computer, "Continue on this device"), "Begin now" or Begin, and nothing is sent before it. The
+The terms are agreed with the first tap on "Prepare my morning", "Begin now" or Begin, and nothing is sent before it. The
 acquisition cohort starts at the first routine; setup-only visitors are counted in `setup_report`, and visitors who
 never tap anything aren't counted at all.
 
@@ -135,7 +135,7 @@ Viewing Welcome sends nothing and changes nothing on the phone.
 
 | Stage | Signal |
 | --- | --- |
-| 1. Observed setup participation | `setup_started`: the first tap on "Prepare my morning" (on a computer, "Continue on this device"). Only with the counts on. People who only view Welcome or the computer's phone step aren't visible. |
+| 1. Observed setup participation | `setup_started`: the first tap on "Prepare my morning". Only with the counts on. People who only view Welcome aren't visible. |
 | 2. Setup completion | `setup_completed`: the end of the last step (Continue or Skip for now) |
 | 3. First routine start | the device's first `routine_started` on or after the day setup finished |
 | 4. First full routine | the device's first `core_routine_completed` def 2 on or after the day setup finished |
@@ -156,8 +156,8 @@ Viewing Welcome sends nothing and changes nothing on the phone.
   rows 2–4 but not row 1. "Begin now" visitors send no setup events and appear only in the routine cohorts.
 - **"By day 1" and "by day 7"** are local calendar dates, not hours. Day 0 is the phone's local date when setup
   finished; day 1 is the next local date. Sunday 21:00 setup → Sunday is day 0 and a Monday-morning routine is day 1.
-  Setup at 00:30 on Monday → Monday is day 0, so a Monday-morning routine is day 0. "Up already? Begin now" on the Ready
-  screen counts as day 0. Routines dated before the setup day aren't counted (in practice there are
+  Setup at 00:30 on Monday → Monday is day 0, so a Monday-morning routine is day 0. Begin on the ready screen, right after setup, counts
+  as day 0. Routines dated before the setup day aren't counted (in practice there are
   none: anyone with a routine is never sent through setup).
 - **Denominators** are only devices whose whole window is final (next point). `numerator`, `denominator` and `pct`
   cover only those. Devices whose window is still open are in `not_yet_eligible`, never in the denominator, so
