@@ -117,7 +117,6 @@
   .chip.pick .ag { width: 0.95em; height: 0.95em; color: var(--text-2); }
   .chip.pick[aria-pressed="true"] { background: var(--pick-bg); border-color: var(--pick-line); box-shadow: inset 0 0 0 1px var(--pick-line); }
   .chip.pick[aria-pressed="true"] .ck { display: block; }
-  .intention .tasks { margin: 4px 0 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
   /* Save and Skip stay at the bottom of the screen while you look through the list */
   .actions.sticky { position: sticky; bottom: 0; z-index: 2; background: var(--bg); margin-inline: calc(-1 * var(--gutter));
     padding: 12px var(--gutter) max(8px, env(safe-area-inset-bottom)); box-shadow: 0 -12px 16px -12px rgba(15, 27, 42, .25); gap: 4px; }
@@ -139,6 +138,7 @@
   .support { font-size: 0.875rem; line-height: 1.25rem; color: var(--text-2); }
   .center { text-align: center; }
   .wordmark { font-size: 1.0625rem; font-weight: 600; letter-spacing: 0.01em; margin: 0; }
+  .dateline { font-size: 0.75rem; line-height: 1rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-2); margin: 0; }
   a { color: var(--text); text-underline-offset: 2px; }
 
   button {
@@ -271,39 +271,28 @@
   .rempane { display: flex; flex-direction: column; gap: 12px; }
   .rempane[hidden] { display: none; }
   .vsteps.four li { font-size: 0.75rem; line-height: 1rem; }
-  /* Week strip: done days are suns, tomorrow is an outline */
-  .week { display: flex; flex-direction: column; gap: 10px; }
-  .week ol { list-style: none; margin: 0; padding: 0; display: flex; justify-content: space-between; gap: 2px; }
-  .week li { position: relative; flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-  /* The path: a thin track between days; back-to-back mornings join in sun colour; a dashed line points to tomorrow */
-  .week li + li::before { content: ""; position: absolute; top: 15px; right: 50%; width: calc(100% + 2px); height: 2px;
-    background: var(--track); border-radius: 1px; }
-  .week li.joined::before { height: 4px; top: 14px; background: var(--sun); }
-  .week li.tonext::before { background: none; border-top: 2px dashed var(--sun); height: 0; }
-  .week .dot { position: relative; z-index: 1; width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--track);
-    background: var(--bg); display: grid; place-items: center; }
-  .week .done .dot { background: var(--sun); border-color: var(--sun); color: #18222F; }
-  .week .done .dot .i { width: 20px; height: 20px; }
-  /* Reached the end but skipped a step (or a day from before steps were recorded): a small mark, not a sun */
-  .week .part .dot { border-color: var(--sun); }
-  .week .part .dot::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--sun); }
-  .week .now .dot { border-color: var(--sun); border-width: 3px; }
-  .week .next .dot { border-style: dashed; border-color: var(--text-2); }
-  /* Days before the first morning: quieter, but solid, so the track doesn't show through */
-  .week .pre .dot { border-color: color-mix(in srgb, var(--track) 45%, var(--bg)); }
-  .week .pre .wd { color: color-mix(in srgb, var(--text-2) 45%, var(--bg)); }
-  .week .wd { font-size: 0.75rem; line-height: 1rem; color: var(--text-2); }
-  .week .now .wd, .week .next .wd { font-weight: 700; color: var(--text); }
-  .wsum { display: flex; align-items: center; gap: 12px; }
-  .ring { width: 52px; height: 52px; flex: none; }
-  .ring circle { fill: none; stroke-width: 4; }
-  .ring .rt { stroke: var(--track); }
-  .ring .rf { stroke: var(--sun); stroke-linecap: round; }
-  .ring text { font: 700 11px var(--font); fill: var(--text); letter-spacing: -0.02em; }
-  .wsum p { display: flex; flex-direction: column; font-size: 0.875rem; line-height: 1.25rem; }
-  .wsum b { color: var(--text); }
-  .wsum span { color: var(--text-2); }
-  @media (prefers-reduced-motion: no-preference) { .ring .rf { transition: stroke-dasharray .6s ease-out; } }
+  /* Your progress: real dates from the first routine to today (the last 7 once there are more). Fixed-width slots,
+     left-aligned; dotted connectors run circle edge to circle edge. No future days. */
+  .progress { display: flex; flex-direction: column; gap: 10px; --slot: 48px; --dot: 30px; }
+  .progress .phead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .progress h2 { font-size: 1.0625rem; line-height: 1.5rem; margin: 0; }
+  .progress .window { font-size: 0.75rem; line-height: 1rem; color: var(--text-2); }
+  .progress ol { list-style: none; margin: 0; padding: 0; display: flex; justify-content: flex-start; }
+  .progress li { position: relative; flex: 0 0 var(--slot); width: var(--slot); display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .progress li + li::before { content: ""; position: absolute; top: calc(var(--dot) / 2 - 1px); right: calc(50% + var(--dot) / 2 + 2px);
+    width: calc(var(--slot) - var(--dot) - 4px); border-top: 2px dotted var(--chip-line); opacity: .7; }
+  .progress .dot { width: var(--dot); height: var(--dot); border-radius: 50%; border: 2px solid var(--chip-line);
+    background: transparent; display: grid; place-items: center; box-sizing: border-box; }
+  /* A full routine: a solid warm-yellow circle */
+  .progress .full .dot { background: var(--sun); border-color: var(--sun); }
+  /* Reached the end with a step skipped (or a day from before steps were recorded): a small mark, never a full circle */
+  .progress .part .dot { border-color: var(--sun); }
+  .progress .part .dot::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--sun); }
+  .progress .wd { font-size: 0.75rem; line-height: 1rem; color: var(--text); white-space: nowrap; }
+  .progress .now .wd { font-weight: 700; }
+  .progress .tl { font-size: 0.6875rem; line-height: 0.875rem; color: var(--text-2); min-height: 0.875rem; }
+  .progress .count { font-size: 0.9375rem; line-height: 1.375rem; color: var(--text); margin: 2px 0 0; }
+  @media (max-width: 359px) { .progress { --slot: 42px; --dot: 26px; } .progress .wd { font-size: 0.625rem; } }
   /* Test drive (preview build only): a slim tab, and a panel that slides up */
   .tdtab { width: auto; min-height: 44px; margin: 20px auto 0; padding: 8px 16px; gap: 8px; border-radius: 999px;
     font-size: 0.875rem; color: var(--text-2); border: 1.5px dashed var(--chip-line); }
@@ -312,6 +301,7 @@
 
   /* ---------- sunrise ---------- */
   .sunrise { display: block; width: min(200px, 56%); height: auto; margin: 4px 0; }
+  .sunrise.mid { margin-inline: auto; }
   .sunrise .disc { fill: var(--sun); }
   .sunrise .ray { stroke: var(--sun); stroke-width: 6; stroke-linecap: round; }
   .sunrise .horizon { stroke: var(--text); stroke-opacity: .28; stroke-width: 2; }
@@ -373,12 +363,16 @@
   .intention {
     background: var(--field);
     border-radius: var(--radius);
-    padding: 12px 18px 16px;
+    padding: 12px 18px 14px;
     display: flex;
     flex-direction: column;
     gap: 2px;
-    border-left: 6px solid var(--sun);
   }
+  .intention .ctitle { font-size: 1.0625rem; line-height: 1.5rem; font-weight: 700; margin: 0; }
+  /* Plain rows, a hairline between them: these are reminders, not checkboxes */
+  .intention .rows { list-style: none; margin: 4px 0 0; padding: 0; }
+  .intention .rows li { padding: 10px 0; font-size: 1.0625rem; line-height: 1.5rem; overflow-wrap: break-word; }
+  .intention .rows li + li { border-top: 1px solid var(--rule); }
   .intention .text { font-size: 1.25rem; line-height: 1.75rem; font-weight: 600; overflow-wrap: break-word; hyphens: auto; }
   @media (max-width: 260px) { .intention { padding-inline: 14px; } .intention .text { font-size: 1.125rem; line-height: 1.5rem; } }
   .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
@@ -531,9 +525,19 @@
   const fullDays = () => new Set(store.get("fullDays", [], isDayList));
   function markDay(key, day) {
     const d = store.get(key, [], isDayList);
-    if (!d.includes(day)) store.set(key, [...d, day].sort().slice(-120));
+    if (!d.includes(day)) store.set(key, [...d, day].sort().slice(-3660));
   }
   const markDone = (day) => markDay("days", day);
+  // The first day this person started a routine: where "Your progress" begins. Earlier versions didn't record it, so
+  // for them it's their earliest recorded day.
+  function startDay() {
+    let s = store.get("startDay", null, isDay);
+    if (!s) {
+      const first = [...doneDays(), ...fullDays()].sort()[0];
+      if (first) { s = first; store.set("startDay", s); }
+    }
+    return s;
+  }
   (() => {
     if (store.get("days", null, isDayList) !== null) return;
     const days = new Set();
@@ -728,7 +732,7 @@
   const icon = (k) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${ICON[k]}</svg>`;
 
   // A sun on the horizon (rising) or above it (risen). `animate` lifts it out of the horizon on Finish. Decorative.
-  function SUN(risen, animate = false) {
+  function SUN(risen, animate = false, centered = false) {
     const cy = risen ? 60 : 96, r = risen ? 26 : 40;
     const rays = [-60, -30, 0, 30, 60].map((a) => {
       const t = (a - 90) * Math.PI / 180, p = (d) => [(120 + Math.cos(t) * d).toFixed(1), (cy + Math.sin(t) * d).toFixed(1)];
@@ -736,7 +740,7 @@
       return `<line class="ray" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
     }).join("");
     const id = "sky" + (risen ? 1 : 0);
-    return `<svg class="sunrise${animate ? " rise" : ""}" viewBox="0 0 240 104" aria-hidden="true" focusable="false">
+    return `<svg class="sunrise${animate ? " rise" : ""}${centered ? " mid" : ""}" viewBox="0 0 240 104" aria-hidden="true" focusable="false">
       <defs><clipPath id="${id}"><rect width="240" height="95"/></clipPath></defs>
       <g clip-path="url(#${id})"><g class="sunbody"><circle class="disc" cx="120" cy="${cy}" r="${r}"/></g><g class="rays">${rays}</g></g>
       <line class="horizon" x1="8" y1="96" x2="232" y2="96"/>
@@ -748,12 +752,16 @@
   // ---------- 1. Begin ----------
   function renderBegin() {
     const agreed = hasAgreed();
-    const earlier = earlierSection(dayKey());
+    const today = dayKey();
+    const earlier = earlierSection(today);
+    // Back after missing at least one day: say so warmly, without counting what was missed
+    const seen = [...doneDays(), ...fullDays(), ...(routine && isDay(routine.day) ? [routine.day] : [])].filter((d) => d < today).sort();
+    const back = seen.length > 0 && seen[seen.length - 1] < addDays(today, -1);
     show(`
       <p class="wordmark">mornward</p>
       ${SUN(false)}
-      <h1>Before the scroll,<br>a few mini tasks.</h1>
-      ${doneDays().size ? weekStrip(false) : ""}
+      <h1>${back ? "Welcome back." : "Before the scroll,<br>a few mini tasks."}</h1>
+      ${startDay() ? progressSection() : ""}
       <ol class="flow" aria-label="Three breaths, a few mini tasks, then you're ready">
         <li>${icon("breath")}<span>3 breaths</span></li>
         <li>${icon("pen")}<span>Mini tasks</span></li>
@@ -771,7 +779,7 @@
             here or any time later. Questions: ${CONTACT}</p></details>
         </div>`}
         ${earlier ? `<div class="more">${earlier}</div>` : ""}
-      </div>`, "Mornward. Before the scroll, a few mini tasks.");
+      </div>`, back ? "Mornward. Welcome back." : "Mornward. Before the scroll, a few mini tasks.");
     $("#begin").onclick = begin;
     // The counts choice, before anything is sent
     const pre = $("#preStats");
@@ -795,6 +803,7 @@
     routine = { day: today, run, rid: uuid().slice(0, 8), phase: "breathe", breaths: 0, breathing: null, tasks: null, startedAt: nowMs() };
     saveRoutine();
     store.set("everStarted", true);
+    if (!startDay()) store.set("startDay", today);
     emit("routine_started", { ...(via ? { via } : {}), ...(first ? { first: true, from: store.get("from", null) } : {}) });
     // Opened in the background (a restored tab): wait for a tap instead of breathing unseen
     renderBreathe(document.hidden);
@@ -1005,10 +1014,13 @@
     for (let i = options.length - 1; options.length > CHIP_MAX && i >= 0; i--) {
       if (set.includes(options[i]) && !sel.includes(options[i])) options.splice(i, 1);
     }
-    const label = () => (touched ? "Save my tasks" : "Keep these");
+    // One screen, one button: tick, untick or type, then Save. (It used to switch between "Keep these" and
+    // "Save my tasks", which read as two different steps.) After a failed save it says Retry.
+    let retry = false;
+    const label = () => (retry ? "Retry" : "Save my tasks");
     show(`
       <h1>What matters<br>this morning?</h1>
-      <p class="body" id="pickHint">${saved ? "Your tasks for today. Keep them or change." : "Two picked to start. Keep them, or tap to change."}</p>
+      <p class="body" id="pickHint">${saved ? "Today's tasks are ticked. Change them, or add your own." : "Two picked to start. Tap to change, or add your own. Up to 3."}</p>
       <div class="chips picks" id="ideas" role="group" aria-label="Mini tasks, up to ${PICK_MAX}">
         ${options.map((x, i) => `<button class="chip pick" type="button" data-idea="${i}" aria-pressed="${sel.includes(x)}">
           <svg class="i ck" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>${own.includes(x) ? `<svg class="i ag" viewBox="0 0 24 24" aria-hidden="true">${ICON.again}</svg>` : ""}<span>${esc(x)}</span>${own.includes(x) ? `<span class="sr-only"> (used before)</span>` : ""}</button>`).join("")}
@@ -1056,10 +1068,16 @@
     field.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); save(); } });
     // Keep Save in view once the keyboard opens
     field.addEventListener("focus", () => setTimeout(() => { const b = $("#isave"); if (b) b.scrollIntoView({ block: "nearest" }); }, 350));
-    // Save (or "Keep these") is the only thing that confirms tasks; opening this screen confirms nothing.
+    // Save is the only thing that confirms tasks; opening this screen confirms nothing.
     // In the routine it's this run's task step. As an edit (after the routine) it changes the saved tasks and
     // nothing else: no event, no change to what the routine recorded.
     let saving = false;
+    // Nothing is shown as saved unless it was: the words and ticks stay, and the button offers Retry
+    const failed = () => {
+      keepDraft();
+      retry = true; redraw();
+      msg("Couldn't save on this phone. Your words are still here.", true);
+    };
     const save = () => {
       if (saving) return;
       const typed = cleanIntention(field.value);
@@ -1068,17 +1086,12 @@
       if (error === "too_many") { msg(`Up to ${PICK_MAX}. Untick one first.`, true); return; }
       saving = true;
       const text = tasks.join(SEP);
-      if (!saveIntention(day, text)) {
-        saving = false;
-        keepDraft();
-        msg("Couldn't save it on this phone. Your words are still here. Try again.", true);
-        return;
-      }
+      if (!saveIntention(day, text)) { saving = false; failed(); return; }
+      if (editing && back) { store.del(draftKey(day)); store.del(picksKey(day)); back(touched ? "Saved." : ""); return; }
+      if (!reachFinish("saved")) { saving = false; failed(); return; }
       store.del(draftKey(day)); store.del(picksKey(day));
-      if (editing && back) { back(touched ? "Saved." : ""); return; }
       // Counts only: how many, whether the suggested pair was kept as it was, whether they wrote their own
       emit("tasks_saved", { count: tasks.length, kept_defaults: !touched && !saved, own: !!typed || tasks.some((x) => !POOL.has(x)) });
-      reachFinish("saved");
     };
     $("#isave").onclick = save;
     $("#iskip").onclick = () => {
@@ -1093,50 +1106,65 @@
   // routine_finished: the end was reached, skips included. core_routine_completed: all three breaths AND tasks saved
   // in this run's task step (definition 2, from beta-5).
   const CORE_DEF = 2;
+  // Returns false if the phone couldn't save the routine; nothing is recorded or shown as done then.
   function reachFinish(tasks) {
+    const before = { ...routine };
     if (routine.phase === "choose") {
       routine.tasks = tasks;
       routine.phase = "finish";
     }
     if (!routine.finishedAt) {
       routine.finishedAt = nowMs();
-      saveRoutine();
       const core = routine.breathing === "completed" && routine.tasks === "saved";
+      if (core && fullDays().size === 0) routine.firstFull = true;
+      if (!saveRoutine()) { routine = before; return false; }
       markDone(routine.day);
       if (core) markDay("fullDays", routine.day);
       emit("routine_finished", { breathing: routine.breathing || "skipped", tasks: routine.tasks || "skipped", core, def: CORE_DEF,
         seconds: Math.round((routine.finishedAt - routine.startedAt) / 1000) });
       if (core) emit("core_routine_completed", { def: CORE_DEF });
-    } else saveRoutine();
+    } else if (!saveRoutine()) { routine = before; return false; }
     renderFinish();
+    return true;
   }
 
   // ---------- 4. Finish ----------
-  function intentionBlock(text, label) {
-    const tasks = tasksOf(text);
-    const body = tasks.length > 1
-      ? `<ul class="text tasks" id="itext">${tasks.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`
-      : `<p class="text" id="itext">${esc(text)}</p>`;
+  // The saved tasks in a white card, as plain rows (reminders, not checkboxes: nothing here tracks doing them)
+  function intentionBlock(text) {
     return `<div class="intention">
-        <div class="row"><span class="support">${label}</span>
+        <div class="row"><h2 class="ctitle">Your mini tasks</h2>
           <button class="link" id="iedit" type="button" aria-label="Edit your mini tasks">Edit</button></div>
-        ${body}
+        <ul class="rows" id="itext">${tasksOf(text).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
       </div>`;
   }
-  const many = (text) => tasksOf(text).length > 1;
   const addButton = `<button class="chip add" id="iadd" type="button">${icon("plus")}<span>Add mini tasks</span></button>`;
+  // What the end of the routine says, from what this run actually recorded (never from an edit afterwards)
+  function finishWords(r) {
+    if (r.breathing === "completed" && r.tasks === "saved")
+      return [r.firstFull ? "Your first reset.<br>Complete." : "Morning reset complete.", "Three breaths taken. Mini tasks chosen."];
+    if (r.tasks === "saved") return ["Your mini tasks are saved.", "Breathing skipped today."];
+    if (r.breathing === "completed") return ["Three breaths taken.", "No mini tasks today."];
+    return ["You're set for today.", "Breathing and mini tasks skipped."];
+  }
+  // The end of the routine: shown once, right after the task step. Done goes to Today; reopening later the same day
+  // opens Today, so the celebration isn't replayed. `note` is set when coming back from an edit (no sunrise again).
   function renderFinish(note = "") {
     const text = intentionFor(routine.day);
+    const [head, sub] = finishWords(routine);
     show(`
-      ${SUN(true, !note)}
-      <h1>You're ready.</h1>
-      ${text ? intentionBlock(text, many(text) ? "Your mini tasks" : "Your mini task") : `<p class="body">No task today.</p>${addButton}`}
+      <p class="wordmark center">mornward</p>
+      ${SUN(true, !note, true)}
+      <p class="dateline center">${esc(fmtDay(routine.day))}</p>
+      <h1 class="center">${head}</h1>
+      <p class="body center" id="finishSub">${esc(sub)}</p>
+      ${text ? intentionBlock(text) : addButton}
       <p class="msg ok" role="status">${esc(note)}</p>
+      ${progressSection()}
       <div class="push">
-        <button class="primary" id="finish" type="button">Finish</button>
-      </div>`, "You're ready.");
+        <button class="primary" id="finish" type="button">Done</button>
+      </div>`, head.replace("<br>", " "));
     ($("#iedit") || $("#iadd")).onclick = () => renderChoose(true, renderFinish);
-    // Finish only moves to Today: everything was recorded when this screen was reached, so extra taps change nothing
+    // Done only moves to Today: everything was recorded when this screen was reached, so extra taps change nothing
     $("#finish").onclick = () => {
       if (routine.phase === "finish") { routine.phase = "done"; saveRoutine(); }
       renderToday();
@@ -1149,10 +1177,10 @@
     const text = intentionFor(routine.day);
     show(`
       <div class="row"><p class="wordmark">mornward</p><p class="support">${esc(fmtDay(routine.day))}</p></div>
-      <h1>${text ? (many(text) ? "Today's mini tasks" : "Today's mini task") : "Done for today"}</h1>
-      ${text ? intentionBlock(text, "Today") : `<p class="body">No task today.</p>${addButton}`}
+      <h1>Done for today.</h1>
+      ${text ? intentionBlock(text) : `<p class="body">No task today.</p>${addButton}`}
       <p class="msg ok" role="status">${esc(note)}</p>
-      ${weekStrip(true)}
+      ${progressSection()}
       <button class="chip" id="again" type="button">${icon("again")}<span>Do the routine again</span></button>
       <div class="more">
         ${earlierSection(routine.day)}
@@ -1160,7 +1188,7 @@
         ${reminderSection()}
         ${themeSection()}
         ${privacySection()}
-      </div>`, text ? (many(text) ? "Today's mini tasks" : "Today's mini task") : "Done for today");
+      </div>`, "Done for today.");
     ($("#iedit") || $("#iadd")).onclick = () => renderChoose(true, renderToday);
     $("#again").onclick = begin;
     renderInstall();
@@ -1503,50 +1531,49 @@
     };
   }
 
-  // ---------- the week strip: the last few mornings, and tomorrow ----------
-  // Shows that this is something you come back to, without a streak to lose: done days fill with a sun,
-  // tomorrow waits as an outline.
-  // What it counts (also in supabase/METRICS.md, "Week strip"):
-  //   window      the last 7 local calendar days, today included (a rolling window, not Monday to Sunday)
-  //   sun         a full routine that day: all three breaths AND mini tasks saved in the routine
-  //   small mark  the routine reached the end but a step was skipped (or the day is from before steps were recorded)
-  //   ring / %    full-routine days in the window ÷ 7
-  function weekStrip(doneToday) {
-    const today = dayKey(), done = doneDays(), full = fullDays();
-    // The seven days that count, plus tomorrow once today is done, so the suns always match the number
-    const offs = doneToday ? [-6, -5, -4, -3, -2, -1, 0, 1] : [-6, -5, -4, -3, -2, -1, 0];
-    // Days before the first routine are drawn quieter so they don't read as misses
-    const start = [...done, ...full].sort()[0] || today;
-    const WINDOW = 7;
-    const inWindow = [-6, -5, -4, -3, -2, -1, 0].map((o) => addDays(today, o));
-    const n = inWindow.filter((d) => full.has(d)).length, den = WINDOW;
-    const parts = inWindow.filter((d) => done.has(d) && !full.has(d)).length;
-    const pct = Math.round((100 * n) / den);
-    let prevDone = false;
-    const slots = offs.map((o) => {
-      const d = addDays(today, o);
+  // ---------- Your progress: the days since you started, and what you did on them ----------
+  // What it shows (also in supabase/METRICS.md, "Your progress"):
+  //   dates       real local dates, from the first day you started a routine to today. Once that's more than 7 days,
+  //               the latest 7, ending today ("Last 7 days"). Never a date before you started, never a future day.
+  //   full        a solid yellow circle: a full routine that day (all three breaths AND mini tasks saved)
+  //   part        a small mark: the routine reached the end with a step skipped (or the day is from before beta-5,
+  //               when steps weren't recorded; those are never counted as full)
+  //   none        a hollow circle: no routine finished that day
+  //   count       days with a full routine, ever (a day counts once however many routines it had; days that leave the
+  //               strip still count). On the phone only; separate from the stats.
+  const daysBetween = (a, b) => {
+    const t = (k) => { const [y, m, d] = k.split("-").map(Number); return Date.UTC(y, m - 1, d); };
+    return Math.round((t(b) - t(a)) / 864e5);
+  };
+  const resetsLine = (n) => (n === 0 ? "No full morning resets yet" : `${n} morning reset${n === 1 ? "" : "s"} completed`);
+  function progressSection() {
+    const today = dayKey();
+    let start = startDay() || today;
+    if (start > today) start = today; // travelled west past the first day
+    const rolling = daysBetween(start, today) >= 7;
+    const first = rolling ? addDays(today, -6) : start;
+    const full = fullDays(), done = doneDays();
+    const dates = [];
+    for (let d = first; d <= today; d = addDays(d, 1)) dates.push(d);
+    const total = full.size;
+    const said = [];
+    const slots = dates.map((d) => {
       const [y, m, dd] = d.split("-").map(Number);
-      const wd = new Date(y, m - 1, dd).toLocaleDateString([], { weekday: "narrow" });
-      const isFull = full.has(d), isPart = !isFull && done.has(d);
-      const cls = [isFull ? "done" : isPart ? "part" : o === 1 ? "next" : o === 0 ? "now" : d < start ? "pre" : "",
-        isFull && prevDone ? "joined" : "", o === 1 && prevDone ? "tonext" : ""].filter(Boolean).join(" ");
-      prevDone = isFull;
-      return `<li class="${cls}"><span class="dot">${isFull ? icon("sun") : ""}</span><span class="wd">${o === 0 ? "Today" : o === 1 ? "Next" : esc(wd)}</span></li>`;
+      const date = new Date(y, m - 1, dd);
+      const wd = date.toLocaleDateString([], { weekday: "short" }).replace(/\.$/, "");
+      const state = full.has(d) ? "full" : done.has(d) ? "part" : "none";
+      const isToday = d === today;
+      said.push(`${date.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })}${isToday ? " (today)" : ""}: ${
+        state === "full" ? "full morning reset" : state === "part" ? "reached the end, a step skipped" : "no reset"}`);
+      return `<li class="${state}${isToday ? " now" : ""}"><span class="dot"></span><span class="wd">${esc(wd)} ${dd}</span><span class="tl">${isToday ? "Today" : ""}</span></li>`;
     }).join("");
-    const tail = doneToday ? "See you tomorrow" : "Today's is next";
-    const label = `Full routine, 3 breaths and mini tasks, on ${n} of the last ${den} days, ${pct} percent.` +
-      `${parts ? ` Reached the end with a step skipped on ${parts} more.` : ""} ${tail}.`;
-    // A small ring fills with the share of mornings done
-    const C = 2 * Math.PI * 21;
-    return `<div class="week" role="img" aria-label="${esc(label)}">
+    const countText = rolling && total ? `Total: ${resetsLine(total)}` : resetsLine(total);
+    return `<section class="progress" aria-labelledby="progTitle">
+        <div class="phead"><h2 id="progTitle">Your progress</h2>${rolling ? `<span class="window">Last 7 days</span>` : ""}</div>
         <ol aria-hidden="true">${slots}</ol>
-        <div class="wsum" aria-hidden="true">
-          <svg class="ring" viewBox="0 0 52 52"><circle class="rt" cx="26" cy="26" r="21"/>
-            ${pct ? `<circle class="rf" cx="26" cy="26" r="21" stroke-dasharray="${((C * pct) / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 26 26)"/>` : ""}
-            <text x="26" y="30" text-anchor="middle">${pct}%</text></svg>
-          <p><b>${n} of the last ${den} days</b><span>full routine: 3 breaths + mini tasks</span></p>
-        </div>
-      </div>`;
+        <p class="sr-only">${esc(said.join(". "))}.</p>
+        <p class="count" id="progCount">${esc(countText)}</p>
+      </section>`;
   }
 
   // ---------- an optional calendar reminder ----------
@@ -1825,7 +1852,7 @@
     if (!current) renderBegin();
     else if (r.phase === "breathe") renderBreathe(true);
     else if (r.phase === "choose") renderChoose();
-    else if (r.phase === "finish") renderFinish();
+    // The end-of-routine screen is shown once; reopening later goes to Today (no replayed celebration)
     else renderToday();
   }
   // Phones keep pages alive for days. Coming back on a new date shows that day's Begin, unless a routine

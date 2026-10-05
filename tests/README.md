@@ -8,6 +8,7 @@ Supabase). Nothing here touches production.
 | `db/security_test.sql` | As the app's key (`anon`) and `authenticated`: valid rows go in; re-sent `event_id`s are skipped; free text and unknown kinds are refused; nothing can be read, changed or deleted; RLS is on |
 | `db/metrics_test.sql` | Seeded people (returners, non-returners, recent joiners, duplicate sessions, test devices, beta-4 and beta-2 rows) and the exact count every report must give |
 | `e2e/routine.test.js` | Finished vs full routine, interruption and reload at every stage, task validation and save failures |
+| `e2e/progress.test.js` | "Your progress": real dates from the first routine, full / partial / none circles, connectors, the cumulative count, the rolling window, the completion screen's wording |
 | `e2e/dates.test.js` | Midnight, year end, daylight saving (both ways), travel, preview dates ignored in production |
 | `e2e/privacy.test.js` | The counts choice from the first screen, queued rows after opting out, no backfill, no task text in requests, no ID in links |
 | `e2e/reminders.test.js` | Calendar file (RFC 5545 lines, stable UID, alarm, escaping; optional independent parse) and Google link; setup taps counted as taps |

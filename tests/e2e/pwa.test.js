@@ -30,10 +30,10 @@ const swReady = (p) => p.evaluate(() => navigator.serviceWorker.ready.then(() =>
     let keys = [];
     for (let i = 0; i < 50; i++) { keys = await cacheKeys(x.p); if (JSON.stringify(keys) === '["mornward-v4"]') break; await x.p.waitForTimeout(200); }
     ok("upgrade: the new worker takes over and removes only its old cache", JSON.stringify(keys) === '["mornward-v4"]', keys);
-    ok("upgrade: the page now runs the new version", (await x.p.evaluate(() => document.documentElement.innerHTML.includes("full routine: 3 breaths + mini tasks"))));
+    ok("upgrade: the page now runs the new version", (await x.p.evaluate(() => document.documentElement.innerHTML.includes("Your progress"))));
     ok("upgrade: today's tasks, the days and the ID are untouched", (await x.ls("intent:" + today)) === before.tasks && JSON.stringify(await x.ls("days")) === JSON.stringify(before.days) && (await x.ls("deviceId")) === before.id);
     ok("upgrade: reopening shows Today (the old routine record still reads), not Begin or onboarding", !!(await x.p.$("#again")));
-    ok("upgrade: a day finished on the old version is not turned into a full routine", !(await x.ls("fullDays")) && (await x.p.$eval(".week li:nth-child(7)", (l) => l.className)) === "part");
+    ok("upgrade: a day finished on the old version is not turned into a full routine", !(await x.ls("fullDays")) && (await x.p.$eval(".progress li.now", (l) => l.className)) === "part now");
 
     // Offline: the saved copy opens; so do the terms
     await x.c.setOffline(true);
@@ -65,7 +65,7 @@ const swReady = (p) => p.evaluate(() => navigator.serviceWorker.ready.then(() =>
     } });
     await x.goto();
     ok("from beta-2: opens on Begin, with the new terms note to agree (no old onboarding)", !!(await x.p.$("#begin")) && !!(await x.p.$("#consent")));
-    ok("from beta-2: earlier mornings show as reached-the-end marks, never as full routines", (await x.p.$$(".week li.part")).length === 2 && (await x.p.$$(".week li.done")).length === 0);
+    ok("from beta-2: earlier mornings show as reached-the-end marks, never as full routines", (await x.p.$$(".progress li.part")).length === 2 && (await x.p.$$(".progress li.full")).length === 0);
     ok("from beta-2: the old task is kept, dated, under Earlier tasks", /Call the bank/.test(await x.p.textContent("#earlier")));
     ok("from beta-2: nothing was sent before agreeing to the new terms", x.bodies.length === 0);
     await S.begin(x); await S.skipBreathing(x); await S.skipTasks(x); await drain(x);

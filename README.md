@@ -13,15 +13,15 @@ Three breaths, then up to three small things for this morning. Then get on with 
 | --- | --- |
 | Begin | One button: 3 breaths → mini tasks → ready. About one minute. |
 | Breathe | Three slow breaths (4 seconds in, 6 out), with Pause and Skip |
-| Choose | "What matters this morning?" Ten mini tasks (a fresh ten each routine day), two ticked: keep them in one tap, change them, or add your own (up to three) |
-| Finish | "You're ready." The sun rises; your mini task, with Edit |
+| Choose | "What matters this morning?" Ten mini tasks (a fresh ten each routine day), two ticked: change them or add your own (up to three), then Save my tasks |
+| Done | "Morning reset complete." The sun rises; your mini tasks (with Edit) and your progress |
 
 Open it again the same day and you see today's mini task. The next day it offers the routine again;
 earlier tasks stay on your phone, listed by date. A calendar reminder is optional, on the screen after you finish. It never asks for notification permission.
 Light and dark: it follows your phone, or pick one under Appearance.
-Begin and the screen after Finish show an "Add to home screen" box (Chrome's one-tap install on Android, Apple's
-Share steps on iPhone) and a week strip over the last 7 days: a full routine (3 breaths and mini tasks) is a sun, a
-morning with a step skipped is a small mark, and tomorrow waits as an outline.
+Begin and Today show an "Add to home screen" box (Chrome's one-tap install on Android, Apple's
+Share steps on iPhone) and "Your progress": your dates since you started (the last 7 once there are more), a yellow circle
+for each full morning reset (3 breaths and mini tasks), and a running count of resets completed.
 
 Design reasoning: [`docs/mornward-ui-ux-rationale.md`](docs/mornward-ui-ux-rationale.md).
 

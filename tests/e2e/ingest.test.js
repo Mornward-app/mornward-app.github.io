@@ -20,8 +20,8 @@ async function drain(x) { for (let i = 0; i < 60 && ((await x.ls("outbox")) || [
   { const x = await open({ status: (n) => (n === 0 ? "lost" : 201) }); await x.goto();
     await S.begin(x); await x.p.reload(); await x.t(700);
     await x.p.click("#bpause"); await x.t(31000); await x.p.reload(); await x.t(700);
-    await S.keep(x); await x.p.reload(); await x.t(700);
-    await S.finish(x); await x.p.reload(); await x.t(700); await drain(x);
+    await S.keep(x); await x.p.reload(); await x.t(700); // reopens on Today (the completion screen isn't replayed)
+    await x.p.reload(); await x.t(700); await drain(x);
     const id = await x.ls("deviceId");
     const got = forDevice(id, "select string_agg(kind, ',' order by kind) from events where device_id = $ID");
     ok("a lost reply, a retry and four reloads: each step stored exactly once", got === "breathing_completed,core_routine_completed,routine_finished,routine_started,tasks_saved", got);

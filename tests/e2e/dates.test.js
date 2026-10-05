@@ -9,7 +9,7 @@ const sentDays = (x, kind) => [...new Set(x.rows().filter((r) => r.kind === kind
 async function drain(x) { for (let i = 0; i < 40 && ((await x.ls("outbox")) || []).length; i++) { await x.t(100); await x.p.waitForTimeout(50); } }
 async function fullRoutine(x) { await S.begin(x); await S.breatheAll(x); await S.keep(x); await drain(x); }
 async function jump(x, when) { await x.p.clock.setSystemTime(new Date(when)); await x.p.reload(); await x.t(700); }
-const summary = (x) => x.p.$eval(".wsum", (e) => e.innerText.replace(/\s+/g, " ").trim());
+const summary = (x) => x.p.textContent("#progCount");
 
 (async () => {
   const site = await serve();
@@ -22,8 +22,7 @@ const summary = (x) => x.p.$eval(".wsum", (e) => e.innerText.replace(/\s+/g, " "
       JSON.stringify(await x.ls("fullDays")) === '["2026-10-05"]' && !!(await x.ls("intent:2026-10-05")));
     await S.finish(x);
     ok("midnight: after Finish it's a new day, so Begin (not yesterday's tasks as today's)", !!(await x.p.$("#begin")));
-    ok("midnight: the strip shows yesterday's sun and today still to do", (await x.p.$eval(".week li:nth-child(6)", (l) => l.className)).includes("done") &&
-      (await x.p.$eval(".week li:nth-child(7)", (l) => l.className)) === "now");
+    ok("midnight: progress shows yesterday full and today still to do", JSON.stringify(await x.p.$$eval(".progress li", (l) => l.map((e) => e.className))) === '["full","none now"]');
     await fullRoutine(x);
     ok("midnight: the new day's routine is its own day, run 1", JSON.stringify(await x.ls("fullDays")) === '["2026-10-05","2026-10-06"]' &&
       x.rows().filter((r) => r.kind === "routine_started" && r.day === "2026-10-06")[0].data.run === 1);
@@ -46,7 +45,7 @@ const summary = (x) => x.p.$eval(".wsum", (e) => e.innerText.replace(/\s+/g, " "
     await S.begin(x); await S.breatheAll(x);
     ok("year end: today's task screen doesn't treat 31 December's tasks as today's", (await x.p.textContent("#pickHint")).startsWith("Two picked"));
     await S.keep(x); await drain(x); await S.finish(x);
-    ok("year end: two full days, 2 of the last 7", JSON.stringify(await x.ls("fullDays")) === '["2026-12-31","2027-01-01"]' && /^29% 2 of the last 7 days/.test(await summary(x)), await summary(x));
+    ok("year end: two full days, 2 resets", JSON.stringify(await x.ls("fullDays")) === '["2026-12-31","2027-01-01"]' && (await summary(x)) === "2 morning resets completed", await summary(x));
     ok("year end: rows dated by local day", JSON.stringify(sentDays(x, "routine_finished")) === '["2026-12-31","2027-01-01"]');
     await x.p.click("#earlier summary");
     ok("year end: 31 December is under Earlier tasks, with its year", /December 31, 2026|31 December 2026/.test(await x.p.textContent("#earlier")), await x.p.textContent("#earlier .when"));
@@ -64,7 +63,7 @@ const summary = (x) => x.p.$eval(".wsum", (e) => e.innerText.replace(/\s+/g, " "
     }
     ok(`daylight saving (${label}): three mornings, three days, none doubled or skipped`, JSON.stringify(await x.ls("fullDays")) === JSON.stringify(days) &&
       JSON.stringify(sentDays(x, "routine_finished")) === JSON.stringify(days), await x.ls("fullDays"));
-    ok(`daylight saving (${label}): 3 of the last 7 days`, /^43% 3 of the last 7 days/.test(await summary(x)), await summary(x));
+    ok(`daylight saving (${label}): 3 dates shown, 3 resets`, (await summary(x)) === "3 morning resets completed" && (await x.p.$$(".progress li")).length === 3, await summary(x));
     await x.c.close();
   }
   // A routine started at 23:55 the night before the clocks change, finished after midnight

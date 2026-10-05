@@ -14,8 +14,8 @@ async function drain(x) {
   }
 }
 const of = (x, kind) => x.rows().filter((r) => r.kind === kind);
-const summary = async (x) => (await x.p.$eval(".wsum", (e) => e.innerText)).replace(/\s+/g, " ").trim();
-const todaySlot = (x) => x.p.$eval(".week li:nth-child(7)", (l) => l.className);
+const summary = async (x) => (await x.p.textContent("#progCount")).trim();
+const todaySlot = (x) => x.p.$eval(".progress li.now", (l) => l.className.replace(" now", ""));
 
 (async () => {
   const site = await serve();
@@ -25,23 +25,24 @@ const todaySlot = (x) => x.p.$eval(".week li:nth-child(7)", (l) => l.className);
   // ---------- Issue 1 ----------
   { const x = await open(); await x.goto();
     await S.begin(x); await S.skipBreathing(x); await S.skipTasks(x); await drain(x);
-    ok("1 skip both: the Finish screen is reached", (await x.p.textContent("h1")).includes("You're ready"));
+    ok("1 skip both: the end is reached, and it says so plainly (no 'complete')", (await x.p.textContent("h1")) === "You're set for today." && /Breathing and mini tasks skipped/.test(await x.p.textContent("#finishSub")));
     const f = of(x, "routine_finished");
     ok("1 skip both: routine_finished sent once, core false", f.length === 1 && f[0].data.core === false && f[0].data.tasks === "skipped" && f[0].data.breathing === "skipped", f.map((r) => r.data));
     ok("1 skip both: no core_routine_completed", of(x, "core_routine_completed").length === 0);
     ok("1 skip both: breathing_skipped and tasks_skipped each sent once", of(x, "breathing_skipped").length === 1 && of(x, "tasks_skipped").length === 1);
     ok("1 skip both: the day is 'reached the end', not a full day", JSON.stringify(await x.ls("days")) === `["${TODAY}"]` && !(await x.ls("fullDays")));
     await S.finish(x);
-    ok("1 skip both: progress says 0 of the last 7 days, 0%", /^0% 0 of the last 7 days full routine: 3 breaths \+ mini tasks$/.test(await summary(x)), await summary(x));
-    ok("1 skip both: today shows the small 'reached the end' mark, not a sun", (await todaySlot(x)) === "part", await todaySlot(x));
-    const label = await x.p.getAttribute(".week", "aria-label");
-    ok("1 screen readers hear the same definition", /Full routine, 3 breaths and mini tasks, on 0 of the last 7 days, 0 percent\. Reached the end with a step skipped on 1 more\./.test(label), label);
+    ok("1 skip both: no reset counted", (await summary(x)) === "No full morning resets yet", await summary(x));
+    ok("1 skip both: today shows the small 'reached the end' mark, not a full circle", (await todaySlot(x)) === "part", await todaySlot(x));
+    const label = await x.p.textContent(".progress .sr-only");
+    ok("1 screen readers hear each day in words", /\(today\): reached the end, a step skipped/.test(label), label);
+    ok("1 no percentage, ring or score anywhere", !(await x.p.$(".ring")) && !/%|of 7|this week/.test(await x.p.textContent(".progress")));
     // Adding tasks afterwards is an edit: it saves them but changes nothing the routine recorded
     const before = x.rows().length;
     await x.p.click("#iadd"); await x.t(700); await S.keep(x); await drain(x);
     ok("1 adding tasks after Finish saves them", (await x.p.$$("#itext li, p#itext")).length > 0);
     ok("1 ...but sends nothing (no tasks_saved, no core)", x.rows().length === before, x.kinds().slice(before));
-    ok("1 ...and the day is still not a full routine", !(await x.ls("fullDays")) && /^0% 0 of/.test(await summary(x)));
+    ok("1 ...and the day is still not a full routine", !(await x.ls("fullDays")) && (await summary(x)) === "No full morning resets yet");
     await x.c.close(); }
 
   { const x = await open(); await x.goto();
@@ -64,19 +65,26 @@ const todaySlot = (x) => x.p.$eval(".week li:nth-child(7)", (l) => l.className);
   { const x = await open(); await x.goto();
     await S.begin(x); await S.breatheAll(x); await S.keep(x); await drain(x);
     const f = of(x, "routine_finished")[0], c = of(x, "core_routine_completed");
-    ok("1 three breaths + Keep these: finished with core true, and one core_routine_completed (def 2)", f && f.data.core === true && c.length === 1 && c[0].data.def === 2, x.kinds());
+    ok("1 three breaths + Save my tasks: finished with core true, and one core_routine_completed (def 2)", f && f.data.core === true && c.length === 1 && c[0].data.def === 2, x.kinds());
     ok("1 ...tasks_saved says the suggested pair was kept", of(x, "tasks_saved")[0].data.kept_defaults === true && of(x, "tasks_saved")[0].data.count === 2);
     ok("1 ...the day is a full routine", JSON.stringify(await x.ls("fullDays")) === `["${TODAY}"]`);
+    ok("1 ...the first ever: 'Your first reset. Complete.' with what was done", (await x.p.textContent("h1")) === "Your first reset.Complete." &&
+      (await x.p.textContent("#finishSub")) === "Three breaths taken. Mini tasks chosen.");
+    ok("1 ...the saved tasks are on the screen, with Edit, no checkboxes", (await x.p.$$("#itext li")).length === 2 && !!(await x.p.$("#iedit")) && !(await x.p.$(".intention input, .intention [role=checkbox]")));
+    ok("1 ...'1 morning reset completed', today a full circle", (await summary(x)) === "1 morning reset completed" && (await todaySlot(x)) === "full", await summary(x));
     await S.finish(x);
-    ok("1 ...progress: 1 of the last 7 days, 14%, a sun today", /^14% 1 of the last 7 days/.test(await summary(x)) && (await todaySlot(x)) === "done", await summary(x));
+    ok("1 ...Done goes to Today, same progress", !!(await x.p.$("#again")) && (await summary(x)) === "1 morning reset completed");
     // Run 2 the same day: its own task step is skipped, even though tasks were saved earlier
     await x.p.click("#again"); await x.t(700); await S.skipBreathing(x);
-    ok("1 run 2: today's tasks come back ticked, waiting for a tap", (await x.p.textContent("#pickHint")).includes("Keep them or change"));
+    ok("1 run 2: today's tasks come back ticked, waiting for a tap; one Save button", (await x.p.textContent("#pickHint")).includes("Today's tasks are ticked") && (await x.p.textContent("#isave")) === "Save my tasks");
     await S.skipTasks(x); await drain(x);
     const f2 = of(x, "routine_finished").find((r) => r.data.run === 2);
     ok("1 run 2 skip: recorded as skipped (not as the earlier save)", f2 && f2.data.tasks === "skipped" && of(x, "tasks_skipped")[0].data.had_earlier === true, f2 && f2.data);
     ok("1 run 2: the two runs have different rids", new Set(of(x, "routine_started").map((r) => r.data.rid)).size === 2);
     ok("1 run 2: still one day, still one full day", (await x.ls("days")).length === 1 && (await x.ls("fullDays")).length === 1);
+    // Run 3, full again the same day: it says "Morning reset complete." (not "first"), and the count stays 1
+    await S.finish(x); await x.p.click("#again"); await x.t(700); await S.breatheAll(x); await S.keep(x);
+    ok("1 run 3 full, same day: 'Morning reset complete.', still 1 reset (one per date)", (await x.p.textContent("h1")) === "Morning reset complete." && (await summary(x)) === "1 morning reset completed");
     await x.c.close(); }
 
   { const x = await open(); await x.goto();
@@ -125,19 +133,25 @@ const todaySlot = (x) => x.p.$eval(".week li:nth-child(7)", (l) => l.className);
     ok("4 reload on the task screen: typed words and ticks come back", (await x.p.inputValue("#intent")) === "Walk the dog" &&
       JSON.stringify(await x.p.$$eval('.chip.pick[aria-pressed="true"] span:not(.sr-only)', (l) => l.map((s) => s.textContent))) === JSON.stringify(ticked));
     await S.keep(x); await drain(x);
-    await x.p.reload(); await x.t(700); await drain(x);
-    ok("4 reload on the Finish screen: still there, nothing sent twice", (await x.p.textContent("h1")).includes("You're ready") && of(x, "routine_finished").length === 1 && of(x, "tasks_saved").length === 1);
-    // Finish tapped three times quickly
+    ok("4 skip breathing + save: 'Your mini tasks are saved.'", (await x.p.textContent("h1")) === "Your mini tasks are saved.");
+    // Done tapped three times quickly
     await x.p.click("#finish"); await x.p.click("body", { position: { x: 200, y: 600 } }).catch(() => {}); await x.t(100);
     await x.p.click("body", { position: { x: 200, y: 600 } }).catch(() => {}); await x.t(700); await drain(x);
-    ok("4 Finish tapped repeatedly: on Today once, nothing new recorded", !!(await x.p.$("#again")) && of(x, "routine_finished").length === 1 && (await x.ls("days")).length === 1 && (await x.ls("routine")).phase === "done");
+    ok("4 Done tapped repeatedly: on Today once, nothing new recorded", !!(await x.p.$("#again")) && of(x, "routine_finished").length === 1 && (await x.ls("days")).length === 1 && (await x.ls("routine")).phase === "done");
     const saved = await x.ls("intent:" + TODAY);
     await x.p.click("#iedit"); await x.t(700); await S.untickAll(x); await x.p.fill("#intent", "Something else"); await x.t(100);
     await x.p.click("#iskip"); await x.t(700);
     ok("4 edit, then 'Keep it as it was': tasks unchanged, the edit's draft dropped", (await x.ls("intent:" + TODAY)) === saved && !(await x.ls("draft:" + TODAY)) && !(await x.ls("picks:" + TODAY)));
     // Reopening the same day (a new tab) shows Today, not Begin or onboarding
     const p2 = await x.c.newPage(); await p2.clock.install({ time: new Date("2026-10-05T12:00:00") }); await p2.goto(site.url); await p2.clock.runFor(700);
-    ok("4 same-day reopen: Today with the saved tasks", !!(await p2.$("#again")) && !(await p2.$("#begin")) && (await p2.textContent("h1")).startsWith("Today's mini task"));
+    ok("4 same-day reopen: Today with the saved tasks", !!(await p2.$("#again")) && !(await p2.$("#begin")) && (await p2.textContent("h1")) === "Done for today." && (await p2.$$("#itext li")).length === 2);
+    await p2.close();
+    // Reloading before Done: Today, not the celebration again, and nothing sent twice
+    { const y = await open(); await y.goto(); await S.begin(y); await S.breatheAll(y); await S.keep(y); await drain(y);
+      await y.p.reload(); await y.t(700); await drain(y);
+      ok("4 reload on the completion screen: opens Today (no replayed celebration), nothing sent twice", !!(await y.p.$("#again")) && !(await y.p.$(".sunrise.rise")) &&
+        of(y, "routine_finished").length === 1 && of(y, "core_routine_completed").length === 1);
+      await y.c.close(); }
     await x.c.close(); }
 
   // ---------- Issue 6 ----------
@@ -164,7 +178,8 @@ const todaySlot = (x) => x.p.$eval(".week li:nth-child(7)", (l) => l.className);
     await x.p.fill("#intent", "  " + kept.toUpperCase() + "  ");
     // Storage fails: no success shown, the draft stays, nothing sent
     await x.p.evaluate(() => { window.__failTasks = true; }); await S.keep(x);
-    ok("6 saving fails: says so, stays on the screen, words still there", /Couldn't save it/.test(await msg()) && !!(await x.p.$("#isave")) && (await x.p.inputValue("#intent")).includes(kept.toUpperCase()) && (await x.ls("routine")).phase === "choose");
+    ok("6 saving fails: says so, offers Retry, stays on the screen, words still there", /Couldn't save on this phone/.test(await msg()) && (await x.p.textContent("#isave")) === "Retry" &&
+      (await x.p.inputValue("#intent")).includes(kept.toUpperCase()) && (await x.ls("routine")).phase === "choose" && !(await x.ls("fullDays")) && !(await x.ls("days")));
     await drain(x);
     ok("6 ...and nothing is recorded as saved", x.rows().every((r) => r.kind !== "tasks_saved" && r.kind !== "routine_finished"));
     await x.p.evaluate(() => { window.__failTasks = false; }); await S.keep(x); await drain(x);

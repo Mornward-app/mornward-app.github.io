@@ -137,14 +137,27 @@ The old views (`testers`, `pass_rules`, `daily_mornings`, `step_stats`) are kept
 `metrics_test.sql` confirms their known problems: `pass_rules` counts every device (test, recent and beta-4+ ones),
 and `testers.first_day` is the first event of any kind. Use `legacy_retention_report` instead.
 
-## Week strip (on the phone, not sent)
+## Your progress (on the phone, not sent)
 
-- **Window:** the last 7 local calendar days, today included. This is a rolling window, not Monday to Sunday.
-- **Sun:** a full routine that day (`fullDays`, recorded from beta-5).
-- **Small mark:** the routine reached the end but a step was skipped, or the day is from before beta-5 (steps
-  weren't recorded on the phone then, so those days are never counted as full).
-- **Ring and %:** full days in the window ÷ 7. The caption reads "N of the last 7 days · full routine: 3 breaths +
-  mini tasks".
+- **Dates:** real local dates, from the first day this person started a routine (`fl.startDay`; for earlier
+  versions, their earliest recorded day) through today. Once that's more than 7 days, it shows the latest 7, ending
+  today, with a "Last 7 days" label. It never shows a date before the start or a future day, and never resets on a
+  weekday. Days between visits are shown, so gaps stay visible.
+- **Circles:**
+  - Solid yellow: a full routine that day (`fullDays`, recorded from beta-5: all three breaths and tasks saved in the
+    routine).
+  - Small mark: the routine reached the end with a step skipped, or the day is from before beta-5 (never counted as
+    full).
+  - Hollow: no routine finished.
+- **Count:** distinct local dates with a full routine, ever. "N morning reset(s) completed", or "Total: N …" once the
+  strip rolls. Several routines on one date count once, and gaps don't remove anything.
+- It's separate from the stats and the retention metrics. No percentages, rings or weekly scores.
+- **The completion screen** (shown once, right after the task step; reopening the same day shows Today):
+  - First ever full routine: "Your first reset. Complete."
+  - Any later full routine: "Morning reset complete."
+  - Both say "Three breaths taken. Mini tasks chosen."
+  - Partial routines say what was done ("Your mini tasks are saved.", "Three breaths taken.").
+  - After a missed day, Begin says "Welcome back."
 
 ## Reminders
 

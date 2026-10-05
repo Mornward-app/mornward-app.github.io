@@ -23,7 +23,7 @@ for name in mw_test_upgrade mw_test_fresh; do
     grep -q FAIL <<<"$out" && { grep FAIL <<<"$out"; fail=1; }
   done
 done
-for t in routine dates privacy reminders pwa ingest; do
+for t in routine progress dates privacy reminders pwa ingest; do
   node "tests/e2e/$t.test.js" || fail=1
 done
 exit $fail
