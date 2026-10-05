@@ -329,6 +329,9 @@
   .tdgrid { display: grid; grid-template-columns: 1fr; gap: 10px; }
   .tdrow { display: flex; flex-direction: column; gap: 6px; }
   .tdout:empty { display: none; }
+  #guideNow:empty { display: none; }
+  /* A sheet taller than the screen scrolls; its parts never squash */
+  .gsheet > * { flex-shrink: 0; }
   .tdout { background: var(--field); border-radius: var(--radius); padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
   .tdout h3 { margin: 0; font-size: 1rem; }
   .tdout ul, .tdout ol { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
@@ -980,6 +983,16 @@
     $("#setupGo").onclick = startSetup;
     $("#beginNow").onclick = begin;
     renderHandoff(); // a computer: the phone code (slim, centred) and "What is Mornward?" beside the app
+    qrGuide();
+  }
+  // Arrived on a phone from the computer's QR code (?from=qr): the home-screen steps open by themselves over
+  // Welcome, once per phone, for this phone (iPhone or Android, from the browser; switchable). Never in the
+  // installed app. It's only the steps: nothing is agreed or sent until a Welcome button is tapped.
+  function qrGuide() {
+    if (linkFrom !== "qr" || !(isIOS || isAndroid) || onHomeScreen || ["home", "installed"].includes(installState())) return;
+    if (store.get("qrGuide", false) === true) return;
+    store.set("qrGuide", true);
+    setTimeout(() => { if (card.querySelector("#setupGo") && !$("#installGuide")) openGuide(true); }, 700);
   }
   // Opens setup. Starts no routine; counts setup_started once, if the counts are on.
   function startSetup() {
@@ -1629,6 +1642,9 @@
     if (installed) return;
     installPrompt = e;
     refreshHome();
+    // The steps are already open (from the QR code): offer Chrome's one-tap dialog there too
+    const now = $("#guideNow");
+    if (now && !now.firstElementChild) { now.innerHTML = guideNowButton(); wireGuideNow(); }
   });
   window.addEventListener("appinstalled", () => {
     installed = true; installPrompt = null; installAccepted = false; installNote = "";
@@ -1735,7 +1751,8 @@
 
   // The guide for adding by hand (iPhone always; Android when Chrome hasn't offered its dialog): a sheet at the
   // bottom with the steps, including the final confirmation. Esc, Done or tapping outside closes it.
-  function openGuide() {
+  // auto: opened by itself (arriving from the QR code): a short reason, "Later" instead of "Done"
+  function openGuide(auto = false) {
     closeGuide();
     let k = stepKind();
     // Which phone the steps are for, chosen from the browser and switchable, so nobody follows the wrong ones
@@ -1752,22 +1769,25 @@
       <div class="gsheet" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
         <div class="row"><h2 id="guideTitle" tabindex="-1">Add Mornward to your home screen</h2>
           <button class="ix" data-guide-close type="button" aria-label="Close"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+        ${auto ? `<p class="body" id="guideWhy">One tap from your home screen when you wake.</p>` : ""}
+        <div id="guideNow">${guideNowButton()}</div>
         <div class="seg" role="group" aria-label="Your phone">
           <button type="button" data-os="ios" aria-pressed="${os === "ios"}">iPhone</button>
           <button type="button" data-os="android" aria-pressed="${os === "android"}">Android</button>
         </div>
         <p class="support" id="guideWhere">${where(os)}</p>
         <div id="guideSteps">${installStepsList(k)}</div>
-        <p class="support">It opens straight to Mornward, full screen, even offline.</p>
+        ${auto ? "" : `<p class="support">It opens straight to Mornward, full screen, even offline.</p>`}
         <details class="cantfind"><summary>Can't find it?</summary>
           <p>You may be inside another app's browser (Reddit, Instagram). Open this page in ${isIOS ? "Safari" : "Chrome"}, then try again.</p>
           <button class="link start" type="button" data-copy-link>Copy link</button>
           <input type="text" readonly aria-label="Link to Mornward" data-link-field hidden>
           <p role="status" data-copy-msg></p>
         </details>
-        <button class="primary" data-guide-close type="button">Done</button>
+        <button class="${auto ? "secondary" : "primary"}" data-guide-close type="button">${auto ? "Later" : "Done"}</button>
       </div>`;
     document.body.appendChild(wrap);
+    wireGuideNow();
     wrap.querySelectorAll("[data-guide-close]").forEach((x) => (x.onclick = () => closeGuide(true)));
     wrap.querySelectorAll("[data-os]").forEach((x) => (x.onclick = () => {
       os = x.dataset.os;
@@ -1790,6 +1810,12 @@
       }
     };
     $("#guideTitle").focus();
+  }
+  // Android, when Chrome offers its own dialog: one tap instead of the steps (Chrome only allows it from a tap)
+  const guideNowButton = () => (installPrompt && !isIOS ? `<button class="primary" id="guideInstall" type="button">Add to home screen</button>` : "");
+  function wireGuideNow() {
+    const b = $("#guideInstall");
+    if (b) b.onclick = () => { closeGuide(); startAdd(b); };
   }
   function closeGuide(refocus = false) {
     const g = $("#installGuide");

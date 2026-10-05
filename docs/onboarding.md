@@ -56,6 +56,15 @@ words: task names (shuffled per phone), folded sections and screen-reader-only t
   ID or anything personal. Phones never show it. After setup, Prepared, Begin and Today keep the same card beside
   the app.
 
+## Arriving from the computer's QR code
+
+On a phone, a visit from the computer's QR code (`?from=qr`) opens the home-screen steps by themselves over
+Welcome, about a second after it appears: "One tap from your home screen when you wake." The steps are for this
+phone (iPhone or Android, from the browser; switchable). On Android, when Chrome offers its own dialog, a one-tap
+**Add to home screen** button sits on top. **Later** closes it. It opens once per phone (`fl.qrGuide`), never in the
+installed app, never on a computer, and never over an existing user's Begin. It agrees to nothing and sends nothing.
+Checked by `tests/e2e/qr-guide.test.js`.
+
 ## State model (on the phone only)
 
 Routing never reads the stats, so it works offline and with counts off.
