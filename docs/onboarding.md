@@ -72,6 +72,15 @@ phone (iPhone or Android, from the browser; switchable). On Android, when Chrome
 installed app, never on a computer, and never over an existing user's Begin. It agrees to nothing and sends nothing.
 Checked by `tests/e2e/qr-guide.test.js`.
 
+## Once it's on the home screen
+
+`fl.homeAdded` (`{ how, on }`, on the phone only) means Mornward is on this phone's home screen. After that, every
+add offer stays away for good: the box on Begin and Today, the quiet row, setup's "Add to home screen · optional",
+and the QR arrival steps. It's set when Mornward is opened from the icon (`opened`; on Android the icon shares this
+storage with Chrome), when Chrome reports the install (`installed`) or lists it as installed (`detected`), or when
+someone taps **I've added it** in the steps (`self`; on iPhone Safari can't see the icon). New visitors and
+browsers without it see the offer as before. It's never sent; only Chrome's own install is counted (`app_installed`).
+
 ## State model (on the phone only)
 
 Routing never reads the stats, so it works offline and with counts off.

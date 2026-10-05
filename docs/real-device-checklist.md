@@ -81,3 +81,6 @@ passes, treat it as **unverified**.
 - [ ] **Reminder repeats (both phones):** add the reminder once; check the event repeats every morning with no end
       date, and the alert fires at the time on the second morning too. Then Edit setup: it shows "Your calendar
       reminder", not the controls.
+- [ ] **Added once (both phones):** add Mornward to the home screen, tap "I've added it" (iPhone), then open
+      mornward.app in Safari / Chrome again: no "Add to home screen" box, row or steps anywhere. Android: open it once
+      from the icon, then in Chrome: no box.

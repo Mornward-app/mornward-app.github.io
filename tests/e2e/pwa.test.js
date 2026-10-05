@@ -79,7 +79,7 @@ const swReady = (p) => p.evaluate(() => navigator.serviceWorker.ready.then(() =>
     ok("install: no box before the first routine", !(await x.p.$("#installBox")));
     await S.begin(x); await S.skipBreathing(x); await S.skipTasks(x); await S.finish(x);
     ok("install: offered on Today after the first routine", !!(await x.p.$("#installBox")));
-    await x.p.click("[data-install-add]"); await x.t(300); await x.p.click("#installGuide [data-guide-close].primary"); await x.t(300); await drain(x);
+    await x.p.click("[data-install-add]"); await x.t(300); await x.p.click("#installGuide .link[data-guide-close]"); await x.t(300); await drain(x);
     ok("install: opening the add guide counts nothing (not an installation)", x.rows().every((r) => !/install/.test(r.kind)));
     await x.p.click("[data-install-later]"); await x.t(200);
     ok("install: ✕ removes the box; a quiet row stays", !(await x.p.$("#installBox")) && !!(await x.p.$("#addSec")));
@@ -97,6 +97,45 @@ const swReady = (p) => p.evaluate(() => navigator.serviceWorker.ready.then(() =>
   { const x = await ctx(b, site.url, { when: "2026-10-05T07:10:00", init: () => { navigator.getInstalledRelatedApps = () => Promise.resolve([{ platform: "webapp" }]); } });
     await x.goto(); await S.begin(x); await S.skipBreathing(x); await S.skipTasks(x); await S.finish(x); await drain(x);
     ok("installed, opened in the browser (Chrome reports it): the box stays away, nothing counted", !(await x.p.$("[data-install-add]")) && x.rows().every((r) => !/install/.test(r.kind)));
+    await x.c.close(); }
+  // Once on the home screen, nothing asks again — iPhone: "I've added it" in the steps
+  { const x = await ctx(b, site.url, { when: "2026-10-05T07:10:00", device: "iPhone 13" }); await x.goto();
+    await S.begin(x); await S.skipBreathing(x); await S.skipTasks(x); await S.finish(x);
+    ok("added once (iPhone): a new visitor is offered the box after the first routine", !!(await x.p.$("#installBox")));
+    await x.p.click("[data-install-add]"); await x.t(300);
+    ok("added once (iPhone): the steps have 'I've added it' and 'Not yet'", (await x.p.textContent("#installGuide [data-guide-added]")) === "I've added it" &&
+      (await x.p.textContent("#installGuide .link[data-guide-close]")) === "Not yet");
+    await x.p.click("#installGuide [data-guide-added]"); await x.t(300); await drain(x);
+    ok("added once (iPhone): 'I've added it' removes every offer at once (box and quiet row)", !(await x.p.$("#installBox")) && !(await x.p.$("#addSec")) && !(await x.p.$("#installGuide")));
+    ok("added once (iPhone): it's only noted on the phone, not counted as an install", (await x.ls("homeAdded")).how === "self" && x.rows().every((r) => !/install/.test(r.kind)));
+    await x.p.reload(); await x.t(700);
+    ok("added once (iPhone): still gone after a reload", !(await x.p.$("#installBox")) && !(await x.p.$("#addSec")));
+    await x.p.clock.setSystemTime(new Date("2026-10-06T07:10:00")); await x.p.reload(); await x.t(700);
+    ok("added once (iPhone): the next morning's Begin doesn't offer it either", !!(await x.p.$("#begin")) && !(await x.p.$("#installBox")));
+    await x.c.close(); }
+  // Android: opened from the icon once, then in Chrome (same storage): no offer in Chrome
+  { const a = await ctx(b, site.url, { when: "2026-10-05T07:10:00", init: () => {
+      const mm = window.matchMedia.bind(window);
+      window.matchMedia = (q) => (q.includes("display-mode: standalone") ? { matches: true, media: q, addEventListener() {}, removeEventListener() {} } : mm(q));
+    } });
+    await a.goto(); const state = await a.c.storageState(); await a.c.close();
+    const x = await ctx(b, site.url, { when: "2026-10-05T07:10:00", storageState: state }); await x.goto();
+    await S.begin(x); await S.skipBreathing(x); await S.skipTasks(x); await S.finish(x);
+    ok("added once (Android): after opening it from the icon, Chrome offers nothing", !(await x.p.$("#installBox")) && !(await x.p.$("#addSec")) && (await x.ls("homeAdded")).how === "opened");
+    await x.c.close(); }
+  // Chrome reported it once: remembered, even when Chrome stops reporting
+  { const x = await ctx(b, site.url, { when: "2026-10-05T07:10:00", init: () => {
+      navigator.getInstalledRelatedApps = () => Promise.resolve(localStorage.getItem("fl.reported") ? [] : (localStorage.setItem("fl.reported", "1"), [{ platform: "webapp" }])); } });
+    await x.goto(); await S.begin(x); await S.skipBreathing(x); await S.skipTasks(x); await S.finish(x);
+    await x.p.reload(); await x.t(700);
+    ok("added once (Chrome reported it): remembered on later visits", !(await x.p.$("#installBox")) && (await x.ls("homeAdded")).how === "detected");
+    await x.c.close(); }
+  // Setup's optional row and the QR steps also stay away once it's known
+  { const x = await ctx(b, site.url, { when: "2026-10-05T20:00:00", device: "iPhone 13", init: () => { localStorage.setItem("fl.homeAdded", JSON.stringify({ how: "self", on: "2026-10-05" })); } });
+    await x.goto("?from=qr"); await x.t(1000);
+    ok("added once: arriving from the QR code doesn't open the steps", !(await x.p.$("#installGuide")));
+    await x.p.click("#setupGo"); await x.t(700); await x.p.click("#stepNext"); await x.t(700);
+    ok("added once: setup's 'Add to home screen · optional' row is gone", !(await x.p.$("#addSec")) && !!(await x.p.$("#remAt")));
     await x.c.close(); }
   { const x = await ctx(b, site.url, { when: "2026-10-05T07:10:00", init: () => { navigator.getInstalledRelatedApps = () => Promise.resolve([]); } });
     await x.goto(); await S.begin(x); await S.skipBreathing(x); await S.skipTasks(x); await S.finish(x);

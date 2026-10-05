@@ -1656,9 +1656,17 @@
   // The saved event can be shown once, only from a tap. "Accepted" means the person said yes to the prompt;
   // only appinstalled (or opening from the icon) confirms it's actually on the home screen.
   let installPrompt = null, installBusy = false, installAccepted = false, installNote = "", installed = false;
+  // Once Mornward is known to be on this phone's home screen, nothing asks to add it again (kept on the phone, never
+  // sent). Known when: it was opened from the icon (Android shares this storage with Chrome); Chrome says it was
+  // installed, or reports it as installed; or the person taps "I've added it" in the steps (iPhone: Safari can't see
+  // the icon, whose storage is separate). Until then, new visitors and browsers see the offer as before.
+  const isHomeNote = (v) => typeof v === "object" && typeof v.how === "string";
+  const markHome = (how) => { if (!store.get("homeAdded", null, isHomeNote)) store.set("homeAdded", { how, on: dayKey() }); };
+  const homeKnown = () => onHomeScreen || !!store.get("homeAdded", null, isHomeNote);
+  if (onHomeScreen) markHome("opened");
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
-    if (installed) return;
+    if (installed || homeKnown()) return;
     installPrompt = e;
     refreshHome();
     // The steps are already open (from the QR code): offer Chrome's one-tap dialog there too
@@ -1667,6 +1675,7 @@
   });
   window.addEventListener("appinstalled", () => {
     installed = true; installPrompt = null; installAccepted = false; installNote = "";
+    markHome("installed");
     emitDay("app_installed");
     refreshHome();
   });
@@ -1675,7 +1684,7 @@
   // "unknown", never "not installed": the box only offers, it never says Mornward isn't there. Nothing is counted.
   if (navigator.getInstalledRelatedApps) {
     navigator.getInstalledRelatedApps().then((apps) => {
-      if (Array.isArray(apps) && apps.length && !installed) { installed = true; installPrompt = null; refreshHome(); }
+      if (Array.isArray(apps) && apps.length) { markHome("detected"); installPrompt = null; refreshHome(); }
     }).catch(() => {});
   }
   // Browser detection is best effort: Instagram, Facebook, TikTok and others name themselves; Reddit often doesn't
@@ -1735,7 +1744,7 @@
     const pick = PREVIEW ? store.get("previewPlatform", null) : null;
     return pick ? pick === "computer" : onComputer();
   };
-  const installState = () => (onHomeScreen ? "home" : installed ? "installed" : installAccepted ? "accepted"
+  const installState = () => (onHomeScreen ? "home" : installed ? "installed" : homeKnown() ? "home" : installAccepted ? "accepted"
     : installPrompt ? "prompt" : "manual");
   // The box at the bottom of Today (and Begin, once someone has finished a routine): one row. Gone once Mornward is on
   // the home screen. The ✕ means no: the box doesn't come back, and a quiet row under Today stays for later.
@@ -1770,7 +1779,7 @@
 
   // The guide for adding by hand (iPhone always; Android when Chrome hasn't offered its dialog): a sheet at the
   // bottom with the steps, including the final confirmation. Esc, Done or tapping outside closes it.
-  // auto: opened by itself (arriving from the QR code): a short reason, "Later" instead of "Done"
+  // auto: opened by itself (arriving from the QR code): a short reason, and "Later" instead of "Not yet"
   function openGuide(auto = false) {
     closeGuide();
     let k = stepKind();
@@ -1803,11 +1812,20 @@
           <input type="text" readonly aria-label="Link to Mornward" data-link-field hidden>
           <p role="status" data-copy-msg></p>
         </details>
-        <button class="${auto ? "secondary" : "primary"}" data-guide-close type="button">${auto ? "Later" : "Done"}</button>
+        <button class="primary" data-guide-added type="button">I've added it</button>
+        <button class="link" data-guide-close type="button">${auto ? "Later" : "Not yet"}</button>
       </div>`;
     document.body.appendChild(wrap);
     wireGuideNow();
     wrap.querySelectorAll("[data-guide-close]").forEach((x) => (x.onclick = () => closeGuide(true)));
+    // Taken at their word (Safari can't check): every add offer on this phone goes away
+    wrap.querySelector("[data-guide-added]").onclick = () => {
+      markHome("self");
+      closeGuide();
+      const row = $("#addSec");
+      if (row) row.remove();
+      renderInstall();
+    };
     wrap.querySelectorAll("[data-os]").forEach((x) => (x.onclick = () => {
       os = x.dataset.os;
       const kind = os === "ios" ? (k.startsWith("ios") ? k : "ios-safari") : (k.startsWith("ios") ? "android-chrome" : k);
