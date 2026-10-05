@@ -7,6 +7,9 @@ Supabase). Nothing here touches production.
 | --- | --- |
 | `db/security_test.sql` | As the app's key (`anon`) and `authenticated`: valid rows go in; re-sent `event_id`s are skipped; free text and unknown kinds are refused; nothing can be read, changed or deleted; RLS is on |
 | `db/metrics_test.sql` | Seeded people (returners, non-returners, recent joiners, duplicate sessions, test devices, beta-4 and beta-2 rows) and the exact count every report must give |
+| `e2e/onboarding.test.js` | Setup-first onboarding: the 13 acceptance scenarios in `docs/onboarding.md` (setup records no routine, prepared tasks need confirming, Begin now, skip-all, existing users, counts off, failed saves, calendar honesty, desktop hand-off, accessibility) |
+| `e2e/onboarding-regressions.test.js` | One check per bug found by the independent QA passes (double-tap into a routine, lost step-3 choices, silent save failures, `·` at the end of a task, stale tabs, icon flags, accessibility at 200% text) |
+| `db/setup_test.sql` | Setup events accepted without answers; `setup_report` counts and windows |
 | `e2e/routine.test.js` | Finished vs full routine, interruption and reload at every stage, task validation and save failures |
 | `e2e/progress.test.js` | "Your progress": real dates from the first routine, full / partial / none circles, connectors, the cumulative count, the rolling window, the completion screen's wording |
 | `e2e/dates.test.js` | Midnight, year end, daylight saving (both ways), travel, preview dates ignored in production |

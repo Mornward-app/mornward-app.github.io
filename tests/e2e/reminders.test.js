@@ -40,8 +40,9 @@ function icalParse(file) {
 
   // Copy says what happens, and no more
   const android = await x.p.textContent('[data-pane="android"]'), ios = await x.p.textContent('[data-pane="ios"]');
-  ok("copy: Google — save it there, set the notification; how to stop it", /Save it there/.test(android) && /At time of event/.test(android) && /To stop it, delete the event/.test(android));
-  ok("copy: Apple — check the alert; how to stop it", /check the alert in Calendar/.test(ios) && /To stop it, delete the event/.test(ios) && !/pops up/.test(ios + android));
+  ok("copy: Google — finish saving it there, set the notification; how to stop it", /Finish saving it there/.test(android) && /At time of event/.test(android) && /To stop it, delete the event/.test(android));
+  ok("copy: Apple — open it to add it, check the alert; how to stop it", /Open it to add it to Calendar/.test(ios) && /check the alert/.test(ios) && /To stop it, delete the event/.test(ios) && !/pops up/.test(ios + android));
+  ok("copy: the first reminder is stated as a real date and time", /^First reminder: \w+day, \w+ \d+ at /.test(await x.p.textContent("#remWhen")));
   ok("copy: the Shortcut — how to remove it", /delete it under Automation in Shortcuts/.test(await x.p.textContent("#remShortcut")));
 
   // Calendar file, made at 07:10 for 06:30 (already past today, so tomorrow)

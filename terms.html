@@ -67,8 +67,9 @@
     <ul>
       <li><strong>A random device ID</strong> made on your phone, like <code>3f2a9c…</code>. It isn't linked to your name, email or any account, but it does link your records to each other, so they're pseudonymous rather than fully anonymous. Each record also gets its own random ID, so a record sent twice is stored once.</li>
       <li><strong>The date</strong>, and the time the record arrived.</li>
-      <li><strong>Which steps of the routine happened:</strong> you started it, finished or skipped the breathing (and how many breaths you'd done if you skipped), saved or skipped mini tasks (how many, whether you kept the two suggested ones or changed them, and whether you wrote your own), reached the end, and how many seconds it took. Never what any task says.</li>
+      <li><strong>Which steps of the routine happened:</strong> you started it, finished or skipped the breathing (and how many breaths you'd done if you skipped), saved or skipped mini tasks (how many, whether you kept the two suggested ones, or the ones you prepared in setup, unchanged, and whether you wrote your own), reached the end, and how many seconds it took. Never what any task says.</li>
       <li><strong>Whether you opened Mornward from your home screen</strong>, or from a calendar reminder or an alarm shortcut, and on Android whether you said yes to adding it there.</li>
+      <li><strong>Whether you started and finished setup</strong>, and how many mini tasks you prepared for your first morning. Never which apps you picked, which tasks, or your reminder time.</li>
       <li><strong>Whether you tapped to set up a morning reminder</strong>: opened the Google Calendar link, made a calendar file, or copied the alarm-shortcut link. Not whether you saved it or whether it went off; Mornward can't see that.</li>
       <li><strong>Which link you came from</strong> (like "reddit"), if the link says so. Sent once, with your first routine.</li>
     </ul>
@@ -80,6 +81,7 @@
     <ul>
       <li>Your name, email, phone number or any account. There's no sign-up.</li>
       <li>Your mini tasks, or anything else you write. Not a single word, only <em>whether</em> you saved one.</li>
+      <li><strong>Your setup answers</strong>: which apps your morning scroll starts in, the tasks you prepare and your reminder time. They're never sent to Mornward; they stay in this browser on your phone (the reminder time also goes into the calendar event, if you make one). Mornward doesn't block, watch or detect any app.</li>
       <li>Your earlier tasks or notes. They stay in this browser on your phone.</li>
       <li>Your location, contacts, photos or other apps. Mornward has no access to them.</li>
       <li>Anything at all once you tap <strong>Turn off</strong>.</li>
@@ -93,9 +95,9 @@
       <li><strong>Not medical advice.</strong> It's a habit tool, not medical or mental-health advice. If you're struggling, please talk to someone qualified.</li>
       <li><strong>Your writing lives on your phone.</strong> Your mini tasks (and notes from earlier versions) are saved only in your browser. Clearing your browser data deletes them, and they can't be recovered.</li>
       <li><strong>Calendar reminders.</strong> If you add one, it's made on your phone and saved in your own calendar, with a plain link to Mornward. The link carries no ID, settings or tasks (reminders made by versions before beta-5 included your random ID after "#"). Mornward never receives the event. If you choose Google Calendar, Google keeps it like any other event you create. Delete it in your calendar any time.</li>
-      <li><strong>iPhone home-screen icon.</strong> On iPhone the icon keeps its own storage, separate from Safari. So that you aren't counted as a new person, the icon's start address holds your random ID, the terms version and your stats choice after "#", on your phone only. It never holds your tasks, and with stats off it holds no ID.</li>
+      <li><strong>iPhone home-screen icon.</strong> On iPhone the icon keeps its own storage, separate from Safari. So that you aren't counted as a new person or asked to set up again, the icon's start address holds your random ID, the terms version, your stats choice, and two yes/no flags (whether you've done a routine, whether setup is done) after "#", on your phone only. It never holds your tasks or setup answers, and with stats off it holds no ID.</li>
       <li><strong>Age.</strong> You're at least 13 years old.</li>
-      <li><strong>Agreeing.</strong> You agree by tapping <strong>Begin</strong> the first time, below a short note that links here. If these terms change, that note shows again and tapping Begin agrees to the new version.
+      <li><strong>Agreeing.</strong> You agree with your first tap on <strong>Set up my morning</strong>, <strong>Begin now</strong> or <strong>Begin</strong>, below a short note that links here. Nothing is counted before that tap. If these terms change, that note shows again and the next of those taps agrees to the new version.
         Agreeing is also your consent to the anonymous stats described here, including storing them in the United States.
         You can withdraw it any time by turning stats off.</li>
     </ul>
@@ -104,7 +106,7 @@
   <section>
     <h2>Your controls</h2>
     <ul>
-      <li><strong>Turn stats off</strong> under <strong>Privacy and your data</strong>, on the screen you see after finishing a routine. Nothing is sent from your phone after that, and anything waiting to be sent is deleted.</li>
+      <li><strong>Turn stats off</strong> on the first screen, before you tap anything, or any time later under <strong>Privacy and your data</strong> (on the screen you see before your first morning, and after every routine). Nothing is sent from your phone after that, and anything waiting to be sent is deleted.</li>
       <li><strong>See or delete your stats.</strong> Open <strong>Privacy and your data</strong> after a routine
         and email the anonymous ID shown there to <a href="mailto:mornward@proton.me">mornward@proton.me</a>. Every record
         with that ID is deleted, or sent to you if you asked to see it, within 30 days and usually much sooner. We don't
@@ -127,7 +129,7 @@
       email or contact details, and only the developer can read them. They're used only to learn whether the beta
       helps, and they're never sold, shared or used for ads.</p>
     <p><strong>How long:</strong> the records are deleted within 90 days after the beta ends, or sooner if you ask.</p>
-    <p class="small">Last updated 5 October 2026 · beta-5</p>
+    <p class="small">Last updated 6 October 2026 · beta-5</p>
   </section>
 
   <a class="back" href="./">← Back to Mornward</a>

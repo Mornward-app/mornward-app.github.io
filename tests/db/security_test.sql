@@ -75,6 +75,7 @@ select pg_temp.expect_error('anon cannot add to excluded_devices', $q$insert int
 select pg_temp.expect_error('anon cannot read retention_report', 'select * from public.retention_report', array['42501']);
 select pg_temp.expect_error('anon cannot read routine_cohort', 'select * from public.routine_cohort', array['42501']);
 select pg_temp.expect_error('anon cannot read routine_runs', 'select * from public.routine_runs', array['42501']);
+select pg_temp.expect_error('anon cannot read setup_report', 'select * from public.setup_report', array['42501']);
 select pg_temp.expect_error('anon cannot read legacy_retention_report', 'select * from public.legacy_retention_report', array['42501']);
 select pg_temp.expect_error('anon cannot read the old views either', 'select * from public.testers', array['42501']);
 reset role;

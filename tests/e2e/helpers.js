@@ -48,7 +48,8 @@ function freshDb(name) {
   psql(DB_ADMIN, ["-c", `drop database if exists ${name} with (force)`, "-c", `create database ${name}`]);
   const url = dbUrl(name);
   for (const f of ["tests/db/supabase_roles.sql", "tests/db/fixtures/production_baseline_main.sql",
-    "supabase/migrations/20261004000000_intention_routine.sql", "supabase/migrations/20261005000000_reliability_metrics.sql"]) {
+    "supabase/migrations/20261004000000_intention_routine.sql", "supabase/migrations/20261005000000_reliability_metrics.sql",
+    "supabase/migrations/20261006000000_setup_onboarding.sql"]) {
     psql(url, ["-f", f]);
   }
   return url;
@@ -113,7 +114,8 @@ async function ctx(browser, base, opt = {}) {
 
 // The routine, step by step (each waits past the 500 ms double-tap guard)
 const steps = {
-  begin: async (x) => { await x.p.click("#begin"); await x.t(700); },
+  // Begin on the Begin / prepared screens; "Begin now" on a new visitor's Welcome
+  begin: async (x) => { await x.p.click((await x.p.$("#begin")) ? "#begin" : "#beginNow"); await x.t(700); },
   breatheAll: async (x) => { await x.t(31000); },
   skipBreathing: async (x) => { await x.p.click("#bskip"); await x.t(700); },
   keep: async (x) => { await x.p.click("#isave"); await x.t(700); },

@@ -111,13 +111,15 @@
   /* Mini tasks: wrapped chips; ticked ones get a check and the accent outline */
   .chips.picks { gap: 8px; }
   .typing .picks, .typing #pickHint { display: none; }
-  .chip.pick { min-height: 44px; padding: 8px 14px; font-size: 0.875rem; border-radius: 999px; gap: 6px; }
+  .chip.pick { min-height: 44px; min-width: 44px; justify-content: center; padding: 8px 14px; font-size: 0.875rem; border-radius: 999px; gap: 6px; }
   .chip.pick span { white-space: normal; text-align: left; }
   .chip.pick .ck { display: none; width: 1.05em; height: 1.05em; stroke-width: 2.6; color: var(--text); }
   .chip.pick .ag { width: 0.95em; height: 0.95em; color: var(--text-2); }
   .chip.pick[aria-pressed="true"] { background: var(--pick-bg); border-color: var(--pick-line); box-shadow: inset 0 0 0 1px var(--pick-line); }
   .chip.pick[aria-pressed="true"] .ck { display: block; }
   /* Save and Skip stay at the bottom of the screen while you look through the list */
+  html { scroll-padding-bottom: calc(var(--sticky-h, 0px) + 8px); }
+  .actions.sticky.unstick { position: static; box-shadow: none; }
   .actions.sticky { position: sticky; bottom: 0; z-index: 2; background: var(--bg); margin-inline: calc(-1 * var(--gutter));
     padding: 12px var(--gutter) max(8px, env(safe-area-inset-bottom)); box-shadow: 0 -12px 16px -12px rgba(15, 27, 42, .25); gap: 4px; }
 
@@ -204,8 +206,9 @@
   .chip .i { width: 1.05em; height: 1.05em; color: var(--text-2); }
   .chip[aria-pressed="true"] { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); }
   .chip.add, #again { align-self: flex-start; }
-  .seg { display: flex; gap: 0; border: 1.5px solid var(--chip-line); border-radius: 14px; overflow: hidden; }
-  .seg button { flex: 1; min-height: 48px; border-radius: 0; font-size: 0.9375rem; }
+  .seg { display: flex; flex-wrap: wrap; gap: 0; border: 1.5px solid var(--chip-line); border-radius: 14px; overflow: hidden; }
+  /* Large text: the options wrap instead of being cut off */
+  .seg button { flex: 1 1 auto; min-width: 0; min-height: 48px; border-radius: 0; font-size: 0.9375rem; white-space: normal; overflow-wrap: anywhere; }
   .seg button + button { border-left: 1.5px solid var(--chip-line); }
   .seg button[aria-pressed="true"] { background: var(--button); color: var(--button-text); }
   .ask { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 12px; background: var(--field); color: var(--text); }
@@ -264,13 +267,19 @@
   .horow .secondary { width: auto; min-height: 44px; padding: 8px 14px; font-size: 0.9375rem; }
   @media (max-width: 420px) { .handoff { flex-direction: column; align-items: flex-start; } .handoff .qr { width: 160px; } }
   @media (min-width: 1000px) {
-    .handoff { position: fixed; top: 96px; left: calc(50% + 264px); width: 300px; margin: 0; flex-direction: column; align-items: flex-start; }
+    .handoff { position: fixed; top: 96px; left: calc(50% + 264px); width: 300px; margin: 0; flex-direction: column; align-items: flex-start;
+      max-height: calc(100vh - 120px); overflow: auto; }
     .handoff .qr { width: 200px; }
   }
   .seg + .support { margin-top: -6px; }
   .rempane { display: flex; flex-direction: column; gap: 12px; }
   .rempane[hidden] { display: none; }
   .vsteps.four li { font-size: 0.75rem; line-height: 1rem; }
+  .vsteps li span { overflow-wrap: anywhere; }
+  /* Large text: the four Shortcut steps go two by two */
+  .vsteps.four { flex-wrap: wrap; row-gap: 14px; }
+  .vsteps.four li { flex: 1 1 calc(50% - 8px); }
+  @media (min-width: 380px) { .vsteps.four li { flex: 1 1 0; } }
   /* Your progress: real dates from the first routine to today (the last 7 once there are more). Fixed-width slots,
      left-aligned; dotted connectors run circle edge to circle edge. No future days. */
   .progress { display: flex; flex-direction: column; gap: 10px; --slot: 48px; --dot: 30px; }
@@ -375,7 +384,9 @@
   .intention .rows li + li { border-top: 1px solid var(--rule); }
   .intention .text { font-size: 1.25rem; line-height: 1.75rem; font-weight: 600; overflow-wrap: break-word; hyphens: auto; }
   @media (max-width: 260px) { .intention { padding-inline: 14px; } .intention .text { font-size: 1.125rem; line-height: 1.5rem; } }
-  .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+  #again span { white-space: normal; }
+  details.section .inner a { overflow-wrap: anywhere; }
   .row .link { margin-right: -12px; }
 
   /* Secondary sections on the completed screen: closed by default */
@@ -398,7 +409,7 @@
   .history .what { color: var(--text); overflow-wrap: break-word; }
   .myid { display: block; padding: 10px 12px; border: 1px solid var(--field-line); border-radius: 10px; background: var(--field);
     font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.8125rem; overflow-wrap: anywhere; color: var(--text); }
-  input[type="time"], input[type="text"] {
+  input[type="time"], input[type="date"], input[type="text"] {
     font: inherit; color: var(--text); background: var(--field); border: 2px solid var(--field-line);
     border-radius: 12px; min-height: 48px; padding: 8px 12px; width: 100%;
   }
@@ -409,6 +420,20 @@
   .consent { font-size: 0.875rem; line-height: 1.25rem; color: var(--text-2); }
   .consent summary { cursor: pointer; text-decoration: underline; font-weight: 600; color: var(--text); min-height: 44px; display: flex; align-items: center; }
   .consent ul { margin: 0 0 8px; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
+  /* ---------- setup (first visit) ---------- */
+  .steptop { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; }
+  .steptop .back { width: auto; min-height: 44px; padding: 0 4px 0 0; gap: 4px; }
+  .stepnum { font-size: 0.8125rem; line-height: 1rem; font-weight: 600; color: var(--text-2); margin: 0; white-space: nowrap; }
+  .lede { font-size: 1.125rem; line-height: 1.625rem; color: var(--text); margin: 0; }
+  .remtime { display: flex; flex-wrap: wrap; gap: 12px; }
+  .remtime > div { flex: 1 1 140px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+  .remwhen { font-weight: 600; color: var(--text); margin: 0; }
+  .planned { color: var(--text-2); margin: 0; }
+  .setupcard { background: var(--field); border-radius: var(--radius); padding: 14px 18px; display: flex; flex-direction: column; gap: 4px; }
+  .setupcard h2 { font-size: 1.0625rem; line-height: 1.5rem; margin: 0; }
+  .setupcard ul { list-style: none; margin: 0; padding: 0; }
+  .setupcard li { padding: 8px 0; overflow-wrap: break-word; }
+  .setupcard li + li { border-top: 1px solid var(--rule); }
 </style>
 
 <div class="app">
@@ -502,7 +527,8 @@
   // One task as typed: spaces tidied, at most MAX_INTENTION characters (whole characters, so an emoji isn't cut in
   // half). The " · " that joins saved tasks can't appear inside one, or a single typed task would read back as several;
   // a "·" inside a word (Catalan "col·laborar") is left alone.
-  const cleanIntention = (raw) => Array.from(String(raw).normalize("NFC").replace(/\s+·\s+/g, ", ").replace(/\s+/g, " ").trim())
+  const cleanIntention = (raw) => Array.from(String(raw).normalize("NFC").replace(/\s+·\s+/g, ", ").replace(/\s+/g, " ").trim()
+    .replace(/^(?:·\s*)+|(?:\s*·)+$/g, "").trim())
     .slice(0, MAX_INTENTION).join("").trim();
   // The one check used by every save (the routine and Edit): ticked chips plus the typed task, cleaned, empty ones
   // dropped, repeats dropped whatever their capitals (the first wording is kept), at most PICK_MAX.
@@ -572,12 +598,14 @@
   // Keep in sync with terms.html
   const COUNTED = `<ul>
       <li>A random ID made on this phone, not linked to your name, email or any account.</li>
-      <li>The date, and which steps happened: started, breathing finished or skipped, mini tasks saved or skipped (how many, and whether you kept the suggested ones), finished.</li>
+      <li>The date, and which steps happened: started, breathing finished or skipped, mini tasks saved or skipped (how many, whether you kept the suggested or prepared ones unchanged, and whether you wrote your own), finished.</li>
       <li>Whether you opened it from the home screen, whether you added it there, and which link you came from (like "reddit"), if the link says so.</li>
       <li>Whether you tapped to set up a morning reminder (not whether it was saved or went off).</li>
+      <li>Whether you started and finished setup, and how many mini tasks you prepared (not which ones).</li>
     </ul>`;
   const NOT_SENT = `<ul>
       <li>Your mini tasks, or anything else you write. Not a single word.</li>
+      <li>Your setup answers: which apps you picked, your reminder time.</li>
       <li>Your name, email, phone number, location, contacts or other apps.</li>
       <li>Anything at all once you turn the counts off.</li>
     </ul>`;
@@ -692,11 +720,27 @@
 
   // The next screen's main button sits where the last one was, so the second half of a sleepy double-tap
   // would press it. Swallow clicks for a short moment after every screen change.
-  let tapGuardUntil = 0;
-  const guardTaps = () => { tapGuardUntil = performance.now() + 500; };
+  let tapGuardUntil = 0, shownAt = 0, lastTap = -1e9, fromTap = false;
+  const guardTaps = () => { shownAt = performance.now(); tapGuardUntil = shownAt + 500; fromTap = shownAt - lastTap < 200; };
+  // Actions that start a routine wait a little longer when a tap just brought this screen up: on the setup screens,
+  // a slow double-tap on Continue would otherwise land on "Begin your reset" in the same spot. (Opening the app is
+  // not a tap, so Begin works at once then.)
+  const settled = () => !fromTap || performance.now() - shownAt > 1200;
   document.addEventListener("click", (e) => {
-    if (performance.now() < tapGuardUntil) { e.preventDefault(); e.stopPropagation(); }
+    if (performance.now() < tapGuardUntil) { e.preventDefault(); e.stopPropagation(); return; }
+    lastTap = performance.now();
   }, true);
+  // The bottom buttons stay in reach (sticky), unless that would cover a quarter of the screen (large text, short
+  // screens): then they sit at the end of the page. Either way, focus scrolls things clear of them.
+  function fitSticky() {
+    const bar = card.querySelector(".actions.sticky");
+    if (!bar) { document.documentElement.style.removeProperty("--sticky-h"); return; }
+    bar.classList.remove("unstick");
+    const big = bar.offsetHeight > innerHeight * 0.25;
+    bar.classList.toggle("unstick", big);
+    document.documentElement.style.setProperty("--sticky-h", (big ? 0 : bar.offsetHeight) + "px");
+  }
+  window.addEventListener("resize", fitSticky);
   // After a screen change, tell screen readers where they are and move focus to the new heading.
   // Skipped on the very first screen, so opening the app doesn't jump focus.
   let screensShown = 0;
@@ -705,6 +749,7 @@
     guardTaps();
     card.innerHTML = html;
     card.classList.remove("typing");
+    fitSticky();
     $("#installSlot").innerHTML = ""; // only Begin and Today show the home-screen box
     $("#handoffSlot").innerHTML = "";
     closeGuide();
@@ -727,7 +772,8 @@
     lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
     list: '<path d="M9 7h11M9 12h11M9 17h11M4 7h1M4 12h1M4 17h1"/>',
     theme: '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/>',
-    plus: '<path d="M12 5v14M5 12h14"/>'
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    back: '<path d="M15 5l-7 7 7 7"/>'
   };
   const icon = (k) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${ICON[k]}</svg>`;
 
@@ -761,6 +807,7 @@
       <p class="wordmark">mornward</p>
       ${SUN(false)}
       <h1>${back ? "Welcome back." : "Before the scroll,<br>a few mini tasks."}</h1>
+      ${personalLine() ? `<p class="body" id="invite">${esc(personalLine())}</p>` : ""}
       ${startDay() ? progressSection() : ""}
       <ol class="flow" aria-label="Three breaths, a few mini tasks, then you're ready">
         <li>${icon("breath")}<span>3 breaths</span></li>
@@ -770,33 +817,18 @@
       <div class="push">
         <button class="primary" id="begin" type="button">Begin</button>
         <p class="support center tag">${icon("clock")}About one minute</p>
-        ${agreed ? "" : `<div class="consent" id="consent">
-          <p>Free · No account · Your words stay on this phone.</p>
-          <p>Tapping Begin accepts the <a href="terms.html" target="_blank" rel="noopener">beta terms</a>.</p>
-          <p id="preStats"></p>
-          <details><summary>What's counted</summary>${COUNTED}<p><b>Never sent:</b></p>${NOT_SENT}
-            <p>Stored on Supabase in the United States and deleted within 90 days after the beta. You can change this
-            here or any time later. Questions: ${CONTACT}</p></details>
-        </div>`}
+        ${agreed ? "" : consentBlock("Tapping Begin")}
         ${earlier ? `<div class="more">${earlier}</div>` : ""}
       </div>`, back ? "Mornward. Welcome back." : "Mornward. Before the scroll, a few mini tasks.");
     $("#begin").onclick = begin;
-    // The counts choice, before anything is sent
-    const pre = $("#preStats");
-    if (pre) {
-      const draw = () => {
-        const off = store.get("noStats", false) === true;
-        pre.innerHTML = `Anonymous usage counts are ${off ? "off" : "on"}. <button class="link inline" type="button" id="preToggle">${off ? "Turn on" : "Turn off"}</button>`;
-        $("#preToggle").onclick = () => { store.set("noStats", !off); if (!off) { store.set("outbox", []); store.set("viewbox", []); } draw(); $("#preToggle").focus(); };
-      };
-      draw();
-    }
+    wirePre();
     // The home-screen box waits until someone has finished a routine; a computer gets the phone card right away
     if (doneDays().size) renderInstall();
     renderHandoff();
   }
   function begin() {
-    if (!hasAgreed()) store.set("agreed", { version: TERMS_VERSION, on: dayKey(), how: "begin" });
+    agree("begin");
+    routine = upgradeRoutine(store.get("routine", null, isRoutine));
     const today = dayKey();
     const first = store.get("everStarted", false) !== true;
     const run = routine && routine.day === today ? routine.run + 1 : 1;
@@ -807,6 +839,316 @@
     emit("routine_started", { ...(via ? { via } : {}), ...(first ? { first: true, from: store.get("from", null) } : {}) });
     // Opened in the background (a restored tab): wait for a tap instead of breathing unseen
     renderBreathe(document.hidden);
+  }
+
+  // The terms note and the counts choice, shown before anything can be sent (Welcome, Begin, the prepared screen)
+  function consentBlock(verb) {
+    return `<div class="consent" id="consent">
+          <p>Free · No account · Your words stay on this phone.</p>
+          <p>${verb} accepts the <a href="terms.html" target="_blank" rel="noopener">beta terms</a>.</p>
+          <p id="preStats"></p>
+          <details><summary>What's counted</summary>${COUNTED}<p><b>Never sent:</b></p>${NOT_SENT}
+            <p>Stored on Supabase in the United States and deleted within 90 days after the beta. You can change this
+            here or any time later. Questions: ${CONTACT}</p></details>
+        </div>`;
+  }
+  function wirePre() {
+    const pre = $("#preStats");
+    if (!pre) return;
+    const draw = () => {
+      const off = store.get("noStats", false) === true;
+      pre.innerHTML = `Anonymous usage counts are ${off ? "off" : "on"}. <button class="link inline" type="button" id="preToggle">${off ? "Turn on" : "Turn off"}</button>`;
+      $("#preToggle").onclick = () => { store.set("noStats", !off); if (!off) { store.set("outbox", []); store.set("viewbox", []); } draw(); $("#preToggle").focus(); };
+    };
+    draw();
+  }
+  function agree(how) { if (!hasAgreed()) store.set("agreed", { version: TERMS_VERSION, on: dayKey(), how }); }
+
+  // ---------- first visit: prepare now, practise in the morning ----------
+  // Explicit state, on the phone only (never inferred from the stats, so it works offline and with counts off):
+  //   fl.onboard   missing                          a new visitor (or someone from before setup existed)
+  //                { status: "started", step }      setup in progress; step: scroll | tasks | remind
+  //                { status: "done" }               setup finished
+  //                plus apps (where the scroll starts), tasksSkipped, remindSkipped, startedOn, doneOn
+  //   fl.prepared  { tasks, on, used }              tasks chosen in setup for the first morning. Separate from dated
+  //                                                 tasks (intent:DAY) and from every completion record: they start
+  //                                                 nothing, confirm nothing and fill no circle. The first morning
+  //                                                 offers them ticked, to keep, change or skip, after breathing.
+  //   fl.prepDraft { sel, typed, touched }          unsaved ticks and typing on the setup task step
+  // Where someone lands (entryState, below): new → Welcome; setup → its step; prepared → "A minute before the
+  // scroll"; routine → breathing or tasks; today → Today; returning → Begin. Anyone with routine history skips setup.
+  const SETUP_STEPS = ["scroll", "tasks", "remind"];
+  const isOnboard = (v) => typeof v === "object" && (v.status === "started" || v.status === "done");
+  const getOb = () => store.get("onboard", null, isOnboard);
+  const setOb = (patch) => { const next = { v: 1, ...(getOb() || {}), ...patch }; return store.set("onboard", next) ? next : null; };
+  const isPrepared = (v) => typeof v === "object" && Array.isArray(v.tasks) && v.tasks.every(isText);
+  const preparedTasks = () => { const p = store.get("prepared", null, isPrepared); return p && !p.used && p.tasks.length ? p : null; };
+  const SCROLL_APPS = [["instagram", "Instagram"], ["tiktok", "TikTok"], ["youtube", "YouTube"], ["facebook", "Facebook"],
+    ["reddit", "Reddit"], ["x", "X"], ["other", "Something else"], ["unsure", "I'm not sure"]];
+  const appsChosen = () => { const o = getOb(); return o && Array.isArray(o.apps) ? o.apps.filter((k) => SCROLL_APPS.some(([a]) => a === k)) : []; };
+  // One named app: "Before Instagram, take a minute for yourself." Several, unsure or skipped: the plain line.
+  // Wording only: Mornward can't see, block or detect any app.
+  function inviteLine() {
+    const a = appsChosen();
+    const one = a.length === 1 && a[0] !== "other" && a[0] !== "unsure" ? SCROLL_APPS.find(([k]) => k === a[0])[1] : null;
+    return one ? `Before ${one}, take a minute for yourself.` : "A minute before the scroll.";
+  }
+  const personalLine = () => (inviteLine() === "A minute before the scroll." ? "" : inviteLine());
+  // Anyone who has started a routine (in this version or an earlier one) is never sent through setup
+  const hasHistory = () => store.get("everStarted", false) === true || !!startDay() || doneDays().size > 0;
+  // Setup events: once per device, never tied to a routine, never with answers in them
+  function emitSetup(kind, data = {}) { if (statsOn()) queueRow("setup#" + kind, kind, dayKey(), 0, data); }
+  // A planned first morning, if one was picked with a calendar action and it's still ahead. Phrased as the plan,
+  // never as a reminder that's set: Mornward can't see the calendar.
+  function plannedLine() {
+    const p = store.get("remPlan", null, (v) => typeof v === "object" && isAlarmTime(v.at) && isDay(v.first));
+    if (!p) return "";
+    const d = nextAlarm(p.at, p.first);
+    if (dayKey(d) !== p.first) return "";
+    return `<p class="planned" id="planned">Your planned first morning: ${esc(whenText(d))}. Start any time you're up.</p>`;
+  }
+  const taskCard = (title, tasks) => `<section class="setupcard" aria-labelledby="tcTitle"><h2 id="tcTitle">${title}</h2>
+        <ul id="prepList">${tasks.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></section>`;
+  const stepTop = (n) => `<div class="steptop"><button class="link back" id="stepBack" type="button">${icon("back")}<span>Back</span></button>
+        <p class="stepnum">Step ${n} of 3</p></div>`;
+
+  function renderWelcome() {
+    show(`
+      <p class="wordmark">mornward</p>
+      ${SUN(false)}
+      <h1>A calmer start, before the scroll.</h1>
+      <p class="lede">Mornward is a one-minute morning reset: three breaths, then a few small tasks you choose.</p>
+      <p class="body">Set it up now. Start when you wake.</p>
+      <div class="push">
+        <button class="primary" id="setupGo" type="button">Set up my morning</button>
+        <button class="link" id="beginNow" type="button">Already starting your day? Begin now</button>
+        <p class="msg err" id="welcomeMsg" role="status"></p>
+        ${hasAgreed() ? `<p class="consent" id="preStats"></p>` : consentBlock("Continuing")}
+      </div>`, "Mornward. A calmer start, before the scroll.");
+    wirePre();
+    $("#setupGo").onclick = startSetup;
+    $("#beginNow").onclick = begin;
+    renderHandoff();
+  }
+  // Opens setup. Starts no routine; counts setup_started once, if the counts are on.
+  function startSetup() {
+    agree("setup");
+    const o = getOb();
+    // Without saved setup state nothing could be resumed or finished: say so instead of pretending
+    if (!o && !setOb({ status: "started", step: "scroll", startedOn: dayKey(), apps: [] })) {
+      $("#welcomeMsg").textContent = "This browser isn't saving anything right now (private mode or full storage). Setup needs that. You can still Begin now.";
+      return;
+    }
+    if (!o) emitSetup("setup_started");
+    prepareIconStart();
+    renderSetup(o && o.status === "started" && SETUP_STEPS.includes(o.step) ? o.step : "scroll");
+  }
+  // editing: changing a finished setup (from the prepared screen); its answers are kept as they're changed
+  function renderSetup(step, editing = false) {
+    const o = getOb();
+    if (o && o.status === "started" && !editing) setOb({ step });
+    if (step === "tasks") renderPrepTasks(editing);
+    else if (step === "remind") renderRemind(editing);
+    else renderScroll(editing);
+  }
+
+  // Step 1: where the morning scroll starts (optional; stays on the phone; only words the invitation)
+  const appChips = (sel) => SCROLL_APPS.map(([k, l]) => `<button class="chip pick" type="button" data-app="${k}" aria-pressed="${sel.includes(k)}">
+          <svg class="i ck" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg><span>${esc(l)}</span></button>`).join("");
+  // "I'm not sure" stands alone: choosing it clears the others, and choosing another clears it
+  function toggleApp(sel, k) {
+    if (k === "unsure") return sel.includes("unsure") ? [] : ["unsure"];
+    const rest = sel.filter((x) => x !== "unsure");
+    return rest.includes(k) ? rest.filter((x) => x !== k) : [...rest, k];
+  }
+  function renderScroll(editing) {
+    let sel = appsChosen();
+    show(`${stepTop(1)}
+      <h1>Where does your morning scroll usually start?</h1>
+      <p class="body">Choose any that fit. You can skip this.</p>
+      <div class="chips picks" id="apps" role="group" aria-label="Where your morning scroll usually starts">${appChips(sel)}</div>
+      <p class="support">Only used to word your morning invitation. It stays on this phone. Mornward doesn't block, watch or detect other apps.</p>
+      <p class="msg err" id="stepMsg" role="status"></p>
+      <div class="actions sticky">
+        <button class="primary" id="stepNext" type="button">Continue</button>
+        <button class="link" id="stepSkip" type="button">Skip</button>
+      </div>`, "Step 1 of 3. Where does your morning scroll usually start?");
+    const redraw = () => card.querySelectorAll("[data-app]").forEach((b) => b.setAttribute("aria-pressed", String(sel.includes(b.dataset.app))));
+    card.querySelectorAll("[data-app]").forEach((b) => (b.onclick = () => { sel = toggleApp(sel, b.dataset.app); redraw(); setOb({ apps: sel }); }));
+    // Moves on only once the answer is saved; otherwise the choices stay and it offers Retry
+    const go = (apps) => {
+      if (setOb({ apps })) { renderSetup("tasks", editing); return; }
+      $("#stepMsg").textContent = "Couldn't save on this phone. Your choices are still here.";
+      $("#stepNext").textContent = "Retry";
+    };
+    $("#stepNext").onclick = () => go(sel);
+    $("#stepSkip").onclick = () => go([]);
+    $("#stepBack").onclick = () => (editing ? renderPrepared() : renderWelcome());
+  }
+
+  // Step 2: tasks for the first morning. Same suggestions, limits and checks as the routine; saved apart from it.
+  const isPrepDraft = (v) => typeof v === "object" && Array.isArray(v.sel) && v.sel.every(isText) && isText(v.typed);
+  function renderPrepTasks(editing) {
+    const set = todaysSet(dayKey());
+    const prev = store.get("prepared", null, isPrepared);
+    const draft = store.get("prepDraft", null, isPrepDraft);
+    let sel = draft ? draft.sel.slice(0, PICK_MAX) : prev && prev.tasks.length ? prev.tasks.slice(0, PICK_MAX) : set.slice(0, 2);
+    let touched = draft ? !!draft.touched : false;
+    const options = [...sel.filter((x) => !set.includes(x)), ...set];
+    for (let i = options.length - 1; options.length > CHIP_MAX && i >= 0; i--) if (!sel.includes(options[i])) options.splice(i, 1);
+    let retry = false;
+    show(`${stepTop(2)}
+      <h1>What would you like to make room for?</h1>
+      <p class="body" id="pickHint">Choose up to three mini tasks for your next morning. You can change them later.</p>
+      <div class="chips picks" id="ideas" role="group" aria-label="Mini tasks for your next morning, up to ${PICK_MAX}">
+        ${options.map((x, i) => `<button class="chip pick" type="button" data-idea="${i}" aria-pressed="${sel.includes(x)}">
+          <svg class="i ck" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg><span>${esc(x)}</span></button>`).join("")}
+      </div>
+      <div class="field">
+        <label for="prepIntent">Add your own</label>
+        <textarea id="prepIntent" rows="1" maxlength="${MAX_INTENTION}" enterkeyhint="done" autocomplete="off"
+          autocapitalize="sentences" placeholder="Something small is enough" aria-describedby="imsg">${esc(draft ? draft.typed : "")}</textarea>
+        <p class="msg" id="imsg" role="status"></p>
+      </div>
+      <div class="actions sticky">
+        <button class="primary" id="stepNext" type="button">Save my tasks</button>
+        <button class="link" id="stepSkip" type="button">Choose in the morning</button>
+      </div>`, "Step 2 of 3. What would you like to make room for?");
+    const field = $("#prepIntent");
+    const msg = (t, err = false) => { $("#imsg").textContent = t; $("#imsg").className = "msg" + (err ? " err" : ""); };
+    const grow = () => { field.style.height = "auto"; field.style.height = field.scrollHeight + 4 + "px"; };
+    grow();
+    const keepDraft = () => {
+      if (!store.set("prepDraft", { sel, typed: field.value, touched })) msg("This phone isn't saving drafts right now. Keep this page open.", true);
+    };
+    const redraw = () => {
+      card.querySelectorAll("[data-idea]").forEach((b) => b.setAttribute("aria-pressed", String(sel.includes(options[b.dataset.idea]))));
+      $("#stepNext").textContent = retry ? "Retry" : "Save my tasks";
+    };
+    card.querySelectorAll("[data-idea]").forEach((b) => (b.onclick = () => {
+      const x = options[b.dataset.idea];
+      if (sel.includes(x)) sel = sel.filter((y) => y !== x);
+      else if (normalizeTasks(sel, field.value).tasks.length >= PICK_MAX) { msg(`Up to ${PICK_MAX}. Untick one first.`, true); return; }
+      else sel = [...sel, x];
+      touched = true; msg(""); redraw(); keepDraft();
+    }));
+    field.addEventListener("input", () => { grow(); touched = true; keepDraft(); });
+    let unfold = 0;
+    field.addEventListener("focus", () => { clearTimeout(unfold); card.classList.add("typing"); });
+    field.addEventListener("blur", () => { unfold = setTimeout(() => card.classList.remove("typing"), 450); });
+    field.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); save(); } });
+    const save = () => {
+      const { tasks, error } = normalizeTasks(sel, field.value);
+      if (error === "empty") { msg("Pick one or write a few words, or choose in the morning.", true); return; }
+      if (error === "too_many") { msg(`Up to ${PICK_MAX}. Untick one first.`, true); return; }
+      const rec = { tasks, on: dayKey(), used: hasHistory() || !!(prev && prev.used) };
+      // Saved only if the phone confirms it (written, then read back); otherwise the choices stay and it offers Retry
+      const ok = store.set("prepared", rec) && JSON.stringify(store.get("prepared", null, isPrepared)) === JSON.stringify(rec) && setOb({ tasksSkipped: false });
+      if (!ok) { keepDraft(); retry = true; redraw(); msg("Couldn't save on this phone. Your choices are still here.", true); return; }
+      store.del("prepDraft");
+      renderSetup("remind", editing);
+    };
+    $("#stepNext").onclick = save;
+    $("#stepSkip").onclick = () => {
+      if (!store.del("prepared") || !setOb({ tasksSkipped: true })) { retry = true; redraw(); msg("Couldn't save on this phone. Try again.", true); return; }
+      store.del("prepDraft");
+      renderSetup("remind", editing);
+    };
+    $("#stepBack").onclick = () => { keepDraft(); renderSetup("scroll", editing); };
+  }
+
+  // Step 3: a reminder (optional), then the home screen (optional, quieter). One primary action: Continue.
+  function renderRemind(editing) {
+    show(`${stepTop(3)}
+      <h1>Make room for your first morning.</h1>
+      <p class="body">Choose a reminder time that fits when you wake.</p>
+      <div class="remsetup" id="remSetup">${reminderControls()}</div>
+      <p class="support">A reminder is optional. Mornward works without one and never asks for notification permission.</p>
+      ${installOptional()}
+      <div class="actions sticky">
+        <button class="primary" id="stepNext" type="button">Continue</button>
+        <button class="link" id="stepSkip" type="button">Skip reminder</button>
+      </div>`, "Step 3 of 3. Make room for your first morning.");
+    wireReminder();
+    syncQuiet();
+    const done = (skipped) => {
+      if (!setOb({ remindSkipped: skipped }) || !finishSetup()) {
+        $("#remMsg").textContent = "Couldn't save your setup on this phone. Try again.";
+        $("#stepNext").textContent = "Retry";
+      }
+    };
+    $("#stepNext").onclick = () => done(false);
+    $("#stepSkip").onclick = () => { store.del("remPlan"); store.del("remDate"); done(true); };
+    $("#stepBack").onclick = () => renderSetup("tasks", editing);
+  }
+  // Returns false if the phone couldn't save it (then nothing claims setup is finished)
+  function finishSetup() {
+    const o = getOb();
+    const first = !o || o.status !== "done";
+    if (!setOb({ status: "done", step: null, doneOn: (o && o.doneOn) || dayKey() })) return false;
+    if (first) { const p = preparedTasks(); emitSetup("setup_completed", { tasks_prepared: p ? p.tasks.length : 0 }); }
+    prepareIconStart();
+    renderSetupDone();
+    return true;
+  }
+  // Not the morning reset: no sun, no count, no history, nothing claimed about the reminder
+  function renderSetupDone() {
+    const p = preparedTasks();
+    show(`
+      <p class="wordmark">mornward</p>
+      <h1>You’re ready for your first morning.</h1>
+      <p class="lede">When you wake, open Mornward before your usual scroll. ${p ? "Your mini tasks will be waiting." : "You can choose your mini tasks then."}</p>
+      ${p ? taskCard("Waiting for your morning", p.tasks) : ""}
+      ${plannedLine()}
+      <button class="link start" id="beginNow" type="button">Starting your day now? Begin your reset</button>
+      <div class="push">
+        <button class="primary" id="setupDone" type="button">Done for now</button>
+        <button class="link" id="setupEdit" type="button">Edit setup</button>
+      </div>`, "You’re ready for your first morning.");
+    $("#setupDone").onclick = () => home();
+    $("#setupEdit").onclick = () => renderSetup("scroll", true);
+    $("#beginNow").onclick = () => { if (settled()) begin(); };
+  }
+  // Setup done, no routine yet: a quiet invitation. Nothing starts until Begin; no "late" or "missed".
+  function renderPrepared() {
+    const p = preparedTasks();
+    show(`
+      <p class="wordmark">mornward</p>
+      ${SUN(false)}
+      <h1>A minute before the scroll.</h1>
+      <p class="lede">Take three breaths, then choose what comes next.</p>
+      ${personalLine() ? `<p class="body" id="invite">${esc(personalLine())}</p>` : ""}
+      ${p ? taskCard("Ready for your morning", p.tasks) : ""}
+      ${plannedLine()}
+      <div class="push">
+        <button class="primary" id="begin" type="button">Begin my morning</button>
+        <p class="support center tag">${icon("clock")}About one minute</p>
+        <button class="link" id="setupEdit" type="button">Edit setup</button>
+        ${hasAgreed() ? "" : consentBlock("Tapping Begin")}
+        <div class="more">${themeSection()}${privacySection()}</div>
+      </div>`, "A minute before the scroll.");
+    // Another tab may have started a routine since this screen was drawn: then go where that leads instead
+    $("#begin").onclick = () => { if (!settled()) return; if (entryState() !== "prepared") { home(); return; } begin(); };
+    $("#setupEdit").onclick = () => { if (entryState() !== "prepared") { home(); return; } renderSetup("scroll", true); };
+    wirePre(); wireTheme(); wirePrivacy();
+    renderHandoff();
+  }
+  // Morning preferences under Today: the same question as setup step 1, saved as it's changed
+  function prefsSection() {
+    return `<details class="section" id="prefsSec"><summary><span class="sl">${icon("pen")}Morning preferences</span></summary><div class="inner">
+        <p>Where does your morning scroll usually start? Only used to word Begin. Stays on this phone.</p>
+        <div class="chips picks" id="prefApps" role="group" aria-label="Where your morning scroll usually starts">${appChips(appsChosen())}</div>
+        <p class="support" id="prefsMsg" role="status"></p>
+      </div></details>`;
+  }
+  function wirePrefs() {
+    let sel = appsChosen();
+    card.querySelectorAll("#prefApps [data-app]").forEach((b) => (b.onclick = () => {
+      sel = toggleApp(sel, b.dataset.app);
+      card.querySelectorAll("#prefApps [data-app]").forEach((x) => x.setAttribute("aria-pressed", String(sel.includes(x.dataset.app))));
+      const ok = setOb(getOb() ? { apps: sel } : { status: "done", apps: sel });
+      $("#prefsMsg").textContent = ok ? "Saved on this phone." : "Couldn't save on this phone.";
+    }));
   }
 
   // ---------- 2. Breathe ----------
@@ -1002,7 +1344,9 @@
     const draft = store.get(draftKey(day), null, isText);
     const keptPicks = store.get(picksKey(day), null, isPicks);
     const set = todaysSet(day);
-    const defaults = saved ? savedTasks : set.slice(0, 2);
+    // The first morning after setup: the prepared tasks come ticked, to keep, change or skip. Never saved for you.
+    const prep = !editing && !saved ? preparedTasks() : null;
+    const defaults = saved ? savedTasks : prep ? prep.tasks.slice(0, PICK_MAX) : set.slice(0, 2);
     let sel = keptPicks ? keptPicks.sel.slice(0, PICK_MAX) : defaults.slice();
     let touched = keptPicks ? keptPicks.touched : false;
     // Every chip: your own recent ones, today's saved custom ones, then the starters
@@ -1020,7 +1364,9 @@
     const label = () => (retry ? "Retry" : "Save my tasks");
     show(`
       <h1>What matters<br>this morning?</h1>
-      <p class="body" id="pickHint">${saved ? "Today's tasks are ticked. Change them, or add your own." : "Two picked to start. Tap to change, or add your own. Up to 3."}</p>
+      <p class="body" id="pickHint">${saved ? "Today's tasks are ticked. Change them, or add your own."
+        : prep ? "The tasks you chose in setup are ticked. Keep them, change them, or add your own."
+        : "Two picked to start. Tap to change, or add your own. Up to 3."}</p>
       <div class="chips picks" id="ideas" role="group" aria-label="Mini tasks, up to ${PICK_MAX}">
         ${options.map((x, i) => `<button class="chip pick" type="button" data-idea="${i}" aria-pressed="${sel.includes(x)}">
           <svg class="i ck" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>${own.includes(x) ? `<svg class="i ag" viewBox="0 0 24 24" aria-hidden="true">${ICON.again}</svg>` : ""}<span>${esc(x)}</span>${own.includes(x) ? `<span class="sr-only"> (used before)</span>` : ""}</button>`).join("")}
@@ -1090,16 +1436,26 @@
       if (editing && back) { store.del(draftKey(day)); store.del(picksKey(day)); back(touched ? "Saved." : ""); return; }
       if (!reachFinish("saved")) { saving = false; failed(); return; }
       store.del(draftKey(day)); store.del(picksKey(day));
-      // Counts only: how many, whether the suggested pair was kept as it was, whether they wrote their own
-      emit("tasks_saved", { count: tasks.length, kept_defaults: !touched && !saved, own: !!typed || tasks.some((x) => !POOL.has(x)) });
+      if (prep) usePrepared();
+      // Counts only: how many, whether the suggested pair (or the tasks from setup) were kept as they were, whether
+      // they wrote their own
+      emit("tasks_saved", { count: tasks.length, kept_defaults: !touched && !saved && !prep, ...(prep ? { prepared: !touched } : {}),
+        own: !!typed || tasks.some((x) => !POOL.has(x)) });
     };
     $("#isave").onclick = save;
     $("#iskip").onclick = () => {
       if (editing && back) { store.del(draftKey(day)); store.del(picksKey(day)); back(""); return; }
       // Skipping never removes tasks already saved today, but this run's task step counts as skipped
+      if (!reachFinish("skipped")) { failed(); return; }
+      if (prep) usePrepared();
       emit("tasks_skipped", { had_earlier: !!saved });
-      reachFinish("skipped");
     };
+  }
+
+  // Marks the setup tasks as offered (kept in storage, never offered again)
+  function usePrepared() {
+    const p = store.get("prepared", null, isPrepared);
+    if (p && !store.set("prepared", { ...p, used: true })) store.del("prepared");
   }
 
   // The end of the routine, recorded once per run (however often the Finish screen is drawn or the page reloads).
@@ -1186,6 +1542,7 @@
         ${earlierSection(routine.day)}
         ${quietAdd()}
         ${reminderSection()}
+        ${prefsSection()}
         ${themeSection()}
         ${privacySection()}
       </div>`, "Done for today.");
@@ -1195,6 +1552,7 @@
     syncQuiet();
     renderHandoff();
     wireReminder();
+    wirePrefs();
     wireTheme();
     wirePrivacy();
   }
@@ -1488,10 +1846,13 @@
     b.onclick = () => startAdd(b);
   }
   // After someone said no to the box: a closed row under Today, so it's still there when they want it
-  const quietAdd = () => (store.get("installNo", false) !== true || ["home", "installed"].includes(installState()) || computerView()) ? ""
-    : `<details class="section" id="addSec"><summary><span class="sl">${icon("home")}Add to home screen</span></summary><div class="inner">
+  const quietAdd = (always = false) => ((!always && store.get("installNo", false) !== true) || ["home", "installed"].includes(installState()) || computerView()) ? ""
+    : `<details class="section" id="addSec"><summary><span class="sl">${icon("home")}Add to home screen${always ? " · optional" : ""}</span></summary><div class="inner">
         <p>${esc(installNote || "Opens in one tap tomorrow, no feed first.")}</p>
         <button class="secondary" id="addQuiet" type="button">${installState() === "accepted" ? "Adding…" : "Add to home screen"}</button></div></details>`;
+
+  // Setup step 3: the home screen as a quiet, optional row (the reminder comes first; neither is required)
+  const installOptional = () => quietAdd(true);
 
   // ---------- on a computer: take it to the phone ----------
   // Mornward is for the minute after an alarm, on a phone; people don't open a laptop first thing. On a computer,
@@ -1505,8 +1866,9 @@
     return `<aside class="handoff" id="handoff" aria-labelledby="hoTitle">
         <div class="qr" role="img" aria-label="QR code that opens mornward.app">${QR_SVG}</div>
         <div class="hotext">
-          <h2 id="hoTitle">Take it to your phone</h2>
-          <p>Your alarm is on your phone. Scan to put Mornward there too.</p>
+          <h2 id="hoTitle">Keep it where your morning starts.</h2>
+          <p>Scan this code to set up Mornward on your phone.</p>
+          <p class="support">It opens fresh there: anything you choose on this computer stays on this computer.</p>
           <div class="horow">
             ${navigator.share ? `<button class="secondary" id="hoSend" type="button">Send to my phone</button>` : ""}
             <button class="link start" id="hoCopy" type="button">Copy link</button>
@@ -1582,13 +1944,20 @@
   const REMIND_DAYS = 7;
   const pad2 = (n) => String(n).padStart(2, "0");
   const isAlarmTime = (v) => typeof v === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
-  function nextAlarm(v) {
+  // The first reminder: on `date` (YYYY-MM-DD) if given and still ahead, otherwise the next time `v` comes round
+  function nextAlarm(v, date = null) {
     const [h, m] = v.split(":").map(Number);
+    if (isDay(date)) {
+      const [y, mo, dd] = date.split("-").map(Number);
+      const d = new Date(y, mo - 1, dd, h, m, 0, 0);
+      if (d > now()) return d;
+    }
     const d = now();
     d.setHours(h, m, 0, 0);
     if (d <= now()) d.setDate(d.getDate() + 1);
     return d;
   }
+  const whenText = (d) => `${d.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })} at ${d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
   const icsLocal = (d) => `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}T${pad2(d.getHours())}${pad2(d.getMinutes())}00`;
   const REMIND_TITLE = "Mornward: three breaths, one mini task";
   // Continuity token, for one place only: the iPhone home-screen icon's start address (prepareIconStart). The icon
@@ -1598,7 +1967,8 @@
   // Shortcut, copied links) carry nothing: Google receives a calendar link's text, and calendars sync.
   function carryState() {
     const off = store.get("noStats", false) === true;
-    const r = { v: 1, ...(off ? {} : { i: deviceId() }), t: hasAgreed() ? TERMS_VERSION : null, s: off ? 1 : 0 };
+    const r = { v: 1, ...(off ? {} : { i: deviceId() }), t: hasAgreed() ? TERMS_VERSION : null, s: off ? 1 : 0,
+      e: hasHistory() ? 1 : 0, o: (getOb() || {}).status === "done" ? 1 : 0 };
     return encodeURIComponent(JSON.stringify(r));
   }
   const carryLink = () => "https://mornward.app/?via=calendar";
@@ -1618,8 +1988,8 @@
   // The event keeps one UID per phone (a random value, not the stats ID), with SEQUENCE going up each time a file is
   // made, so a calendar that supports it can update the event instead of adding a second one. Whether it does is up
   // to the calendar app (see supabase/METRICS.md, "Reminders"). The time is "floating": 07:00 wherever the phone is.
-  function calendarFile(v, link) {
-    const start = nextAlarm(v);
+  function calendarFile(v, link, date = null) {
+    const start = nextAlarm(v, date);
     const made = new Date(); // the real moment the file is made, even in a preview
     const stamp = `${made.getUTCFullYear()}${pad2(made.getUTCMonth() + 1)}${pad2(made.getUTCDate())}T${pad2(made.getUTCHours())}${pad2(made.getUTCMinutes())}${pad2(made.getUTCSeconds())}Z`;
     let uid = store.get("remUid", null, (x) => typeof x === "string" && /^[0-9a-f]{32}$/.test(x));
@@ -1633,8 +2003,8 @@
       "BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${icsEsc("Before the scroll: one mini task")}`, "TRIGGER:PT0M", "END:VALARM",
       "END:VEVENT", "END:VCALENDAR"].map(icsFold).join("\r\n") + "\r\n";
   }
-  function googleCalendarLink(v, link) {
-    const start = nextAlarm(v);
+  function googleCalendarLink(v, link, date = null) {
+    const start = nextAlarm(v, date);
     const end = new Date(start.getTime() + 5 * 60000);
     const q = new URLSearchParams({ action: "TEMPLATE", text: REMIND_TITLE, details: reminderText(link),
       dates: `${icsLocal(start)}/${icsLocal(end)}`, recur: `RRULE:FREQ=DAILY;COUNT=${REMIND_DAYS}` });
@@ -1649,25 +2019,32 @@
   //            that automation, so the app shows the steps and copies the link to paste.
   // None of these can be confirmed from here, so nothing says "set". The tap is counted (reminder_setup), as a tap.
   const alarmLink = () => "https://mornward.app/?via=alarm";
-  function reminderSection() {
+  // The reminder controls. In Today they sit in a closed section; in setup (step 3) they're the page itself.
+  function reminderControls() {
     const at = store.get("alarmAt", "", isAlarmTime) || "07:00";
     const os = isIOS ? "ios" : "android";
+    // A first date picked earlier (kept while it's still ahead), else the next time `at` comes round
+    const first = nextAlarm(at, store.get("remDate", null, isDay));
     const S = (g, t) => `<li><span class="g">${GLYPH[g]}</span><span>${t}</span></li>`;
-    return `<details class="section" id="remindSec"><summary><span class="sl">${icon("cal")}Morning reminder</span></summary><div class="inner">
-        <div class="seg" role="group" aria-label="Your phone">
+    return `<div class="seg" role="group" aria-label="Your phone">
           <button type="button" data-rem-os="ios" aria-pressed="${os === "ios"}">iPhone</button>
           <button type="button" data-rem-os="android" aria-pressed="${os === "android"}">Android</button>
         </div>
-        <label class="flabel" for="remAt">Time</label>
-        <input type="time" id="remAt" value="${esc(at)}">
+        <div class="remtime">
+          <div><label class="flabel" for="remAt">Time</label>
+            <input type="time" id="remAt" value="${esc(at)}"></div>
+          <div><label class="flabel" for="remDate">First morning</label>
+            <input type="date" id="remDate" value="${esc(dayKey(first))}" min="${esc(dayKey())}"></div>
+        </div>
+        <p class="remwhen" id="remWhen" aria-live="polite">First reminder: ${esc(whenText(first))}, then daily for ${REMIND_DAYS} mornings.</p>
         <div class="rempane" data-pane="android"${os === "android" ? "" : " hidden"}>
-          <p>Opens Google Calendar with an event at this time for the next ${REMIND_DAYS} mornings. Save it there, and set its notification to “At time of event”.</p>
+          <p>Opens Google Calendar with the event filled in. Finish saving it there, then set its notification to “At time of event”.</p>
           <a class="button secondary" id="remGoogle" href="#" target="_blank" rel="noopener">Add to Google Calendar</a>
           <button class="link start" id="remIcsAlt" type="button">Use a calendar file instead</button>
           <p class="support">To stop it, delete the event in your calendar. It ends by itself after ${REMIND_DAYS} mornings.</p>
         </div>
         <div class="rempane" data-pane="ios"${os === "ios" ? "" : " hidden"}>
-          <p>Makes an event with an alert at this time for the next ${REMIND_DAYS} mornings. Add it, then check the alert in Calendar.</p>
+          <p>Makes a calendar event with an alert. Open it to add it to Calendar, then check the alert is set to “At time of event”.</p>
           <button class="secondary" id="remIcs" type="button">Add to Apple Calendar</button>
           <p class="support">To stop it, delete the event in Calendar. It ends by itself after ${REMIND_DAYS} mornings.</p>
           <details class="cantfind" id="remShortcut"><summary>Better: open Mornward when your alarm stops</summary>
@@ -1686,7 +2063,11 @@
             <p class="support">Steps can differ a little between iOS versions. To stop it, delete it under Automation in Shortcuts.</p>
           </details>
         </div>
-        <p role="status" id="remMsg"></p>
+        <p role="status" id="remMsg"></p>`;
+  }
+  function reminderSection() {
+    return `<details class="section" id="remindSec"><summary><span class="sl">${icon("cal")}Morning reminder</span></summary><div class="inner">
+        ${reminderControls()}
       </div></details>`;
   }
   function wireReminder() {
@@ -1694,10 +2075,32 @@
     if (!g) return;
     const msg = (t) => { $("#remMsg").textContent = t; };
     const time = () => $("#remAt").value;
-    const point = () => { if (isAlarmTime(time())) g.href = googleCalendarLink(time(), carryLink()); };
+    const dateField = $("#remDate");
+    // Time and first date are kept as they're changed (on the phone only), so a reload or midnight doesn't lose them
+    let dateTouched = !!store.get("remDate", null, isDay);
+    const date = () => (dateTouched && isDay(dateField.value) ? dateField.value : null);
+    // The first reminder in words, from the real date and time (never a hard-coded "tomorrow")
+    const point = () => {
+      if (!isAlarmTime(time())) return;
+      const first = nextAlarm(time(), date());
+      // A chosen date that's now in the past falls back to the next occurrence, and stops being "chosen"
+      if (dateTouched && dayKey(first) !== dateField.value) { dateTouched = false; store.del("remDate"); }
+      if (dayKey(first) !== dateField.value) dateField.value = dayKey(first);
+      dateField.min = dayKey();
+      $("#remWhen").textContent = `First reminder: ${whenText(first)}, then daily for ${REMIND_DAYS} mornings.`;
+      g.href = googleCalendarLink(time(), carryLink(), date());
+    };
     point();
-    $("#remAt").addEventListener("input", point);
-    $("#remAt").addEventListener("change", point);
+    const keepTime = () => { if (isAlarmTime(time())) store.set("alarmAt", time()); point(); };
+    $("#remAt").addEventListener("input", keepTime);
+    $("#remAt").addEventListener("change", keepTime);
+    dateField.addEventListener("change", () => {
+      dateTouched = isDay(dateField.value);
+      if (dateTouched) store.set("remDate", dateField.value); else store.del("remDate");
+      point();
+    });
+    // Kept on the phone only, to show "planned for …" later. Not sent anywhere, and not proof a reminder exists.
+    const remember = () => store.set("remPlan", { at: time(), first: dayKey(nextAlarm(time(), date())) });
     const check = () => {
       if (isAlarmTime(time())) { store.set("alarmAt", time()); return true; }
       msg("Pick a time first."); $("#remAt").focus(); return false;
@@ -1711,17 +2114,18 @@
       if (!check()) { e.preventDefault(); return; }
       point();
       // We can only hand it over, not confirm it was saved
-      msg("Google Calendar opened. Save the event there to keep it.");
+      remember();
+      msg("Calendar opened—finish saving your reminder there.");
       emitDay("reminder_setup", { action: "google_link" }, "google_link");
     };
     const file = () => {
       if (!check()) return;
       const a = document.createElement("a");
-      a.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(calendarFile(time(), carryLink()));
+      a.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(calendarFile(time(), carryLink(), date()));
       a.download = "mornward.ics";
       document.body.appendChild(a); a.click(); a.remove();
-      msg(isIOS ? "Tap Add to Calendar on the next screen. If a file downloaded instead, open it from Downloads."
-        : "Open the downloaded file to add it to your calendar.");
+      remember();
+      msg("Calendar file downloaded—open it to add your reminder.");
       emitDay("reminder_setup", { action: "calendar_file" }, "calendar_file");
     };
     $("#remIcs").onclick = file;
@@ -1797,7 +2201,11 @@
     let r;
     try { r = JSON.parse(decodeURIComponent(m[1])); } catch { return; }
     if (!r || typeof r !== "object" || r.v !== 1) return;
-    if (typeof r.i === "string" && /^[0-9a-f-]{36}$/.test(r.i)) { store.set("deviceId", r.i); store.set("everStarted", true); }
+    if (typeof r.i === "string" && /^[0-9a-f-]{36}$/.test(r.i)) store.set("deviceId", r.i);
+    // e: the browser had routine history (links from before beta-5 have no e, and always came from someone who did)
+    if (r.e === 1 || r.e === undefined) store.set("everStarted", true);
+    // o: setup was done there. Only that fact is carried (no answers, no tasks), so the icon doesn't ask again.
+    if (r.o === 1 && !getOb()) store.set("onboard", { v: 1, status: "done", apps: [], tasksSkipped: true, carried: true });
     if (r.t === TERMS_VERSION) store.set("agreed", { version: TERMS_VERSION, on: dayKey(), how: "carried" });
     if (r.s === 1) store.set("noStats", true);
     if (isAlarmTime(r.a)) store.set("alarmAt", r.a);
@@ -1807,7 +2215,10 @@
       store.set("letter", { text: r.n.slice(0, 200), forDay: r.nd, writtenOn: isDay(r.nw) ? r.nw : r.nd });
   })();
   // People who used the previous version aren't new: their first routine here isn't marked as a first visit
-  if (store.get("everStarted", false) !== true && (store.get("setup", null) || store.get("agreed", null))) store.set("everStarted", true);
+  if (store.get("everStarted", false) !== true) {
+    const a = store.get("agreed", null, (v) => typeof v === "object");
+    if (store.get("setup", null) || (a && a.version !== TERMS_VERSION)) store.set("everStarted", true);
+  }
   // Which link someone came from (?from=reddit). Kept on the phone, sent once with the first routine.
   const linkFrom = (() => {
     const v = (new URLSearchParams(location.search).get("from") || "").toLowerCase();
@@ -1843,17 +2254,34 @@
   // ---------- which screen to show ----------
   // Today's routine picks up where it was (breathing comes back paused). A routine from an earlier date is
   // never shown as today's; it's under "Earlier tasks", dated. One started just before midnight can be finished.
-  function home() {
+  // Where someone is, from what's saved on this phone (never from the stats):
+  //   routine    a routine in progress today (or just after midnight): breathing comes back paused, tasks as left
+  //   today      a routine finished today: Today (the end-of-routine screen isn't replayed)
+  //   setup      setup started, not finished: its step, with every answer kept
+  //   returning  any routine history: Begin (with "Welcome back." after a missed day). Never sent through setup.
+  //   prepared   setup finished, no routine yet: "A minute before the scroll."
+  //   new        none of the above: Welcome
+  function entryState() {
     const today = dayKey();
-    routine = store.get("routine", null, isRoutine);
     const r = routine;
     const current = r && (r.day === today ||
       (r.phase !== "done" && r.day === addDays(today, -1) && nowMs() - r.startedAt < CARRY_OVER_MS));
-    if (!current) renderBegin();
-    else if (r.phase === "breathe") renderBreathe(true);
-    else if (r.phase === "choose") renderChoose();
-    // The end-of-routine screen is shown once; reopening later goes to Today (no replayed celebration)
-    else renderToday();
+    if (current) return r.phase === "breathe" || r.phase === "choose" ? "routine" : r.day === today ? "today" : "returning";
+    const o = getOb();
+    if (o && o.status === "started" && !hasHistory()) return "setup";
+    if (hasHistory()) return "returning";
+    if (o && o.status === "done") return "prepared";
+    return "new";
+  }
+  function home() {
+    routine = upgradeRoutine(store.get("routine", null, isRoutine));
+    const st = entryState();
+    if (st === "routine") { if (routine.phase === "breathe") renderBreathe(true); else renderChoose(); }
+    else if (st === "today") renderToday();
+    else if (st === "setup") { const o = getOb(); renderSetup(SETUP_STEPS.includes(o.step) ? o.step : "scroll"); }
+    else if (st === "prepared") renderPrepared();
+    else if (st === "new") renderWelcome();
+    else renderBegin();
   }
   // Phones keep pages alive for days. Coming back on a new date shows that day's Begin, unless a routine
   // is in progress on screen (breathing or typing), which stays put.
@@ -1862,7 +2290,7 @@
     if (document.hidden) return;
     const today = dayKey();
     if (today === shownFor) return;
-    if (br || $("#intent")) return;
+    if (br || $("#intent") || $("#prepIntent") || $(".steptop")) return;
     shownFor = today;
     home();
   }

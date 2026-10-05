@@ -337,3 +337,20 @@ queue race (send in flight, counts off and on, new routine): new routine_started
    ID and restores the 20261004 views.
 
 Correct counting doesn't make retention better. These changes only make the numbers trustworthy enough to learn from.
+
+## Addendum: the setup-first onboarding (Phase 1) and these fixes
+
+The setup state was added to the same reliability rules (details: `docs/onboarding.md`).
+
+| Check | How it's verified |
+| --- | --- |
+| Setup and prepared tasks survive reloads and updates | `onboarding.test.js`: reload mid-setup resumes on the same step with ticks and typing; prepared tasks survive reopening on later days. `pwa.test.js`: the service-worker upgrade keeps storage. |
+| Opting out stops setup counts, not setup | `onboarding.test.js` scenario 9: the whole journey with counts off; zero requests, nothing queued, no ID |
+| Prepared choices can't award achievements | Scenario 1: no `routine`, `days`, `fullDays`, `startDay` after setup. Scenario 3: progress starts on the first routine day only. `setup_test.sql`: setup-only devices are in no routine report. |
+| Existing users keep their tasks and history | Scenario 8 (beta-2 storage, and pre-setup beta-5 history): Begin, never setup |
+| Old storage upgrades safely | The old `fl.setup` key (beta-2) is left alone; the new state is `fl.onboard`. The legacy "existing user" check now ignores this version's own agreement, which also happens at setup. A beta-4 routine record is upgraded on every load (it used to be upgraded only at start-up). |
+| New kinds only after the schema change | Migration `20261006000000_setup_onboarding.sql` (additive); `setup_test.sql` checks accepted and refused rows; ingestion end to end via `ingest.test.js` |
+| Failed calendar hand-offs don't trap navigation | Scenario 11: Google Calendar blocked, setup continues |
+| Reminder links carry no private setup data | Scenario: the Google link has no app, task or ID; `privacy.test.js`: the icon address carries only flags |
+| Deletion copy stays accurate | "Delete everything on this phone" also removes setup (scenario test); the terms list setup answers as never sent and kept on the phone |
+

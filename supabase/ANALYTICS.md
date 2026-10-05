@@ -8,11 +8,15 @@ Mornward sends small anonymous records to Supabase so you can see whether the be
 short version.
 
 **Order of deployment.** Apply [`migrations/20261004000000_intention_routine.sql`](migrations/20261004000000_intention_routine.sql),
-then [`migrations/20261005000000_reliability_metrics.sql`](migrations/20261005000000_reliability_metrics.sql) (or
-re-run `setup.sql`, which includes both), **before** the beta-5 app goes live. Beta-5 sends an `event_id` column; without
+then [`migrations/20261005000000_reliability_metrics.sql`](migrations/20261005000000_reliability_metrics.sql), then
+[`migrations/20261006000000_setup_onboarding.sql`](migrations/20261006000000_setup_onboarding.sql) (or re-run `setup.sql`,
+which includes all three), **before** the beta-5 app goes live. Beta-5 sends an `event_id` column; without
 the second migration every beta-5 row is rejected and dropped. To re-run something later, re-run only the newest
 migration (the older one's kind list is narrower and fails once newer rows exist; its transaction then changes
 nothing). Rollback: [`rollback/20261005000000_reliability_metrics.down.sql`](rollback/20261005000000_reliability_metrics.down.sql).
+
+**Setup events:** `setup_started` and `setup_completed` (once per device, no answers), reported in `setup_report`
+(see [`METRICS.md`](METRICS.md#setup-setup_report) and [`../docs/onboarding.md`](../docs/onboarding.md)).
 
 **Events:** `routine_started`, `breathing_completed`, `breathing_skipped`, `tasks_saved`, `tasks_skipped`,
 `routine_finished` (the end was reached, skips included), `core_routine_completed` (all three breaths **and** tasks
@@ -29,7 +33,7 @@ from the queue by `event_id`, so rows queued while a request is out are never dr
 beta-4/5 kinds have an exact key list; older kinds allow only booleans, small numbers, null and short lowercase
 identifiers. Free text can't be stored. Existing rows aren't re-checked.
 
-**Consent.** Nothing is sent before the first tap on Begin. Turning the counts off (before Begin, or under Privacy)
+**Consent.** Nothing is sent before the first tap on a Welcome action ("Set up my morning" or "Begin now") or on Begin. Turning the counts off (on Welcome before any tap, or under Privacy on the prepared screen and Today)
 empties the queue; nothing is queued while they're off, so turning them back on never sends that period.
 
 **Reports** (dashboard only; the app's key can't read them): `retention_report` (every metric with numerator,
@@ -62,7 +66,7 @@ links, cleared data) are listed in [`METRICS.md`](METRICS.md#identity).
 - **Links don't carry the id (beta-5).** Calendar events, the alarm Shortcut link and copied links are plain
   `mornward.app` links. Before beta-5 they carried the id after `#`; the Google Calendar link sent it to Google
   inside the event text. Older links are still accepted when opened.
-- **iPhone icon:** the one exception. Its start address carries the id, terms version and counts choice after `#`
+- **iPhone icon:** the one exception. Its start address carries the id, terms version, counts choice and two yes/no flags (routine history, setup done) after `#`
   (on the phone only; no id at all if counts are off), so the icon isn't counted as a new person. Tasks are never
   carried. Not tested on a real iPhone.
 - **Time zones:** see [`METRICS.md`](METRICS.md#dates).

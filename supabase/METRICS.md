@@ -56,12 +56,14 @@ drafts, edits, alarm time, anything typed. The database refuses rows whose `data
 | `routine_started` | Begin is tapped | `first: true` + `from` on the device's first routine ever; `via: calendar \| alarm` when opened from a reminder link | — |
 | `breathing_completed` | The third full breath ends, with the app in view | — | Breaths can't complete while the app is hidden |
 | `breathing_skipped` | Skip breathing | `breaths_done` 0–2 | — |
-| `tasks_saved` | Save / Keep these is pressed in the routine's task step and the phone confirms the write | `count` 1–3, `kept_defaults` (the two pre-ticked tasks saved unchanged), `own` | That a task was done in real life. Opening the screen confirms nothing. |
+| `tasks_saved` | Save is pressed in the routine's task step and the phone confirms the write | `count` 1–3, `kept_defaults` (the two pre-ticked suggestions saved unchanged), `prepared` (the tasks prepared in setup saved unchanged), `own` | That a task was done in real life. Opening the screen confirms nothing. |
 | `tasks_skipped` | Skip for today in the routine's task step | `had_earlier` (tasks were already saved that day) | — |
 | `routine_finished` | The Finish screen is reached, skips included | `breathing`, `tasks` (this run's task step), `core`, `def: 2`, `seconds` | A full routine |
 | `core_routine_completed` | With `routine_finished`, when `breathing = completed` **and** `tasks = saved` | `def: 2` | — |
 | `install_prompt` | Chrome's own install dialog is answered (Android) | `outcome: accepted \| dismissed`, `run: 0` | `accepted` is not a confirmed install |
 | `app_installed` | Chrome confirms the install (Android) | `run: 0` | iPhones never send it |
+| `setup_started` | "Set up my morning" the first time (once per device) | `run: 0` | A routine, a visit, or consent to anything beyond the counts |
+| `setup_completed` | Setup reaches its end the first time (once per device) | `tasks_prepared` 0–3, `run: 0` | That a routine was started, tasks were performed, or a reminder exists |
 | `reminder_setup` | A reminder setup tap, once per day per action | `action: google_link \| calendar_file \| shortcut_link`, `run: 0` | That a reminder was saved, is on, or will alert |
 
 Edits after the task step (Edit, Add mini tasks) save the tasks on the phone and send nothing. They never change
@@ -78,7 +80,7 @@ Beta-4 `intention_saved` / `intention_skipped` are read as `tasks_saved` / `task
 | --- | --- | --- |
 | Routine | One `(device_id, day, rid)`; duplicate rows count once | `routine_runs` |
 | Device-day | One `(device_id, day)`, however many routines | `routine_days` |
-| Active day | A device-day with `routine_started`. Opening the app without tapping Begin sends nothing, so it isn't visible. | `routine_days.started` |
+| Active day | A device-day with `routine_started`. Opening the app without tapping Begin starts no routine, so it isn't an active day. (Setup taps send only the setup events.) | `routine_days.started` |
 | Finished day | A device-day with `routine_finished` | `routine_days.finished` |
 | Full (core) day | A device-day with `core_routine_completed` (def 2) | `routine_days.core` |
 | Test device | Any row with `test: true`, or listed in `excluded_devices` | `test_devices` |
@@ -93,8 +95,9 @@ includes only devices that:
 - whose first counted routine is marked `first`;
 - whose first counted routine wasn't opened from a reminder.
 
-Nothing is sent before Begin (that's when the terms are agreed), so the first eligible visit we can see is the first
-routine. Visitors who never tap Begin aren't counted.
+The terms are agreed with the first tap on "Set up my morning", "Begin now" or Begin, and nothing is sent before it. The
+acquisition cohort starts at the first routine; setup-only visitors are counted in `setup_report`, and visitors who
+never tap anything aren't counted at all.
 
 **Activation cohort.** The same devices, but day 0 is their first full (core) day (`routine_cohort.activation_day`).
 Devices that never complete a full routine aren't in it.
@@ -123,6 +126,31 @@ are separate rows. A return in which both steps were skipped counts as a return,
 
 `routine_daily`: per local day, devices that started / finished / did a full routine (each device once per day),
 plus routines started. Test devices are left out.
+
+## Setup (`setup_report`)
+
+Setup is preparation, not use. It's measured on its own and never feeds the routine cohorts. A device with only
+setup events appears in no routine report. Setup answers (apps, tasks, reminder time) are never sent.
+
+| Stage | Signal |
+| --- | --- |
+| 1. Observed setup participation | `setup_started`. Only with the counts on, after the terms are accepted by tapping a Welcome action. People who only view Welcome aren't visible. |
+| 2. Setup completion | `setup_completed` |
+| 3. First routine start | the device's first `routine_started` (acquisition cohort, day 0) |
+| 4. First full routine | the device's first `core_routine_completed` def 2 (activation cohort, day 0) |
+| 5. Later returns | `retention_report` (D1, D7, first-week frequency, repeat core), from either cohort |
+
+| Metric | Day 0 | Counts when… | Eligible when |
+| --- | --- | --- | --- |
+| `setup_completed_7d` | setup started | setup finished by day 7 | day 0 + 10 ≤ today |
+| `first_routine_by_day1` | setup finished | a first routine on day 0 or day 1 (evening setup, next morning) | day 0 + 4 ≤ today |
+| `first_routine_by_day7` | setup finished | a first routine by day 7 | day 0 + 10 ≤ today |
+| `first_full_by_day7` | setup finished | a first full routine by day 7 | day 0 + 10 ≤ today |
+
+Someone who set up tonight isn't counted as a failed activation until their day 1 is final. **Limitation:** the time
+someone intends to start isn't sent (it's a local preference). A later intended start, such as a night shift or the
+weekend, therefore shows only in the day-7 rows. That's reported here rather than guessed. Test devices are left out.
+"Begin now" users have no setup events; they appear only in the routine cohorts.
 
 ## The beta-2 app (live until beta-5 ships): `legacy_retention_report`
 

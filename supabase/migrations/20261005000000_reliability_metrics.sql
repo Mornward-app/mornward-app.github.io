@@ -55,7 +55,9 @@ alter table public.events add constraint events_kind_check check (kind in (
   'routine_started', 'breathing_completed', 'breathing_skipped', 'intention_saved', 'intention_skipped',
   'routine_finished', 'core_routine_completed', 'install_prompt', 'app_installed',
   -- beta-5
-  'tasks_saved', 'tasks_skipped', 'reminder_setup'));
+  'tasks_saved', 'tasks_skipped', 'reminder_setup',
+  -- setup-first onboarding (20261006): listed here too, so re-running this file after it never fails on setup rows
+  'setup_started', 'setup_completed'));
 
 -- 3. Payload shape ------------------------------------------------------------------------------------------------
 
@@ -107,6 +109,8 @@ begin
         when 'tasks_saved.count'              then mornward_private.is_int(v, 1, 3)
         when 'tasks_saved.kept_defaults'      then jsonb_typeof(v) = 'boolean'
         when 'tasks_saved.own'                then jsonb_typeof(v) = 'boolean'
+        when 'tasks_saved.prepared'           then jsonb_typeof(v) = 'boolean'
+        when 'setup_completed.tasks_prepared' then mornward_private.is_int(v, 0, 3)
         when 'intention_saved.count'          then mornward_private.is_int(v, 1, 3)
         when 'intention_saved.kept_defaults'  then jsonb_typeof(v) = 'boolean'
         when 'intention_saved.own'            then jsonb_typeof(v) = 'boolean'

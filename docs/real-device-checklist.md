@@ -42,8 +42,8 @@ passes, treat it as **unverified**.
 
 ## Privacy and stats (with a dev Supabase project, or rows marked `?test=1`)
 
-- [ ] Fresh install: before Begin, nothing appears in `events` for this phone.
-- [ ] Turn counts off before Begin and do a routine: no new rows.
+- [ ] Fresh install: before any tap on Welcome, nothing appears in `events` for this phone.
+- [ ] Turn counts off on Welcome, then set up and do a routine: no new rows.
 - [ ] In the dashboard, the phone's routine appears once in `routine_runs` after a reload mid-routine.
 
 ## Record results
@@ -51,3 +51,20 @@ passes, treat it as **unverified**.
 | Check | Phone / OS | Date | Pass / fail / note |
 | --- | --- | --- | --- |
 | | | | |
+
+## Setup (setup-first onboarding)
+
+- [ ] **Both phones:** a fresh visit shows Welcome. Go through Set up my morning → steps 1–3 → Done for now. Kill the
+      browser and reopen: "A minute before the scroll." appears with the prepared tasks. No breathing starts by itself.
+- [ ] **Both phones:** next morning, Begin my morning → breaths → the prepared tasks are ticked. Save. The progress
+      shows only today and "1 morning reset completed".
+- [ ] **Both phones:** the date picker on step 3 opens. Pick a later date; "First reminder: …" changes; the
+      calendar event starts on that date.
+- [ ] **iPhone:** add to the home screen from step 3, then open the icon. It should open on the prepared screen
+      without asking setup again (prepared tasks aren't carried; it should say you can choose them then).
+- [ ] **VoiceOver (iPhone) and TalkBack (Android):** each step reads its heading, "Step n of 3" and each choice as
+      a toggle button (selected / not selected).
+- [ ] **Largest system text size (Dynamic Type / Android font size):** every setup screen is usable, and the
+      bottom buttons don't cover the inputs.
+- [ ] **A computer:** Welcome shows "Keep it where your morning starts." Scanning the code opens mornward.app on the
+      phone with Welcome (nothing carried over).

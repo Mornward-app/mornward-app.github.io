@@ -86,8 +86,8 @@ const SECRET = "Call mum about Sunday";
     const m = JSON.parse(decodeURIComponent(href.replace("data:application/manifest+json,", "")));
     const carried = JSON.parse(decodeURIComponent(m.start_url.split("#r=")[1]));
     const id = await x.ls("deviceId");
-    if (!off) ok("3 iPhone icon start address: ID, terms version and choice only (no tasks, source or alarm time)",
-      JSON.stringify(Object.keys(carried).sort()) === '["i","s","t","v"]' && carried.i === id && carried.s === 0, carried);
+    if (!off) ok("3 iPhone icon start address: ID, terms version, choice and two yes/no flags (no tasks, answers, source or alarm time)",
+      JSON.stringify(Object.keys(carried).sort()) === '["e","i","o","s","t","v"]' && carried.i === id && carried.s === 0 && [0, 1].includes(carried.e) && [0, 1].includes(carried.o), carried);
     else ok("3 iPhone icon with counts off: no ID carried at all", !("i" in carried) && carried.s === 1, carried);
     await x.c.close();
   }
