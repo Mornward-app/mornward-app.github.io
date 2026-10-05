@@ -43,7 +43,11 @@ const swReady = (p) => p.evaluate(() => navigator.serviceWorker.ready.then(() =>
     ok("offline: the terms page opens too", /Terms and privacy/.test(await x.p.title()));
     await x.p.goto(site.url + "?via=calendar").catch(() => {});
     ok("offline: an address with a query (a reminder link) still opens the app", !!(await x.p.$("#card")));
+    const calOff = await x.p.evaluate(() => fetch("cal/0630.ics").then((r) => r.text().then((t) => t.slice(0, 15)), () => "network error"));
+    ok("offline: a calendar file is never answered with the app page (the worker leaves cal/ alone)", calOff === "network error", calOff);
     await x.c.setOffline(false);
+    const calOn = await x.p.evaluate(() => fetch("cal/0630.ics").then((r) => r.text()));
+    ok("online: the calendar file arrives as itself", calOn.startsWith("BEGIN:VCALENDAR") && calOn.includes("mornward-0630@mornward.app"));
     // Weak signal: the page takes 10 s; the saved copy shows after about 4 s
     site.slowPages(10000);
     const t0 = Date.now(); await x.p.goto(site.url, { waitUntil: "domcontentloaded" }); const ms = Date.now() - t0;

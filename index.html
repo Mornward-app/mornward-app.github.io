@@ -471,10 +471,6 @@
   .remquick { gap: 6px; flex-wrap: wrap; }
   /* Equal widths on one line when they fit; with large text they keep their words and wrap instead */
   .remquick .chip { flex: 1 0 auto; min-width: 44px; padding: 6px 8px; justify-content: center; font-size: 0.875rem; }
-  .remother { position: relative; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; }
-  .remother input[type="date"] { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; padding: 0; border: 0;
-    opacity: 0; cursor: pointer; -webkit-appearance: none; appearance: none; }
-  .remother:focus-within { outline: 3px solid var(--focus); outline-offset: 3px; }
   .remwhen { font-weight: 600; color: var(--text); margin: 0; }
   /* Already done: ticks instead of steps */
   .setlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -1131,13 +1127,15 @@
       <div class="remsetup" id="remSetup">${reminderBlock(true, home)}</div>
       ${allSet ? "" : home ? `<p class="hometick" id="homeTick">${GLYPH.ok}<span>On your home screen</span></p>` : installOptional()}
       <div class="actions sticky">
-        <button class="primary" id="stepNext" type="button">Continue</button>
+        <button class="primary" id="stepNext" type="button">${savedReminder() ? "Done" : "Continue"}</button>
         ${savedReminder() ? "" : `<button class="link" id="stepSkip" type="button">Skip for now</button>`}
       </div>`, `Step 2 of ${SETUP_STEPS.length}. Make it easy to return.`);
     wireReminder(true);
     syncQuiet();
+    // A calendar tap here: the reminder is added, so the button says Done (and there's nothing to skip)
+    card.querySelectorAll("#remGoogle, #remIcs, #remIcsAlt").forEach((a) => a.addEventListener("click", () => { if (!savedReminder()) return; $("#stepNext").textContent = "Done"; $("#stepSkip")?.remove(); }));
     const done = (skipped) => {
-      if (setOb({ remindSkipped: skipped }) && skipped) { store.del("remPlan"); store.del("remDate"); }
+      if (setOb({ remindSkipped: skipped }) && skipped) store.del("remPlan");
       if (!getOb() || getOb().remindSkipped !== skipped || !finishSetup()) {
         const shown = $("#remDone") && !$("#remDone").hidden ? $("#remDoneMsg") : $("#remMsg");
         shown.textContent = "Couldn't save your setup on this phone. Try again.";
@@ -2056,38 +2054,8 @@
   }
   const carryLink = () => "https://mornward.app/?via=calendar";
   const reminderText = (link) => `Before the scroll: ${link}\nThree breaths, one mini task. About a minute.`;
-  const icsEsc = (t) => t.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
-  // Calendar files want lines of at most 75 bytes; longer ones continue on the next line after a space
-  const icsFold = (line) => {
-    const out = []; let cur = "", bytes = 0;
-    for (const ch of line) {
-      const b = new TextEncoder().encode(ch).length;
-      if (bytes + b > (out.length ? 74 : 75)) { out.push(cur); cur = ""; bytes = 0; }
-      cur += ch; bytes += b;
-    }
-    out.push(cur);
-    return out.join("\r\n ");
-  };
-  // The event keeps one UID per phone (a random value, not the stats ID), with SEQUENCE going up each time a file is
-  // made, so a calendar that supports it can update the event instead of adding a second one. Whether it does is up
-  // to the calendar app (see supabase/METRICS.md, "Reminders"). The time is "floating": 07:00 wherever the phone is.
-  function calendarFile(v, link, date = null) {
-    const start = nextAlarm(v, date);
-    const made = new Date(); // the real moment the file is made, even in a preview
-    const stamp = `${made.getUTCFullYear()}${pad2(made.getUTCMonth() + 1)}${pad2(made.getUTCDate())}T${pad2(made.getUTCHours())}${pad2(made.getUTCMinutes())}${pad2(made.getUTCSeconds())}Z`;
-    let uid = store.get("remUid", null, (x) => typeof x === "string" && /^[0-9a-f]{32}$/.test(x));
-    if (!uid) { uid = uuid().replace(/-/g, ""); store.set("remUid", uid); }
-    const seq = store.get("remSeq", -1, Number.isInteger) + 1;
-    store.set("remSeq", seq);
-    return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Mornward//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "BEGIN:VEVENT",
-      `UID:${uid}@mornward.app`, `SEQUENCE:${seq}`,
-      `DTSTAMP:${stamp}`, `DTSTART:${icsLocal(start)}`, "DURATION:PT5M", "RRULE:FREQ=DAILY",
-      `SUMMARY:${icsEsc(REMIND_TITLE)}`, `DESCRIPTION:${icsEsc(reminderText(link))}`, `URL:${link}`,
-      "BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${icsEsc("Before the scroll: one mini task")}`, "TRIGGER:PT0M", "END:VALARM",
-      "END:VEVENT", "END:VCALENDAR"].map(icsFold).join("\r\n") + "\r\n";
-  }
-  function googleCalendarLink(v, link, date = null) {
-    const start = nextAlarm(v, date);
+  function googleCalendarLink(v, link) {
+    const start = nextAlarm(v);
     const end = new Date(start.getTime() + 5 * 60000);
     const q = new URLSearchParams({ action: "TEMPLATE", text: REMIND_TITLE, details: reminderText(link),
       dates: `${icsLocal(start)}/${icsLocal(end)}`, recur: "RRULE:FREQ=DAILY" });
@@ -2103,42 +2071,32 @@
   // None of these can be confirmed from here, so nothing says "set". The tap is counted (reminder_setup), as a tap.
   const alarmLink = () => "https://mornward.app/?via=alarm";
   // The reminder controls. In Today they sit in a closed section; in setup (step 2) they’re the page itself.
-  // In setup the first date suggested is the next morning: tomorrow (or, after midnight and before 4 AM, the
-  // morning about to come). Worked out from the real date each time, never stored as "tomorrow".
-  const nextMorning = () => (now().getHours() < 4 ? dayKey() : addDays(dayKey(), 1));
   // Quick picks for the time: one tap instead of the picker
   const REM_QUICK = ["06:00", "06:30", "07:00", "07:30", "08:00"];
   const quickLabel = (t) => { const [h, m] = t.split(":").map(Number); return new Date(2026, 0, 1, h, m).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).replace(/\s?[AaPp]\.?[Mm]\.?$/, ""); };
-  const dayChip = (d) => { const [y, m, dd] = d.split("-").map(Number); return new Date(y, m - 1, dd).toLocaleDateString([], { weekday: "short", day: "numeric" }); };
+  // The calendar file for a time: one per minute of the day, on the site (cal/HHMM.ics, see tools/make-calendar-files.py)
+  const calFile = (t) => `cal/${t.replace(":", "")}.ics`;
   function reminderControls(setup = false) {
     const at = store.get("alarmAt", "", isAlarmTime) || "07:00";
     const os = isIOS ? "ios" : "android";
-    // A first date picked earlier (kept while it's still ahead), else the suggestion, else the next time `at` comes round
-    const first = nextAlarm(at, store.get("remDate", null, isDay) || (setup ? nextMorning() : null));
+    // The first reminder: the next time `at` comes round (the calendar event repeats every morning from then)
+    const first = nextAlarm(at);
     const S = (g, t) => `<li><span class="g">${GLYPH[g]}</span><span>${t}</span></li>`;
     // One calendar button for this phone; the other phone, instructions and the Shortcut are folded under More options
     // One card: the time (with quick picks), then the first morning, each on its own row, then the first reminder
-    // The first morning: the next three, by tap (the date picker sits under "Other" for anything later)
-    const base = setup ? nextMorning() : dayKey(nextAlarm(at));
-    const days = [0, 1, 2].map((n) => addDays(base, n)).map((d) => `<button class="chip pick" type="button" data-rem-day="${d}"><span>${esc(dayChip(d))}</span></button>`).join("");
     const quick = REM_QUICK.map((t) => `<button class="chip pick" type="button" data-rem-quick="${t}" aria-pressed="${t === at}"><span>${esc(quickLabel(t))}</span></button>`).join("");
     return `<div class="remcard">
           <div class="remrow"><span class="remic" aria-hidden="true">${icon("clock")}</span>
             <label class="flabel" for="remAt">Time</label>
             <input type="time" id="remAt" value="${esc(at)}"></div>
           <div class="chips remquick" role="group" aria-label="Quick times">${quick}</div>
-          <div class="remrow"><span class="remic" aria-hidden="true">${icon("cal")}</span>
-            <p class="flabel" id="remDayLbl">First morning</p></div>
-          <div class="chips remquick" role="group" aria-labelledby="remDayLbl">${days}
-            <label class="chip pick remother" id="remOther"><span id="remOtherLbl">Other</span>
-              <input type="date" id="remDate" aria-label="Another first morning" value="${esc(dayKey(first))}" min="${esc(dayKey())}"></label></div>
           <p class="remwhen" id="remWhen" aria-live="polite">First reminder: ${esc(whenText(first))}</p>
         </div>
         <div class="rempane" data-pane="android"${os === "android" ? "" : " hidden"}>
           <a class="button secondary" id="remGoogle" href="#" target="_blank" rel="noopener">${icon("cal")}<span>Add to Google Calendar</span></a>
         </div>
         <div class="rempane" data-pane="ios"${os === "ios" ? "" : " hidden"}>
-          <button class="secondary" id="remIcs" type="button">${icon("cal")}<span>Add to Apple Calendar</span></button>
+          <a class="button secondary" id="remIcs" href="${calFile(at)}">${icon("cal")}<span>Add to Apple Calendar</span></a>
         </div>
         <p role="status" id="remMsg"></p>
         <details class="cantfind" id="remMore"><summary>More options</summary>
@@ -2148,10 +2106,10 @@
           </div>
           <div class="rempane" data-pane="android"${os === "android" ? "" : " hidden"}>
             <p>Opens Google Calendar with the event filled in. Save it there, then set its notification to “At time of event”.</p>
-            <button class="link start" id="remIcsAlt" type="button">Use a calendar file instead</button>
+            <a class="link start" id="remIcsAlt" href="${calFile(at)}">Use another calendar app instead</a>
           </div>
           <div class="rempane" data-pane="ios"${os === "ios" ? "" : " hidden"}>
-            <p>Makes a calendar file. Open it to add it to Calendar, and check the alert is “At time of event”.</p>
+            <p>Opens Apple Calendar's own add sheet. Tap Add, and check the alert is “At time of event”.</p>
             <details class="cantfind" id="remShortcut"><summary>Open Mornward when your alarm stops</summary>
               <p>Apple's Shortcuts app can do this every morning. It takes a minute, once.</p>
               <ol class="vsteps four">
@@ -2210,25 +2168,14 @@
     if (change) change.onclick = () => { $("#remDone").hidden = true; $("#remCtl").hidden = false; $("#remAt").focus(); };
     const msg = (t) => { $("#remMsg").textContent = t; };
     const time = () => $("#remAt").value;
-    const dateField = $("#remDate");
-    // Time and first date are kept as they're changed (on the phone only), so a reload or midnight doesn't lose them
-    let dateTouched = !!store.get("remDate", null, isDay);
-    const date = () => (dateTouched && isDay(dateField.value) ? dateField.value : setup ? nextMorning() : null);
+    const ics = [$("#remIcs"), $("#remIcsAlt")].filter(Boolean);
     // The first reminder in words, from the real date and time (never a hard-coded "tomorrow")
     const point = () => {
-      if (!isAlarmTime(time())) { $("#remWhen").textContent = "Pick a time to see your first reminder."; g.removeAttribute("href"); return; }
-      const first = nextAlarm(time(), date());
-      // A chosen date that's now in the past falls back to the next occurrence, and stops being "chosen"
-      if (dateTouched && dayKey(first) !== dateField.value) { dateTouched = false; store.del("remDate"); return point(); }
-      if (dayKey(first) !== dateField.value) dateField.value = dayKey(first);
-      dateField.min = dayKey();
-      // The chip for that date is picked; a later date shows on "Other"
-      let onChip = false;
-      card.querySelectorAll("[data-rem-day]").forEach((b) => { const on = b.dataset.remDay === dateField.value; onChip = onChip || on; b.setAttribute("aria-pressed", String(on)); });
-      const other = $("#remOther");
-      if (other) { other.setAttribute("aria-pressed", String(!onChip)); $("#remOtherLbl").textContent = onChip ? "Other" : dayChip(dateField.value); }
+      if (!isAlarmTime(time())) { $("#remWhen").textContent = "Pick a time to see your first reminder."; g.removeAttribute("href"); ics.forEach((a) => a.removeAttribute("href")); return; }
+      const first = nextAlarm(time());
       $("#remWhen").textContent = `First reminder: ${whenText(first)}`;
-      g.href = googleCalendarLink(time(), carryLink(), date());
+      g.href = googleCalendarLink(time(), carryLink());
+      ics.forEach((a) => { a.href = calFile(time()); });
     };
     point();
     const syncQuick = () => card.querySelectorAll("[data-rem-quick]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.remQuick === time())));
@@ -2236,14 +2183,8 @@
     card.querySelectorAll("[data-rem-quick]").forEach((b) => (b.onclick = () => { $("#remAt").value = b.dataset.remQuick; keepTime(); }));
     $("#remAt").addEventListener("input", keepTime);
     $("#remAt").addEventListener("change", keepTime);
-    card.querySelectorAll("[data-rem-day]").forEach((b) => (b.onclick = () => { dateField.value = b.dataset.remDay; dateField.dispatchEvent(new Event("change")); }));
-    dateField.addEventListener("change", () => {
-      dateTouched = isDay(dateField.value);
-      if (dateTouched) store.set("remDate", dateField.value); else store.del("remDate");
-      point();
-    });
     // Kept on the phone only, to show "planned for …" later. Not sent anywhere, and not proof a reminder exists.
-    const remember = () => store.set("remPlan", { at: time(), first: dayKey(nextAlarm(time(), date())) });
+    const remember = () => store.set("remPlan", { at: time(), first: dayKey(nextAlarm(time())) });
     const check = () => {
       if (isAlarmTime(time())) { store.set("alarmAt", time()); return true; }
       msg("Pick a time first."); $("#remAt").focus(); return false;
@@ -2261,18 +2202,15 @@
       msg("Calendar opened—finish saving your reminder there.");
       emitDay("reminder_setup", { action: "google_link" }, "google_link");
     };
-    const file = () => {
-      if (!check()) return;
-      const a = document.createElement("a");
-      a.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(calendarFile(time(), carryLink(), date()));
-      a.download = "mornward.ics";
-      document.body.appendChild(a); a.click(); a.remove();
+    // A real link to the calendar file on the site: iPhone shows Apple Calendar's own add sheet (nothing downloaded)
+    const file = (e) => {
+      if (!check()) { e.preventDefault(); return; }
+      point();
       remember();
-      msg("Calendar file downloaded—open it to add your reminder.");
+      msg("Calendar opened—finish saving your reminder there.");
       emitDay("reminder_setup", { action: "calendar_file" }, "calendar_file");
     };
-    $("#remIcs").onclick = file;
-    $("#remIcsAlt").onclick = file;
+    ics.forEach((a) => (a.onclick = file));
     $("#remCopy").onclick = async () => {
       const url = alarmLink();
       try { await navigator.clipboard.writeText(url); msg("Copied. Paste it in the Open URLs step."); }

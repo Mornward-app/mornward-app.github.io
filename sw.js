@@ -2,7 +2,7 @@
 // one, and it also lets the morning open without a connection.
 // Always asks the network first, so updates show up straight away. The saved copy is used offline, or when a page
 // takes longer than NAV_TIMEOUT_MS to arrive and a saved copy exists (a weak signal shouldn't hold up the morning).
-// It only touches this site's own GET requests: the anonymous stats (POSTs to Supabase) pass straight through.
+// It only touches this site's own GET requests (not the calendar files): the anonymous stats (POSTs to Supabase) pass straight through.
 // It only manages its own caches and never touches localStorage, so tasks and settings survive every update.
 const CACHE = "mornward-v4";
 const SHELL = ["./", "./index.html", "./terms.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png"];
@@ -25,6 +25,9 @@ const saved = (req) => caches.match(req, { ignoreSearch: true })
 self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.method !== "GET" || new URL(req.url).origin !== self.location.origin) return;
+  // Calendar files (cal/HHMM.ics) go straight to the phone: never a saved page in their place, so a slow signal
+  // can't turn "Add to Apple Calendar" into the app opening again
+  if (new URL(req.url).pathname.includes("/cal/")) return;
   const net = fetch(req).then((res) => {
     if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {}); }
     return res;
