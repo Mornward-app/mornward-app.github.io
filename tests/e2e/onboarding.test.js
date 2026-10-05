@@ -96,9 +96,8 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     ok("step 2: after a calendar tap the button says Done, no Skip", (await x.p.textContent("#stepNext")) === "Done" && !(await x.p.$("#stepSkip")));
     // The calendar hand-off can reload the page (back from the calendar app): the tasks are still prepared
     await x.p.reload(); await x.t(700);
-    ok("after the calendar hand-off and a reload: still step 2, the reminder card, Done (no Skip), the tasks prepared", (await h1(x)) === "Make it easy to return." &&
-      (await x.p.textContent("#remDoneWhen")) === "7:00 AM, every morning" && (await x.p.textContent("#stepNext")) === "Done" && !(await x.p.$("#stepSkip")) && JSON.stringify((await x.ls("prepared")).tasks) === JSON.stringify([...chosen, "Call Mum"]));
-    await click(x, "#stepNext");
+    ok("after the calendar hand-off and a reload: straight to Ready (no second step 2, no second Done), the tasks prepared", (await h1(x)) === "Ready for your first morning." &&
+      (await x.ls("onboard")).status === "done" && JSON.stringify((await x.ls("prepared")).tasks) === JSON.stringify([...chosen, "Call Mum"]));
     ok("ready: one screen with the copy, Begin my morning and Edit setup (no separate 'Done for now' step)", (await h1(x)) === "Ready for your first morning." &&
       (await text(x)).includes("When you wake, open Mornward first.") && !(await x.p.$("#setupDone")) && !(await x.p.$("#beginNow")) &&
       (await x.p.textContent("#begin")) === "Begin my morning" && (await x.p.textContent("#setupEdit")) === "Edit setup");
@@ -380,16 +379,14 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     await x.p.click('[data-rem-quick="06:30"]'); await x.p.click("#remGoogle"); await x.t(300);
     for (const p of x.c.pages().slice(1)) await p.close();
     await click(x, "#stepNext"); await x.t(3000); await click(x, "#setupEdit"); await click(x, "#stepNext");
-    ok("B Edit setup after adding a reminder: it shows the reminder, doesn't ask again", (await x.p.textContent("#remDoneWhen")) === "6:30 AM, every morning" &&
-      !(await x.p.isVisible("#remAt")) && !(await x.p.isVisible("#remGoogle")) && !(await x.p.$("#stepSkip")));
-    ok("B ...no claim that it's saved in the calendar (it says what was added from here)", !/saved|is set|will remind/i.test(await x.p.textContent("#remDone")));
-    await x.p.click("#remChange"); await x.t(200);
-    ok("B Change: the controls come back, with a note to delete the old event", await x.p.isVisible("#remAt") && await x.p.isVisible("#remOld"));
-    await click(x, "#stepNext");
-    ok("B ...Continue still finishes setup and keeps the reminder", (await h1(x)) === "Ready for your first morning." && (await x.ls("remPlan")).at === "06:30");
+    ok("B Edit setup after adding a reminder: step 2 isn't asked again (tasks saved → Ready), the reminder kept", (await h1(x)) === "Ready for your first morning." &&
+      !(await x.p.$("#remAt")) && (await x.ls("remPlan")).at === "06:30");
     await jump(x, MON); await S.begin(x); await S.skipBreathing(x); await S.keep(x); await S.finish(x);
     await x.p.click("#remindSec summary"); await x.t(200);
     ok("B Today: Morning reminder shows the added reminder instead of asking", (await x.p.textContent("#remDoneWhen")) === "6:30 AM, every morning" && !(await x.p.isVisible("#remAt")));
+    ok("B ...no claim that it's saved in the calendar (it says what was added from here)", !/saved|is set|will remind/i.test(await x.p.textContent("#remDone")));
+    await x.p.click("#remChange"); await x.t(200);
+    ok("B Change: the controls come back, with a note to delete the old event", await x.p.isVisible("#remAt") && await x.p.isVisible("#remOld"));
     await x.c.close(); }
 
   // Option 2: already done → "All set to return" (both), or a tick for the home screen (only that)
@@ -410,10 +407,18 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
       ok(`home only: a tick instead of the add steps; the reminder card as usual`, (await x.p.textContent("#homeTick")).trim() === "On your home screen" && !(await x.p.$("#addSec")) &&
         await x.p.isVisible("#remAt") && !!(await x.p.$("#stepSkip")));
     } else {
-      ok(`reminder only: the saved reminder, and the home-screen row still offered`, (await x.p.textContent("#remDoneWhen")) === "6:30 AM, every morning" && !!(await x.p.$("#addSec")) && !(await x.p.$("#allSet")));
+      ok(`reminder only: no step 2 at all, straight to Ready`, (await h1(x)) === "Ready for your first morning." && !(await x.p.$("#remSetup")));
     }
     await x.c.close();
   }
+
+  // iPhone, added from Safari's Share menu (Safari can't see it): "Already on my home screen" says so, once
+  { const x = await open({ device: "iPhone 14" }); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext");
+    await x.p.click("#addSec summary"); await x.p.click("#addHave"); await x.t(200);
+    ok("home row: 'Already on my home screen' turns the row into a tick, remembered on the phone", !(await x.p.$("#addSec")) && !!(await x.p.$("#homeTick")) && (await x.ls("homeAdded")).how === "self");
+    await click(x, "#stepNext"); await x.t(3000); await click(x, "#begin"); await S.skipBreathing(x); await S.keep(x); await S.finish(x);
+    ok("home row: ...no add-to-home-screen offer on Today afterwards", !(await x.p.$("[data-install-add]")) && !(await x.p.$("#addSec")));
+    await x.c.close(); }
 
   // The first reminder is the next morning, worked out from the real date and time
   for (const [when, want, label] of [["2026-10-05T06:00:00", "2026-10-05", "setting up at 6 AM (reminder at 7): later this morning"],

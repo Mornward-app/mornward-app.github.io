@@ -1122,6 +1122,9 @@
     // Already on the home screen: a tick instead of the steps. With the reminder added too, one "All set" card.
     const home = homeKnown() && !computerView();
     const allSet = home && !!savedReminder();
+    // A reminder already added (back from the calendar, or Edit setup): nothing left to do here, so no extra screen
+    // and no extra Done. Only "All set to return" (reminder and home screen both done) is still shown.
+    if (savedReminder() && !allSet && finishSetup()) return;
     show(`${stepTop(2)}
       <h1>Make it easy to return.</h1>
       <div class="remsetup" id="remSetup">${reminderBlock(true, home)}</div>
@@ -1915,12 +1918,20 @@
     const b = $("#addQuiet");
     b.textContent = st === "accepted" ? "Adding…" : "Add to home screen";
     b.onclick = () => startAdd(b);
+    // Safari can't see the home screen: someone who added it from the Share menu says so here, once
+    const have = $("#addHave");
+    if (have) have.onclick = () => {
+      markHome("self");
+      if ($("#remSetup")) sec.outerHTML = `<p class="hometick" id="homeTick">${GLYPH.ok}<span>On your home screen</span></p>`;
+      else { sec.remove(); renderInstall(); }
+    };
   }
   // After someone said no to the box: a closed row under Today, so it's still there when they want it
   const quietAdd = (always = false) => ((!always && store.get("installNo", false) !== true) || ["home", "installed"].includes(installState()) || computerView()) ? ""
     : `<details class="section" id="addSec"><summary><span class="sl">${icon("home")}Add to home screen${always ? " · optional" : ""}</span></summary><div class="inner">
         <p>${esc(installNote || "Opens in one tap, no feed first.")}</p>
-        <button class="secondary" id="addQuiet" type="button">${installState() === "accepted" ? "Adding…" : "Add to home screen"}</button></div></details>`;
+        <button class="secondary" id="addQuiet" type="button">${installState() === "accepted" ? "Adding…" : "Add to home screen"}</button>
+        <button class="link start" id="addHave" type="button">Already on my home screen</button></div></details>`;
 
   // Setup step 2: the home screen as a quiet, optional row (the reminder comes first; neither is required)
   const installOptional = () => quietAdd(true);

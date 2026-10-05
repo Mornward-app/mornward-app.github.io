@@ -53,6 +53,11 @@ words: task names (shuffled per phone), folded sections and screen-reader-only t
   The same time is the same file for everyone, so it carries no ID.
 - **The button:** "Continue" (with Skip for now) until a calendar is opened, then "Done" with no Skip, there and on
   the "All set to return" card.
+- **No second step 2:** once a reminder was added, step 2 isn't shown again (back from the calendar, a reload, or
+  Edit setup): it goes straight to Ready. The one exception is "All set to return" (reminder and home screen both
+  done). The reminder can still be changed from Today's Morning reminder.
+- **Already on my home screen:** in the home-screen row. Safari can't see the home screen, so someone who added
+  it from the Share menu taps this once; the row becomes a tick and no add offer shows again on that phone.
 - **Added once, never asked again:** the calendar event repeats every morning until deleted (the alert is at the
   event's time, so the phone notifies each morning). After a calendar tap, step 2 (Edit setup) and Today's Morning
   reminder show "Your calendar reminder · 7:00 AM, every morning" with "Change it or add it again" instead of the
