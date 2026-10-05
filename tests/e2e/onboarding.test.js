@@ -274,7 +274,10 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
   // 12: computer → phone: offered before any personal choice; opening isn't installing; nothing moves
   { const x = await ctx(b, site.url, { when: SUN_EVE, device: "Desktop Chrome" }); await x.p.setViewportSize({ width: 1280, height: 800 }); await x.goto();
     ok("12 computer, Welcome: Prepare my morning, no choices yet", (await x.p.textContent("#setupGo")) === "Prepare my morning" && !(await x.p.$("#prepIntent")));
-    ok("12 computer, Welcome: 'What is Mornward?' beside the app, no code yet", (await x.p.textContent("#aboutTitle")) === "What is Mornward?" && !(await x.p.$("#handoff")));
+    ok("12 computer, Welcome: the phone code beside the app, with 'What is Mornward?' under it", !!(await x.p.$("#handoffSlot #handoff .qr")) && (await x.p.textContent("#aboutTitle")) === "What is Mornward?");
+    const wgeo = await x.p.evaluate(() => { const c = document.querySelector("#handoffSlot #handoff").getBoundingClientRect(), q = document.querySelector("#handoffSlot .qr").getBoundingClientRect();
+      return { w: c.width, q: q.width, off: Math.abs((q.left + q.right) / 2 - (c.left + c.right) / 2) }; });
+    ok("12 computer, Welcome: the card is slim, the code centred and still scannable", wgeo.w <= 240 && wgeo.q >= 120 && wgeo.off < 2, wgeo);
     await click(x, "#setupGo");
     ok("12 ...first: 'Set up where you’ll use it.' / 'Scan to open Mornward on your phone.'", (await h1(x)) === "Set up where you’ll use it." &&
       (await text(x)).includes("Scan to open Mornward on your phone.") && !!(await x.p.$("#card #handoff .qr")));

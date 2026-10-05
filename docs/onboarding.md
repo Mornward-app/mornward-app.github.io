@@ -25,9 +25,9 @@ words: task names (shuffled per phone), folded sections and screen-reader-only t
 | Morning tasks | 25 | ~20 | Six chips; one short hint |
 
 - **The promise** (Welcome and Prepared, under the heading): "Start your day on purpose, not on a feed."
-- **What it is, in ten words** (computer only: beside Welcome, and under the phone code on later screens): "What is Mornward?" / "A one-minute
+- **What it is, in ten words** (computer only, a box under the phone code, from Welcome on): "What is Mornward?" / "A one-minute
   morning routine: three breaths, then your chosen tasks."
-- **The phone code beside the app** (wide windows) is a slim column, 236 px, with the code centred in its card.
+- **The phone code beside the app** (computers, from Welcome on) is a slim column, 236 px, with the code centred in its card, so someone on a computer can open Mornward on their phone and add it to the home screen there.
 
 ## Screens and copy
 

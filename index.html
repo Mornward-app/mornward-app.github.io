@@ -968,7 +968,7 @@
     // On a computer, the phone comes first: before any personal choice is made here
     $("#setupGo").onclick = () => (computerView() ? renderPhoneStep() : startSetup());
     $("#beginNow").onclick = begin;
-    renderAbout();
+    renderHandoff(); // a computer: the phone code (slim, centred) and "What is Mornward?" beside the app
   }
   // A computer: open it on the phone (the code opens the app; it installs nothing), or carry on here
   function renderPhoneStep() {
@@ -1904,8 +1904,6 @@
         <h2 id="aboutTitle">What is Mornward?</h2>
         <p>${WHAT_IT_IS}</p>
       </aside>`;
-  // Welcome on a computer: only "What is Mornward?" beside the app (the code comes with Prepare my morning)
-  function renderAbout() { $("#handoffSlot").innerHTML = computerView() ? aboutHtml() : ""; }
   function renderHandoff() {
     const slot = $("#handoffSlot");
     slot.innerHTML = handoffHtml();
