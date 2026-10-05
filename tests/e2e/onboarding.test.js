@@ -26,10 +26,12 @@ async function pickApps(x, apps) {
 }
 const pressed = (x) => x.p.$$eval('#prefApps [data-app][aria-pressed="true"]', (l) => l.map((e) => e.dataset.app));
 const snapshot = (x) => x.p.evaluate(() => JSON.stringify(Object.keys(localStorage).sort().map((k) => [k, localStorage.getItem(k)])));
-// Words a person can see on the screen (screen-reader-only text and folded sections left out)
-const words = (x) => x.p.evaluate(() => { const c = document.querySelector("#card").cloneNode(true); c.querySelectorAll(".sr-only").forEach((e) => e.remove());
+// The app's own words a person can see (task names, screen-reader-only text and folded sections left out: task names
+// are shuffled per phone, so they'd make the count vary)
+const words = (x) => x.p.evaluate(() => { const c = document.querySelector("#card").cloneNode(true);
+  c.querySelectorAll(".sr-only, .chip.pick span, #prepList li").forEach((e) => e.remove());
   document.body.appendChild(c); const t = c.innerText; c.remove(); return t.split(/\s+/).filter((w) => /[A-Za-z0-9]/.test(w)).length; });
-const BUDGET = { welcome: 40, tasks: 40, ret: 35, ready: 40, prepared: 40, morning: 40 };
+const BUDGET = { welcome: 45, tasks: 25, ret: 35, ready: 35, prepared: 40, morning: 25 };
 const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
 
 (async () => {
@@ -42,7 +44,8 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     ok("welcome: the headline, the routine as three icons, Prepare my morning, Begin now", (await h1(x)) === "A calmer start, before the scroll." &&
       (await x.p.$$("#flowRow li .i")).length === 3 && (await x.p.textContent("#setupGo")) === "Prepare my morning" &&
       (await x.p.textContent("#beginNow")) === "Up already? Begin now");
-    ok(`welcome: few words (≤ ${BUDGET.welcome})`, (await words(x)) <= BUDGET.welcome, await words(x));
+    ok("welcome: the promise", (await x.p.textContent("#promise")) === "Start your day on purpose, not on a feed.");
+    ok(`welcome: few words (≤ ${BUDGET.welcome})`, (await words(x)) <= BUDGET.welcome, "words: " + await words(x));
     ok("welcome: the counts choice and terms are there before anything is sent", !!(await x.p.$("#preToggle")) && !!(await x.p.$('#consent a[href="terms.html"]')) && x.bodies.length === 0);
     ok("welcome: no 'demo', 'test' or 'practice' wording", !/demo|test run|practice/i.test(await text(x)));
     const before = await snapshot(x);
@@ -53,7 +56,7 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
       (await x.p.textContent(".stepnum")) === "Step 1 of 2" && (await x.p.$$(".stepbars i")).length === 2 && (await x.p.$$(".stepbars i.on")).length === 1 &&
       (await x.p.$$("[data-idea]")).length === 6 &&
       (await x.p.textContent("#stepNext")) === "Save my plan" && (await x.p.textContent("#stepSkip")) === "Choose later");
-    ok(`step 1: few words beyond the task names (≤ ${BUDGET.tasks} with them)`, (await words(x)) <= BUDGET.tasks, await words(x));
+    ok(`step 1: few words besides the task names (≤ ${BUDGET.tasks})`, (await words(x)) <= BUDGET.tasks, "words: " + await words(x));
     ok("step 1: no 'where your scroll starts' question in the way", !(await x.p.$("[data-app]")) && !/scroll usually start/.test(await text(x)));
     ok("step 1: nothing saved just by opening it", !(await x.ls("prepared")));
     // Back to Welcome keeps what was chosen; the typing is kept too
@@ -71,7 +74,7 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
       (await x.p.textContent(".stepnum")) === "Step 2 of 2" &&
       !!(await x.p.$("#remAt")) && !!(await x.p.$("#remDate")) && /^First reminder: Monday, October 5 at 7:00/.test(await x.p.textContent("#remWhen")) &&
       (await x.p.textContent("#stepSkip")) === "Skip for now");
-    ok(`step 2: few words (≤ ${BUDGET.ret}); the extra calendar steps are folded`, (await words(x)) <= BUDGET.ret && !(await x.p.$("#remMore[open]")), await words(x));
+    ok(`step 2: few words (≤ ${BUDGET.ret}); the extra calendar steps are folded`, (await words(x)) <= BUDGET.ret && !(await x.p.$("#remMore[open]")), "words: " + await words(x));
     ok("step 2: suggests tomorrow (Sunday evening → Monday) at the time shown", (await x.p.inputValue("#remDate")) === "2026-10-05" && (await x.p.inputValue("#remAt")) === "07:00");
     ok("step 2: one visually primary action (Continue); calendar and home screen are secondary", (await x.p.$$("#card .primary")).length === 1 &&
       (await x.p.textContent("#card .primary")) === "Continue" && !!(await x.p.$("#addSec")));
@@ -93,7 +96,7 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
       (await x.p.textContent("#setupDone")) === "Done for now" && (await x.p.textContent("#setupEdit")) === "Edit setup" &&
       (await x.p.getAttribute("#setupEdit", "class")) === "secondary" &&
       (await x.p.textContent("#beginNow")) === "Up already? Begin now");
-    ok(`ready: few words (≤ ${BUDGET.ready}, tasks included)`, (await words(x)) <= BUDGET.ready, await words(x));
+    ok(`ready: few words besides the tasks (≤ ${BUDGET.ready})`, (await words(x)) <= BUDGET.ready, "words: " + await words(x));
     ok("ready: the prepared tasks are shown", JSON.stringify(await x.p.$$eval("#prepList li", (l) => l.map((e) => e.textContent))) === JSON.stringify([...chosen, "Call Mum"]));
     ok("ready: the reminder status says what's known (the date, and to check the calendar saved it)", /^Tuesday, October 6 at 7:00.*\. Check your calendar saved it\.$/.test(await x.p.textContent("#remStatus")));
     ok("ready: no sun, circles, count, timeline, %, streak, 'complete' claim or 'tomorrow'", !(await x.p.$(".sunrise")) && !(await x.p.$(".progress")) && !(await x.p.$(".dot")) &&
@@ -112,11 +115,12 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     ok("setup events carry no answers", x.bodies.every((bd) => !/instagram|tiktok|Call Mum|07:00|"apps"/i.test(bd)) &&
       x.rows().find((r) => r.kind === "setup_completed").data.tasks_prepared === 2);
     await click(x, "#setupDone");
-    ok("Done for now: the quiet prepared screen, the routine as icons", (await h1(x)) === "A minute before the scroll." && (await x.p.$$("#flowRow li")).length === 3 &&
+    ok("Done for now: the quiet prepared screen, the promise, the routine as icons", (await h1(x)) === "A minute before the scroll." && (await x.p.$$("#flowRow li")).length === 3 &&
+      (await x.p.textContent("#promise")) === "Start your day on purpose, not on a feed." && !(await x.p.$("#themeSec")) &&
       (await x.p.textContent("#begin")) === "Begin my morning" && !!(await x.p.$("#setupEdit")));
     ok("prepared: the Instagram line", (await x.p.textContent("#invite")) === "Before Instagram, take a minute for yourself.");
     ok("prepared: the tasks are visible", JSON.stringify(await x.p.$$eval("#prepList li", (l) => l.map((e) => e.textContent))) === JSON.stringify([...chosen, "Call Mum"]));
-    ok(`prepared: few words (≤ ${BUDGET.prepared}, tasks included)`, (await words(x)) <= BUDGET.prepared, await words(x));
+    ok(`prepared: few words besides the tasks (≤ ${BUDGET.prepared})`, (await words(x)) <= BUDGET.prepared, "words: " + await words(x));
     ok("6 prepared, the evening before: no 'tomorrow', late or missed", !/tomorrow/i.test(await text(x)) && !NOT_LATE.test(await text(x)));
     ok("prepared: breathing doesn't start by itself", !(await x.p.$("#bpause")));
     // Reopen Monday (before the planned Tuesday): same prepared screen, nothing overdue
@@ -127,7 +131,7 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     await S.begin(x); await S.breatheAll(x);
     ok("2 Monday: after breathing, the prepared tasks are ticked, waiting for a tap", JSON.stringify((await ticked(x)).sort()) === JSON.stringify([...chosen, "Call Mum"].sort()) &&
       /Your plan is ticked/.test(await x.p.textContent("#pickHint")));
-    ok(`2 the morning task step: few words (≤ ${BUDGET.morning}, task names included); six suggestions at most`, (await words(x)) <= BUDGET.morning && (await x.p.$$("[data-idea]")).length <= 6, await words(x));
+    ok(`2 the morning task step: few words besides the task names (≤ ${BUDGET.morning}); six suggestions at most`, (await words(x)) <= BUDGET.morning && (await x.p.$$("[data-idea]")).length <= 6, "words: " + await words(x));
     ok("2 ...nothing saved for Monday yet", !(await x.ls("intent:2026-10-05")) && !(await x.ls("fullDays")));
     await x.p.reload(); await x.t(700);
     ok("2 ...still not confirmed after a reload", !(await x.ls("intent:2026-10-05")) && !!(await x.p.$("#isave")));
@@ -270,6 +274,7 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
   // 12: computer → phone: offered before any personal choice; opening isn't installing; nothing moves
   { const x = await ctx(b, site.url, { when: SUN_EVE, device: "Desktop Chrome" }); await x.p.setViewportSize({ width: 1280, height: 800 }); await x.goto();
     ok("12 computer, Welcome: Prepare my morning, no choices yet", (await x.p.textContent("#setupGo")) === "Prepare my morning" && !(await x.p.$("#prepIntent")));
+    ok("12 computer, Welcome: 'What is Mornward?' beside the app, no code yet", (await x.p.textContent("#aboutTitle")) === "What is Mornward?" && !(await x.p.$("#handoff")));
     await click(x, "#setupGo");
     ok("12 ...first: 'Set up where you’ll use it.' / 'Scan to open Mornward on your phone.'", (await h1(x)) === "Set up where you’ll use it." &&
       (await text(x)).includes("Scan to open Mornward on your phone.") && !!(await x.p.$("#card #handoff .qr")));
@@ -278,6 +283,7 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     ok("12 ...says the code opens it in the browser and installs nothing", /Opens in your phone’s browser\. Installs nothing\./.test(note));
     ok("12 ...says choices stay here (no sync claimed)", /Choices made here stay here/.test(note) && !/transfer|sync|carry over/i.test(await text(x)));
     ok("12 ...'Continue on this device' is there", (await x.p.textContent("#hereGo")) === "Continue on this device");
+    ok("12 ...the phone step has no 'What is Mornward?' box (it's beside the app on other screens)", !(await x.p.$("#aboutBox")));
     await x.p.locator("#handoff .qr").screenshot({ path: "/tmp/mw-qr-onb.png" });
     let url = "";
     try { url = execFileSync("python3", ["-c", "import cv2,sys\nimg=cv2.imread(sys.argv[1]); img=cv2.resize(img,None,fx=2,fy=2,interpolation=cv2.INTER_NEAREST)\nv,_,_=cv2.QRCodeDetector().detectAndDecode(img); print(v)", "/tmp/mw-qr-onb.png"]).toString().trim(); } catch {}
@@ -288,6 +294,15 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     await click(x, "#stepNext"); await click(x, "#stepNext"); await click(x, "#setupDone");
     ok("12 ...after setup on the computer, the phone card is still offered beside the app", !!(await x.p.$("#handoffSlot #handoff")) &&
       (await x.p.textContent("#hoTitle")) === "Set up where you’ll use it.");
+    const geo = await x.p.evaluate(() => { const c = document.querySelector("#handoffSlot #handoff").getBoundingClientRect(), q = document.querySelector("#handoffSlot .qr").getBoundingClientRect();
+      return { w: c.width, q: q.width, off: Math.abs((q.left + q.right) / 2 - (c.left + c.right) / 2) }; });
+    ok("12 ...the card is slim and the code is centred in it, still scannable", geo.w <= 240 && geo.q >= 120 && geo.off < 2, geo);
+    const about = (await x.p.textContent("#aboutBox p")).trim();
+    ok("12 ...under it, 'What is Mornward?' in ten words", (await x.p.textContent("#aboutTitle")) === "What is Mornward?" && about.split(/\s+/).length === 10 &&
+      about === "A one-minute morning routine: three breaths, then your chosen tasks.", about);
+    const below = await x.p.evaluate(() => document.querySelector("#aboutBox").getBoundingClientRect().top >= document.querySelector("#handoffSlot #handoff").getBoundingClientRect().bottom);
+    ok("12 ...the box sits under the code card", below);
+    ok("12 ...no Appearance section any more", !(await x.p.$("#themeSec")));
     await x.c.close(); }
   for (const device of ["Pixel 7", "iPhone 13"]) {
     const x = await open({ device }); await x.goto();

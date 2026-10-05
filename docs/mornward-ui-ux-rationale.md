@@ -45,7 +45,7 @@ Two supporting decisions:
 | **Tap the circle to pause**; a short buzz at each in/out change (Android) | A big target for a sleepy thumb; the buzz lets people breathe with their eyes closed. | Unknown whether people find the circle tap; the Pause button stays. The buzz may annoy some people. iPhones ignore it. | Low. The buzz is 12 ms and only during breathing. | Ask in the user test; if people dislike the buzz, add a switch. |
 | **One-tap ideas** under Save: your own last two intentions ("Use again") and four small starters | Typing at 7 am is effort; a tap plus Save is two taps. Your own words come first, so it stays personal. | Starters may make intentions generic. | Low. Tapping only fills the field; nothing is saved until Save, and yesterday's text is never filled in on its own. | Compare saved vs skipped intentions before and after; ask whether the ideas felt pushy. |
 | **The sun rises on Finish** (1.4 s, none with reduced motion) | One small moment of completion instead of words or a score. | It could feel childish to some. | None. | User test reactions. |
-| **Dark mode**: follows the phone (Auto), or Light/Dark under Appearance; in dark, the sun colour becomes the button | A bright screen at 6 am in a dark room is unpleasant; the one action stays the brightest thing on screen. | Dark colours were chosen by contrast ratio, not tested with people. | None known. | Contrast: text 15.0:1, secondary text 8.7:1, button text 11.3:1, field edge 4.6:1, chip edge 3.2:1. |
+| **Dark mode**: follows the phone's light or dark setting (the Appearance choice was removed in October 2026); in dark, the sun colour becomes the button | A bright screen at 6 am in a dark room is unpleasant; the one action stays the brightest thing on screen. | Dark colours were chosen by contrast ratio, not tested with people. | None known. | Contrast: text 15.0:1, secondary text 8.7:1, button text 11.3:1, field edge 4.6:1, chip edge 3.2:1. |
 | **The idea chips sit below Save** and never hide | An earlier version hid them while typing; that moved Save as the keyboard closed, so a tap meant for Save could land on an idea and replace the words. Caught by the tests before release. | None. | Avoided. | Covered in `qa/redesign/v2.js`. |
 
 ## Pass 3: installs and coming back on day 2
@@ -90,7 +90,7 @@ after. Two earlier decisions change because of it, and the reasons are recorded 
 - **Twelve mini tasks as a vertical list** (your own last two first, marked "Use again"). Save and Skip stay pinned to
   the bottom while you scroll. While typing, the list folds away so Save sits under the field above the keyboard;
   it returns 0.45 s after typing ends, so a tap on Save lands before anything moves.
-- **Preview tools are a slim "Test drive" tab** that slides up a panel (Next day, Back to today, Theme, Steps, Start
+- **Preview tools are a slim "Test drive" tab** that slides up a panel (since October 2026: Light/Dark, text size, a sample week, what the phone keeps, what would be counted, Start over; earlier: Next day, Back to today, Theme, Steps, Start
   fresh). Preview build only.
 
 ### Pass 5: pick a few mini tasks (chips, two pre-ticked)

@@ -25,7 +25,7 @@ Setup starts no routine. Up already? "Begin now" goes straight to the routine. D
 
 Open it again the same day and you see today's mini task. The next day it offers the routine again;
 earlier tasks stay on your phone, listed by date. A calendar reminder is optional, in setup and under Today. It never asks for notification permission.
-Light and dark: it follows your phone, or pick one under Appearance.
+Light and dark: it follows your phone's setting.
 Begin and Today show an "Add to home screen" box (Chrome's one-tap install on Android, Apple's
 Share steps on iPhone) and "Your progress": your dates since you started (the last 7 once there are more), a yellow circle
 for each full morning reset (3 breaths and mini tasks), and a running count of resets completed.

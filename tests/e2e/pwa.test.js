@@ -107,13 +107,30 @@ const swReady = (p) => p.evaluate(() => navigator.serviceWorker.ready.then(() =>
   // Preview vs production
   { const x = await ctx(b, site.url, { when: "2026-10-05T07:10:00", init: () => { window.MORNWARD_PREVIEW = true; } });
     await x.goto(); await S.begin(x); await S.skipBreathing(x); await S.keep(x); await S.finish(x);
-    await x.p.click("#tdTab"); await x.t(300); await x.p.click("#pvNext"); await x.t(700);
-    await S.begin(x); await S.skipBreathing(x); await S.keep(x); await x.p.waitForTimeout(500);
-    ok("preview: Test drive works (a pretend next day)", (await x.ls("days")).length === 2);
+    await x.p.click("#tdTab"); await x.t(300);
+    ok("preview Test drive: Light/Dark only (no Auto), text size, sample week, what's kept, what's counted, Start over",
+      JSON.stringify(await x.p.$$eval("[data-td-theme]", (l) => l.map((e) => e.textContent))) === '["Light","Dark"]' &&
+      (await x.p.$$("[data-td-textsize]")).length === 3 && !!(await x.p.$("#pvWeek")) && !!(await x.p.$("#pvKept")) && !!(await x.p.$("#pvCounts")) && !!(await x.p.$("#pvReset")) &&
+      !(await x.p.$("#pvNext")) && !(await x.p.$("#pvPhone")));
+    await x.p.click('[data-td-theme="dark"]');
+    ok("preview Test drive: Dark switches the app to dark", (await x.p.getAttribute("html", "data-theme")) === "dark");
+    await x.p.click('[data-td-textsize="largest"]');
+    ok("preview Test drive: Largest text makes the text bigger", (await x.p.evaluate(() => document.documentElement.style.fontSize)) === "150%");
+    await x.p.click('[data-td-textsize="normal"]');
+    await x.p.click("#pvCounts");
+    const counted = await x.p.textContent("#pvOut");
+    ok("preview Test drive: 'What would be counted' lists this routine in plain words, never the task text", /Started a routine/.test(counted) && /Saved 2 mini tasks \(not what they say\)/.test(counted) && /A full routine|Reached the end/.test(counted), counted);
+    await x.p.click("#pvKept");
+    ok("preview Test drive: 'What this phone keeps' in plain words", /Mini tasks for 1 day/.test(await x.p.textContent("#pvOut")) && /Your words never leave it/.test(await x.p.textContent("#pvOut")));
+    await x.p.click("#pvWeek"); await x.t(700);
+    ok("preview Test drive: a sample week fills the progress (five days, one missed) and today stays as it was", (await x.ls("days")).length === 6 &&
+      (await x.p.$$(".progress li")).length === 7 && (await x.p.$$(".progress li.none")).length === 1 && (await x.p.$("#again, #begin")) !== null);
     ok("preview: nothing at all is sent, whatever is tapped", x.bodies.length === 0 && ((await x.ls("outbox")) || []).length === 0);
     await x.c.close(); }
   { const x = await ctx(b, site.url, { when: "2026-10-05T07:10:00", viewport: null }); await x.goto();
     ok("production: no Test drive tab", !(await x.p.$("#tdTab")));
+    await x.p.evaluate(() => localStorage.setItem("fl.theme", '"dark"')); await x.p.emulateMedia({ colorScheme: "light" }); await x.p.reload(); await x.t(700);
+    ok("production: follows the phone's light or dark setting (an old saved choice is ignored)", !(await x.p.getAttribute("html", "data-theme")));
     const html = require("fs").readFileSync(require("path").join(ROOT, "index.html"), "utf8");
     ok("production: the phone card's link is the real site", html.includes('const PHONE_URL = "https://mornward.app/?from=qr";') && !/claude\.ai\/artifact/.test(html));
     await x.c.close(); }

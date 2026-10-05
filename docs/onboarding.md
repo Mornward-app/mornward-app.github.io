@@ -12,29 +12,33 @@ Each morning: Begin my morning → three breaths → confirm tasks → complete 
 
 ## Few words, more pictures
 
-Every screen keeps to a word budget, checked by `tests/e2e/onboarding.test.js`. The counts are visible words
-only; task names are included, and folded sections and screen-reader-only text are left out.
+Every screen keeps to a word budget, checked by `tests/e2e/onboarding.test.js`. The counts are the app's own visible
+words: task names (shuffled per phone), folded sections and screen-reader-only text are left out.
 
-| Screen | Budget | Today | What carries it instead of words |
+| Screen | Budget | Now | What carries it instead of words |
 | --- | --- | --- | --- |
-| Welcome | 40 | ~37 | The sun; three icons (3 breaths · Mini tasks · Ready); "About one minute" |
-| 1 Pick tasks | 40 | ~36 | Six task chips (was ten); step bars instead of "Step 1 of 2" |
+| Welcome | 45 | ~43 | The sun; the promise; three icons (3 breaths · Mini tasks · Ready) |
+| 1 Pick tasks | 25 | ~22 | Six task chips (was ten); step bars instead of "Step 1 of 2" |
 | 2 Make it easy to return | 35 | ~32 | Time and date pickers; one calendar button for this phone. The other phone, the instructions, the file and the Shortcut are under **More options** |
-| Ready | 40 | ~31 | The plan card; a calendar icon with the date |
-| Prepared (next morning) | 40 | ~34 | The sun, the three icons, the plan card |
-| Morning tasks | 40 | ~37 | Six chips; one short hint |
-| Complete | — | ~29 | The risen sun; the progress dots (no extra line for a full reset) |
+| Ready | 35 | ~28 | The plan card; a calendar icon with the date |
+| Prepared (next morning) | 40 | ~37 | The sun, the promise, the three icons, the plan card |
+| Morning tasks | 25 | ~20 | Six chips; one short hint |
+
+- **The promise** (Welcome and Prepared, under the heading): "Start your day on purpose, not on a feed."
+- **What it is, in ten words** (computer only: beside Welcome, and under the phone code on later screens): "What is Mornward?" / "A one-minute
+  morning routine: three breaths, then your chosen tasks."
+- **The phone code beside the app** (wide windows) is a slim column, 236 px, with the code centred in its card.
 
 ## Screens and copy
 
 | Screen | Heading | Everything else |
 | --- | --- | --- |
-| Welcome | A calmer start, before the scroll. | Icons: 3 breaths · Mini tasks · Ready · "About one minute" · **Prepare my morning** · Up already? Begin now · "Free · No account · Continuing accepts the beta terms." · "Anonymous counts on. Turn off" · What's counted (folded) |
+| Welcome | A calmer start, before the scroll. | The promise · icons: 3 breaths · Mini tasks · Ready · **Prepare my morning** · Up already? Begin now · "Free · No account · Continuing accepts the beta terms." · "Anonymous counts on. Turn off" · What's counted (folded) |
 | Computer only | Set up where you’ll use it. | "Scan to open Mornward on your phone." · QR code · "Opens in your phone’s browser. Installs nothing. Choices made here stay here." · Copy link · **Continue on this device** (secondary) · Back |
 | 1 Pick tasks | Pick your morning tasks. | "Up to 3." · six chips · Add your own · **Save my plan** · Choose later · Back · step bars |
 | 2 Make it easy to return | Make it easy to return. | Time · First morning (suggested: the next morning) · "First reminder: Monday, October 5 at 7:00 AM" · **Add to Google Calendar** or **Add to Apple Calendar** · More options (folded) · Add to home screen · optional (folded) · **Continue** · Skip for now |
 | Ready | Ready for your first morning. | "When you wake, open Mornward first." · Your plan (card) · the reminder line · Personalize (folded) · Up already? Begin now · **Done for now** · Edit setup |
-| Prepared | A minute before the scroll. | The invitation line (if one app was picked) · icons · Your plan · **Begin my morning** · About one minute · Edit setup · Personalize, Appearance, Privacy (folded) |
+| Prepared | A minute before the scroll. | The promise · the invitation line (if one app was picked) · icons · Your plan · **Begin my morning** · Edit setup · Personalize, Privacy (folded) |
 | Morning tasks | What matters this morning? | "Your plan is ticked." (first morning) / "Two picked. Up to 3." / "Today's tasks are ticked." · six chips · **Save my tasks** · Skip for today |
 
 - **Reminder line on Ready**, only what's known: after a calendar tap, a calendar icon and "Tuesday, October 6 at
@@ -139,7 +143,7 @@ Every result below is from Chromium with phone emulation, not a physical phone.
 
 | # | Scenario | Result |
 | --- | --- | --- |
-| W | Word budgets: Welcome, both steps, Ready, Prepared and the morning task step each stay under their budget; six task chips at most | Pass |
+| W | Word budgets: Welcome, both steps, Ready, Prepared and the morning task step each stay under their budget; six task chips at most; the promise on Welcome and Prepared | Pass |
 | P | Viewing Welcome changes nothing stored on the phone, starts nothing and sends nothing | Pass |
 | 1 | Sunday-evening setup without the exercise: no routine, days, full days or start day; only setup events | Pass |
 | 2 | Monday: prepared tasks ticked after breathing ("Your plan is ticked."), not saved until Save, still unsaved after a reload | Pass |
@@ -152,7 +156,7 @@ Every result below is from Chromium with phone emulation, not a physical phone.
 | 9 | Counts off: the whole journey works; nothing sent or queued; no ID made | Pass |
 | 10 | Failed saves (prepared tasks; finishing setup): message, Retry, input kept, no "Ready" | Pass |
 | 11 | Calendar opened but not saved: "Calendar opened—finish saving your reminder there."; tasks and date survive a reload after the hand-off; a blocked calendar doesn't trap setup; no reminder-success claim | Pass |
-| 12 | Computer: the phone step before any choice; "Installs nothing"; "Choices made here stay here"; the QR decodes to `https://mornward.app/?from=qr`; Continue on this device works. Phones never show the code | Pass |
+| 12 | Computer: the phone step before any choice; "Installs nothing"; "Choices made here stay here"; the QR decodes to `https://mornward.app/?from=qr`; Continue on this device works. Beside the app: a slim card (≤ 240 px), the code centred, and "What is Mornward?" in ten words under it. Phones never show the code | Pass |
 | 13 | 320 px, dark mode, reduced motion and 200% text: every setup and morning screen fits the phone's width (checked against the screen, not the stretched viewport); keyboard; focus to the heading; labelled toggle groups; 44 px targets | Pass (emulated) |
 | — | Suggested first date: 6 AM → tomorrow; 1:30 AM → that morning; December 31 → January 1, 2027 with the year | Pass |
 

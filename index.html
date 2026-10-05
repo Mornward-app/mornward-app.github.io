@@ -272,10 +272,15 @@
   .horow { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; }
   .horow .secondary { width: auto; min-height: 44px; padding: 8px 14px; font-size: 0.9375rem; }
   @media (max-width: 420px) { .handoff { flex-direction: column; align-items: flex-start; } .handoff .qr { width: 160px; } }
+  .about { margin-top: 16px; padding: 16px 18px; border-radius: 20px; background: var(--field); border: 1.5px solid var(--chip-line); }
+  .about h2 { margin: 0 0 6px; font-size: 1rem; line-height: 1.375rem; }
+  .about p { margin: 0; font-size: 0.9375rem; line-height: 1.375rem; color: var(--text); }
+  /* Beside the app on wide screens: a slim column, the code centred in its card, "What is Mornward?" under it */
   @media (min-width: 1000px) {
-    .handoff { position: fixed; top: 96px; left: calc(50% + 264px); width: 300px; margin: 0; flex-direction: column; align-items: flex-start;
-      max-height: calc(100vh - 120px); overflow: auto; }
-    .handoff .qr { width: 200px; }
+    #handoffSlot { position: fixed; top: 96px; left: calc(50% + 264px); width: 236px; max-height: calc(100vh - 120px); overflow: auto; }
+    .handoff { margin: 0; padding: 16px; flex-direction: column; align-items: stretch; gap: 12px; }
+    .handoff .qr { width: 128px; align-self: center; }
+    .handoff .hotext h2 { font-size: 1rem; line-height: 1.375rem; }
     .handoff.inline { position: static; width: auto; max-height: none; flex-direction: row; align-items: center; }
     .handoff.inline .qr { width: 160px; }
   }
@@ -318,7 +323,13 @@
   /* Test drive (preview build only): a slim tab, and a panel that slides up */
   .tdtab { width: auto; min-height: 44px; margin: 20px auto 0; padding: 8px 16px; gap: 8px; border-radius: 999px;
     font-size: 0.875rem; color: var(--text-2); border: 1.5px dashed var(--chip-line); }
-  .tdgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .tdgrid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .tdrow { display: flex; flex-direction: column; gap: 6px; }
+  .tdout:empty { display: none; }
+  .tdout { background: var(--field); border-radius: var(--radius); padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .tdout h3 { margin: 0; font-size: 1rem; }
+  .tdout ul, .tdout ol { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
+  .promise { color: var(--text); }
   .tdgrid button { min-height: 48px; padding: 8px 10px; font-size: 0.9375rem; }
 
   /* ---------- sunrise ---------- */
@@ -712,11 +723,13 @@
     flushStats();
   }
   function emit(kind, data = {}) {
+    if (routine) previewNote(kind, data);
     if (!statsOn() || !routine) return;
     queueRow(`${routine.day}#${routine.rid || routine.run}#${kind}`, kind, routine.day, routine.run, data, routine.rid);
   }
   // Not tied to a routine (adding to the home screen, reminder taps): once per day per kind (and `part`), run 0
   function emitDay(kind, data = {}, part = "") {
+    previewNote(kind, data);
     if (!statsOn()) return;
     const day = dayKey();
     queueRow(`${day}#0#${kind}${part ? "#" + part : ""}`, kind, day, 0, data);
@@ -913,7 +926,7 @@
   // Anyone who has started a routine (in this version or an earlier one) is never sent through setup
   const hasHistory = () => store.get("everStarted", false) === true || !!startDay() || doneDays().size > 0;
   // Setup events: once per device, never tied to a routine, never with answers in them
-  function emitSetup(kind, data = {}) { if (statsOn()) queueRow("setup#" + kind, kind, dayKey(), 0, data); }
+  function emitSetup(kind, data = {}) { previewNote(kind, data); if (statsOn()) queueRow("setup#" + kind, kind, dayKey(), 0, data); }
   // A planned first morning, if one was picked with a calendar action and it's still ahead. Phrased as the plan,
   // never as a reminder that's set: Mornward can't see the calendar.
   function plannedDate() {
@@ -927,6 +940,10 @@
   // Back, and the step as a row of short bars (the words are for screen readers)
   const stepTop = (n) => `<div class="steptop"><button class="link back" id="stepBack" type="button">${icon("back")}<span>Back</span></button>
         ${n ? `<span class="stepbars" aria-hidden="true">${SETUP_STEPS.map((_, i) => `<i${i < n ? ' class="on"' : ""}></i>`).join("")}</span><p class="stepnum sr-only">Step ${n} of ${SETUP_STEPS.length}</p>` : ""}</div>`;
+  // The promise, in one line: what the minute gives back (Welcome and the prepared screen)
+  const PROMISE = "Start your day on purpose, not on a feed.";
+  // What Mornward is, in ten words: under the phone card on a computer
+  const WHAT_IT_IS = "A one-minute morning routine: three breaths, then your chosen tasks.";
   // Three breaths → mini tasks → ready, as icons: the routine at a glance (Welcome, Prepared, Begin)
   const flowRow = () => `<ol class="flow" id="flowRow" aria-label="Three breaths, a few mini tasks, then you're ready">
         <li>${icon("breath")}<span>3 breaths</span></li>
@@ -939,8 +956,8 @@
       <p class="wordmark">mornward</p>
       ${SUN(false)}
       <h1>A calmer start, before the scroll.</h1>
+      <p class="lede promise" id="promise">${PROMISE}</p>
       ${flowRow()}
-      <p class="support center tag">${icon("clock")}About one minute</p>
       <div class="push">
         <button class="primary" id="setupGo" type="button">Prepare my morning</button>
         <button class="link" id="beginNow" type="button">Up already? Begin now</button>
@@ -951,6 +968,7 @@
     // On a computer, the phone comes first: before any personal choice is made here
     $("#setupGo").onclick = () => (computerView() ? renderPhoneStep() : startSetup());
     $("#beginNow").onclick = begin;
+    renderAbout();
   }
   // A computer: open it on the phone (the code opens the app; it installs nothing), or carry on here
   function renderPhoneStep() {
@@ -1135,20 +1153,20 @@
       <p class="wordmark">mornward</p>
       ${SUN(false)}
       <h1>A minute before the scroll.</h1>
+      <p class="lede promise" id="promise">${PROMISE}</p>
       <p class="body" id="invite"${personalLine() ? "" : " hidden"}>${esc(personalLine())}</p>
       ${flowRow()}
       ${p ? taskCard("Your plan", p.tasks) : ""}
       <div class="push">
         <button class="primary" id="begin" type="button">Begin my morning</button>
-        <p class="support center tag">${icon("clock")}About one minute</p>
         <button class="link" id="setupEdit" type="button">Edit setup</button>
         ${hasAgreed() ? "" : consentBlock("Tapping Begin")}
-        <div class="more">${prefsSection("Personalize")}${themeSection()}${privacySection()}</div>
+        <div class="more">${prefsSection("Personalize")}${privacySection()}</div>
       </div>`, "A minute before the scroll.");
     // Another tab may have started a routine since this screen was drawn: then go where that leads instead
     $("#begin").onclick = (e) => { if (!settled(e)) return; if (entryState() !== "prepared") { home(); return; } begin(); };
     $("#setupEdit").onclick = () => { if (entryState() !== "prepared") { home(); return; } renderSetup("tasks", true); };
-    wirePre(); wireTheme(); wirePrivacy(); wirePrefs();
+    wirePre(); wirePrivacy(); wirePrefs();
     renderHandoff();
   }
   // Where the morning scroll starts: folded away on the ready and prepared screens, and under Today as Morning
@@ -1564,7 +1582,6 @@
         ${quietAdd()}
         ${reminderSection()}
         ${prefsSection()}
-        ${themeSection()}
         ${privacySection()}
       </div>`, "Done for today.");
     ($("#iedit") || $("#iadd")).onclick = () => renderChoose(true, renderToday);
@@ -1574,15 +1591,15 @@
     renderHandoff();
     wireReminder();
     wirePrefs();
-    wireTheme();
     wirePrivacy();
   }
 
   // ---------- appearance: follows the phone, or pick light or dark ----------
   const THEMES = ["auto", "light", "dark"];
   let themeSet = false; // only clear a theme this page set itself (a host page may set its own)
+  // The live app follows the phone's light or dark setting. Only the preview's Test drive picks one.
   function applyTheme() {
-    const t = store.get("theme", "auto", (v) => THEMES.includes(v));
+    const t = PREVIEW ? store.get("theme", "auto", (v) => THEMES.includes(v)) : "auto";
     const root = document.documentElement;
     if (t === "auto") { if (themeSet) root.removeAttribute("data-theme"); themeSet = false; }
     else { root.setAttribute("data-theme", t); themeSet = true; }
@@ -1593,24 +1610,6 @@
       m.content = t === "auto" ? m.dataset.auto : bgNow;
     });
   }
-  const themeSection = () => {
-    const t = store.get("theme", "auto", (v) => THEMES.includes(v));
-    return `<details class="section" id="themeSec"><summary><span class="sl">${icon("theme")}Appearance</span></summary><div class="inner">
-        <div class="seg" role="group" aria-label="Appearance">
-          ${[["auto", "Auto"], ["light", "Light"], ["dark", "Dark"]].map(([k, l]) =>
-            `<button type="button" data-theme-pick="${k}" aria-pressed="${t === k}">${l}</button>`).join("")}
-        </div>
-        <p>Auto follows your phone's light or dark setting.</p>
-      </div></details>`;
-  };
-  function wireTheme() {
-    card.querySelectorAll("[data-theme-pick]").forEach((b) => (b.onclick = () => {
-      store.set("theme", b.dataset.themePick);
-      applyTheme();
-      card.querySelectorAll("[data-theme-pick]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
-    }));
-  }
-
   // ---------- earlier intentions: always dated, never shown as today's ----------
   function earlierEntries(today) {
     const byDay = new Map();
@@ -1898,8 +1897,15 @@
           <input type="text" readonly aria-label="Link to Mornward" id="hoField" hidden>
           <p class="support" role="status" id="hoMsg"></p>
         </div>
-      </aside>`;
+      </aside>${inline ? "" : aboutHtml()}`;
   }
+  const aboutHtml = () => `
+      <aside class="about" id="aboutBox" aria-labelledby="aboutTitle">
+        <h2 id="aboutTitle">What is Mornward?</h2>
+        <p>${WHAT_IT_IS}</p>
+      </aside>`;
+  // Welcome on a computer: only "What is Mornward?" beside the app (the code comes with Prepare my morning)
+  function renderAbout() { $("#handoffSlot").innerHTML = computerView() ? aboutHtml() : ""; }
   function renderHandoff() {
     const slot = $("#handoffSlot");
     slot.innerHTML = handoffHtml();
@@ -2339,7 +2345,69 @@
     navigator.serviceWorker.register("sw.js").catch(() => {});
   }
   // ---------- Test drive (preview build only) ----------
-  // A slim tab at the bottom; tapping it slides up a panel to try other days, themes and phones. Nothing is sent.
+  // A slim tab at the bottom; tapping it slides up a panel for trying the app: light or dark, larger text, a sample
+  // week of history, and plain-language views of what the phone keeps and what would be counted. Nothing is sent.
+  const TEXT_SIZES = { normal: "", large: "125%", largest: "150%" };
+  const applyTextSize = () => { if (PREVIEW) document.documentElement.style.fontSize = TEXT_SIZES[store.get("previewText", "normal", (v) => v in TEXT_SIZES)]; };
+  // What a preview would have counted (with the counts on), kept on the phone so it can be shown. Never sent.
+  const COUNT_WORDS = {
+    routine_started: () => "Started a routine",
+    breathing_completed: () => "Finished the three breaths",
+    breathing_skipped: (d) => { const n = d.breaths_done || 0; return `Skipped breathing (after ${n} breath${n === 1 ? "" : "s"})`; },
+    tasks_saved: (d) => `Saved ${d.count} mini task${d.count === 1 ? "" : "s"} (not what they say)`,
+    tasks_skipped: () => "Skipped mini tasks",
+    routine_finished: (d) => `Reached the end, in ${d.seconds} second${d.seconds === 1 ? "" : "s"}`,
+    core_routine_completed: () => "A full routine",
+    setup_started: () => "Started setup",
+    setup_completed: (d) => `Finished setup (${d.tasks_prepared} tasks prepared)`,
+    reminder_setup: () => "Tapped a reminder button",
+    install_prompt: (d) => `Home-screen prompt: ${d.outcome}`,
+    app_installed: () => "Added to the home screen"
+  };
+  function previewNote(kind, data) {
+    if (!PREVIEW || !hasAgreed() || store.get("noStats", false) === true) return;
+    store.set("previewLog", store.get("previewLog", [], Array.isArray).concat([{ kind, data }]).slice(-30));
+  }
+  // Five of the last six days: four full, one with a step skipped, one missed. Real dates; it starts no routine today.
+  function sampleWeek() {
+    const today = dayKey(), ago = (n) => addDays(today, -n);
+    const plan = [[6, "Water first · Make my bed", true], [5, "Short walk", true], [4, "Plan my top 3", false],
+      [2, "Stretch · Text someone", true], [1, "Read 10 pages · Open a window", true]];
+    const merge = (key, list) => store.set(key, [...new Set([...store.get(key, [], isDayList), ...list])].sort());
+    merge("days", plan.map(([n]) => ago(n)));
+    merge("fullDays", plan.filter((p) => p[2]).map(([n]) => ago(n)));
+    for (const [n, t] of plan) if (!store.get("intent:" + ago(n), null, isText)) store.set("intent:" + ago(n), t);
+    const s = store.get("startDay", null, isDay);
+    if (!s || s > ago(6)) store.set("startDay", ago(6));
+    store.set("everStarted", true);
+    agree("preview");
+    usePrepared();
+    home();
+  }
+  function keptHtml() {
+    const days = doneDays().size, full = fullDays().size;
+    const tasks = store.keys().filter((k) => /^intent:\d{4}-\d{2}-\d{2}$/.test(k)).length;
+    const ob = getOb(), at = store.get("alarmAt", null, isAlarmTime);
+    const rows = [
+      `Mini tasks for ${tasks} day${tasks === 1 ? "" : "s"}, in your words`,
+      `${days} day${days === 1 ? "" : "s"} with a routine, ${full} full`,
+      `Setup: ${ob ? (ob.status === "done" ? "done" : "in progress") : "not started"}`,
+      ...(appsChosen().length ? ["Where your scroll starts (for the invitation line)"] : []),
+      ...(at ? [`Reminder time: ${at}`] : []),
+      `Anonymous counts: ${store.get("noStats", false) === true ? "off" : "on"}`
+    ];
+    return `<h3>What this phone keeps</h3><ul>${rows.map((r) => `<li>${esc(r)}</li>`).join("")}</ul>
+      <p class="support">Only on this phone. Your words never leave it.</p>`;
+  }
+  function countsHtml() {
+    const log = store.get("previewLog", [], Array.isArray);
+    const off = store.get("noStats", false) === true;
+    const rows = log.slice(-12).reverse().map((r) => { try { return (COUNT_WORDS[r.kind] || (() => r.kind))(r.data || {}); } catch { return r.kind; } });
+    return `<h3>What would be counted</h3>
+      ${off ? `<p>Nothing: the counts are off.</p>` : rows.length ? `<ol>${rows.map((r) => `<li>${esc(r)}</li>`).join("")}</ol>`
+        : `<p>Nothing yet. Do a routine, then look again.</p>`}
+      <p class="support">The live app sends these as anonymous counts. This preview sends nothing.</p>`;
+  }
   function previewBar() {
     if (!PREVIEW) return;
     const tab = document.createElement("button");
@@ -2349,12 +2417,15 @@
     tab.setAttribute("aria-haspopup", "dialog");
     tab.innerHTML = `<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><span>Test drive</span>`;
     document.querySelector(".app").appendChild(tab);
-    const theme = () => store.get("theme", "auto", (v) => THEMES.includes(v));
-    const phone = () => ({ ios: "iPhone", android: "Android", computer: "Computer" }[store.get("previewPlatform", "")] || "this device");
+    // Light or dark: an explicit pick, or else whatever the phone shows now
+    const shade = () => { const t = store.get("theme", "auto", (v) => THEMES.includes(v));
+      return t !== "auto" ? t : matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; };
+    const size = () => store.get("previewText", "normal", (v) => v in TEXT_SIZES);
     const close = () => { const d = $("#testDrive"); if (d) { d.remove(); tab.focus(); } };
+    const seg = (name, cur, opts) => `<div class="seg" role="group" aria-label="${name}">${opts.map(([k, l]) =>
+      `<button type="button" data-td-${name.toLowerCase().replace(/\s/g, "")}="${k}" aria-pressed="${cur === k}">${l}</button>`).join("")}</div>`;
     const open = () => {
       close();
-      const shifted = shiftMs() !== 0;
       const wrap = document.createElement("div");
       wrap.className = "guide";
       wrap.id = "testDrive";
@@ -2362,36 +2433,30 @@
         <div class="gsheet" role="dialog" aria-modal="true" aria-labelledby="tdTitle">
           <div class="row"><h2 id="tdTitle" tabindex="-1">Test drive</h2>
             <button class="ix" data-td-close type="button" aria-label="Close"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
-          <p class="support">Try other days, themes and phones. Nothing is sent.${shifted ? ` Pretending it's <b>${esc(fmtDay(dayKey()))}</b>.` : ""}</p>
+          <p class="support">Try it out. Nothing is sent from this preview.</p>
+          <div class="tdrow"><span class="flabel">Theme</span>${seg("Theme", shade(), [["light", "Light"], ["dark", "Dark"]])}</div>
+          <div class="tdrow"><span class="flabel">Text size</span>${seg("Text size", size(), [["normal", "Normal"], ["large", "Large"], ["largest", "Largest"]])}</div>
           <div class="tdgrid">
-            <button type="button" class="secondary" id="pvNext">Next day</button>
-            ${shifted ? `<button type="button" class="secondary" id="pvToday">Back to today</button>` : ""}
-            <button type="button" class="secondary" id="pvTheme">Theme: ${esc(theme())}</button>
-            <button type="button" class="secondary" id="pvPhone">Steps: ${esc(phone())}</button>
-            <button type="button" class="secondary" id="pvReset">Start fresh</button>
+            <button type="button" class="secondary" id="pvWeek">Show a sample week</button>
+            <button type="button" class="secondary" id="pvKept" aria-controls="pvOut">What this phone keeps</button>
+            <button type="button" class="secondary" id="pvCounts" aria-controls="pvOut">What would be counted</button>
           </div>
+          <div class="tdout" id="pvOut" role="status"></div>
+          <button type="button" class="link" id="pvReset">Start over</button>
         </div>`;
       document.body.appendChild(wrap);
       wrap.querySelectorAll("[data-td-close]").forEach((x) => (x.onclick = close));
-      // Tomorrow at 7:00, so the morning always looks like a morning
-      $("#pvNext").onclick = () => {
-        const t = now(); t.setDate(t.getDate() + 1); t.setHours(7, 0, 0, 0);
-        store.set("previewShift", t.getTime() - Date.now()); close(); home();
-      };
-      if ($("#pvToday")) $("#pvToday").onclick = () => { store.del("previewShift"); close(); home(); };
-      $("#pvTheme").onclick = () => {
-        store.set("theme", THEMES[(THEMES.indexOf(theme()) + 1) % THEMES.length]); applyTheme();
-        $("#pvTheme").textContent = "Theme: " + theme();
-        card.querySelectorAll("[data-theme-pick]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.themePick === theme())));
-      };
-      $("#pvPhone").onclick = () => {
-        const order = [null, "ios", "android", "computer"], cur = store.get("previewPlatform", null);
-        const next = order[(order.indexOf(cur) + 1) % order.length];
-        if (next) store.set("previewPlatform", next); else store.del("previewPlatform");
-        $("#pvPhone").textContent = "Steps: " + phone();
-        refreshHome();
-        if (card.querySelector("#begin, #again")) renderHandoff();
-      };
+      wrap.querySelectorAll("[data-td-theme]").forEach((b) => (b.onclick = () => {
+        store.set("theme", b.dataset.tdTheme); applyTheme();
+        wrap.querySelectorAll("[data-td-theme]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      }));
+      wrap.querySelectorAll("[data-td-textsize]").forEach((b) => (b.onclick = () => {
+        store.set("previewText", b.dataset.tdTextsize); applyTextSize(); fitSticky();
+        wrap.querySelectorAll("[data-td-textsize]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      }));
+      $("#pvWeek").onclick = () => { close(); sampleWeek(); };
+      $("#pvKept").onclick = () => { $("#pvOut").innerHTML = keptHtml(); };
+      $("#pvCounts").onclick = () => { $("#pvOut").innerHTML = countsHtml(); };
       $("#pvReset").onclick = () => { store.keys().forEach((k) => store.del(k)); location.reload(); };
       $("#tdTitle").focus();
     };
@@ -2400,6 +2465,7 @@
   }
 
   applyTheme();
+  applyTextSize();
   flushStats();
   home();
   previewBar();
