@@ -9,10 +9,12 @@ Three breaths, then up to three small things for this morning. Then get on with 
 
 ## How it works
 
-**First visit: prepare now, practise in the morning.** Welcome ("A calmer start, before the scroll.") → where your
-morning scroll usually starts (optional) → mini tasks for your first morning (optional) → a calendar reminder and the
-home screen (both optional) → "You're ready for your first morning." Setup starts no routine. Already up? "Begin now"
-goes straight to the routine. Details: [`docs/onboarding.md`](docs/onboarding.md).
+**First visit: prepare now, practise in the morning.** Welcome ("A calmer start, before the scroll.", with an
+optional folded preview) → mini tasks for your first morning ("Save my morning plan", or choose in the morning) →
+"Make it easy to return." (a calendar reminder and the home screen, both optional) → "Ready for your first morning."
+Where your scroll starts is an optional, folded "Personalize your morning invitation". On a computer, the phone is
+offered first ("Set up where you’ll use it."). Setup starts no routine. Already up? "Begin now" goes straight to the
+routine. Details: [`docs/onboarding.md`](docs/onboarding.md).
 
 **Each morning:**
 

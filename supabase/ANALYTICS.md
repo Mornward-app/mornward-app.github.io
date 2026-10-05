@@ -33,7 +33,7 @@ from the queue by `event_id`, so rows queued while a request is out are never dr
 beta-4/5 kinds have an exact key list; older kinds allow only booleans, small numbers, null and short lowercase
 identifiers. Free text can't be stored. Existing rows aren't re-checked.
 
-**Consent.** Nothing is sent before the first tap on a Welcome action ("Set up my morning" or "Begin now") or on Begin. Turning the counts off (on Welcome before any tap, or under Privacy on the prepared screen and Today)
+**Consent.** Nothing is sent before the first tap on a Welcome action ("Prepare my morning", "Continue on this device" on a computer, or "Begin now"; opening the preview isn't one) or on Begin. Turning the counts off (on Welcome before any tap, or under Privacy on the prepared screen and Today)
 empties the queue; nothing is queued while they're off, so turning them back on never sends that period.
 
 **Reports** (dashboard only; the app's key can't read them): `retention_report` (every metric with numerator,

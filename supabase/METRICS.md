@@ -62,7 +62,7 @@ drafts, edits, alarm time, anything typed. The database refuses rows whose `data
 | `core_routine_completed` | With `routine_finished`, when `breathing = completed` **and** `tasks = saved` | `def: 2` | — |
 | `install_prompt` | Chrome's own install dialog is answered (Android) | `outcome: accepted \| dismissed`, `run: 0` | `accepted` is not a confirmed install |
 | `app_installed` | Chrome confirms the install (Android) | `run: 0` | iPhones never send it |
-| `setup_started` | "Set up my morning" the first time (once per device) | `run: 0` | A routine, a visit, or consent to anything beyond the counts |
+| `setup_started` | "Prepare my morning" the first time (on a computer, "Continue on this device"; once per device) | `run: 0` | A routine, a visit, or consent to anything beyond the counts |
 | `setup_completed` | Setup reaches its end the first time (once per device) | `tasks_prepared` 0–3, `run: 0` | That a routine was started, tasks were performed, or a reminder exists |
 | `reminder_setup` | A reminder setup tap, once per day per action | `action: google_link \| calendar_file \| shortcut_link`, `run: 0` | That a reminder was saved, is on, or will alert |
 
@@ -95,7 +95,7 @@ includes only devices that:
 - whose first counted routine is marked `first`;
 - whose first counted routine wasn't opened from a reminder.
 
-The terms are agreed with the first tap on "Set up my morning", "Begin now" or Begin, and nothing is sent before it. The
+The terms are agreed with the first tap on "Prepare my morning" (on a computer, "Continue on this device"), "Begin now" or Begin, and nothing is sent before it. The
 acquisition cohort starts at the first routine; setup-only visitors are counted in `setup_report`, and visitors who
 never tap anything aren't counted at all.
 
@@ -130,27 +130,56 @@ plus routines started. Test devices are left out.
 ## Setup (`setup_report`)
 
 Setup is preparation, not use. It's measured on its own and never feeds the routine cohorts. A device with only
-setup events appears in no routine report. Setup answers (apps, tasks, reminder time) are never sent.
+setup events appears in no routine report. Setup answers (apps, tasks, reminder time and date) are never sent.
+Opening the Welcome preview ("See what your morning looks like") sends nothing and changes nothing on the phone.
 
 | Stage | Signal |
 | --- | --- |
-| 1. Observed setup participation | `setup_started`. Only with the counts on, after the terms are accepted by tapping a Welcome action. People who only view Welcome aren't visible. |
-| 2. Setup completion | `setup_completed` |
-| 3. First routine start | the device's first `routine_started` (acquisition cohort, day 0) |
-| 4. First full routine | the device's first `core_routine_completed` def 2 (activation cohort, day 0) |
-| 5. Later returns | `retention_report` (D1, D7, first-week frequency, repeat core), from either cohort |
+| 1. Observed setup participation | `setup_started`: the first tap on "Prepare my morning" (on a computer, "Continue on this device"). Only with the counts on. People who only view Welcome, the preview or the computer's phone step aren't visible. |
+| 2. Setup completion | `setup_completed`: the end of the last step (Continue or Skip for now) |
+| 3. First routine start | the device's first `routine_started` on or after the day setup finished |
+| 4. First full routine | the device's first `core_routine_completed` def 2 on or after the day setup finished |
+| 5. Later returns | `retention_report` (D1, D7, first-week frequency, repeat core), from the routine cohorts |
 
-| Metric | Day 0 | Counts when… | Eligible when |
+### What each row means
+
+| Metric | Cohort entry (day 0) | Numerator: the device counts when… | Eligible (in the denominator) when |
 | --- | --- | --- | --- |
-| `setup_completed_7d` | setup started | setup finished by day 7 | day 0 + 10 ≤ today |
-| `first_routine_by_day1` | setup finished | a first routine on day 0 or day 1 (evening setup, next morning) | day 0 + 4 ≤ today |
-| `first_routine_by_day7` | setup finished | a first routine by day 7 | day 0 + 10 ≤ today |
-| `first_full_by_day7` | setup finished | a first full routine by day 7 | day 0 + 10 ≤ today |
+| `setup_completed_7d` | the `day` of its first `setup_started` | its first `setup_completed` is dated day 0 to day 7 | day 0 + 10 ≤ `current_date` |
+| `first_routine_by_day1` | the `day` of its first `setup_completed` | a `routine_started` dated day 0 or day 1 | day 0 + 4 ≤ `current_date` |
+| `first_routine_by_day7` | the `day` of its first `setup_completed` | a `routine_started` dated day 0 to day 7 | day 0 + 10 ≤ `current_date` |
+| `first_full_by_day7` | the `day` of its first `setup_completed` | a `core_routine_completed` (def 2) dated day 0 to day 7 | day 0 + 10 ≤ `current_date` |
 
-Someone who set up tonight isn't counted as a failed activation until their day 1 is final. **Limitation:** the time
-someone intends to start isn't sent (it's a local preference). A later intended start, such as a night shift or the
-weekend, therefore shows only in the day-7 rows. That's reported here rather than guessed. Test devices are left out.
-"Begin now" users have no setup events; they appear only in the routine cohorts.
+- **Who's in a cohort.** A device enters when it sent the event that starts day 0. Test devices (`test_devices`)
+  are left out. Each device counts once per row: the setup events are sent once per device, and the earliest is used
+  if a duplicate arrives. A device with `setup_completed` but no `setup_started` (its first row was lost) is in
+  rows 2–4 but not row 1. "Begin now" visitors send no setup events and appear only in the routine cohorts.
+- **"By day 1" and "by day 7"** are local calendar dates, not hours. Day 0 is the phone's local date when setup
+  finished; day 1 is the next local date. Sunday 21:00 setup → Sunday is day 0 and a Monday-morning routine is day 1.
+  Setup at 00:30 on Monday → Monday is day 0, so a Monday-morning routine is day 0. "Starting your day now? Begin your
+  reset" on the setup day counts as day 0. Routines dated before the setup day aren't counted (in practice there are
+  none: anyone with a routine is never sent through setup).
+- **Denominators** are only devices whose whole window is final (next point). `numerator`, `denominator` and `pct`
+  cover only those. Devices whose window is still open are in `not_yet_eligible`, never in the denominator, so
+  someone who set up last night is never counted as a failed first morning while their day 1 can still arrive.
+- **Incomplete windows and late events.** A window ending on day 0 + k is final once day 0 + k + 3 ≤ `current_date`
+  (UTC), as for the routine metrics (see "Dates"). By then day 0 + k has ended in every time zone, and the insert
+  policy no longer accepts rows dated day 0 + k or earlier. A phone that was offline can still deliver queued rows
+  within that time, and they're counted. Rows queued for longer are refused, so a final number doesn't change later.
+- **Local dates.** Every `day` is the phone's own local date at the time (see "Dates"); there's no shared cohort time
+  zone. Travelling can shift a device's dates by a day either way; nothing is re-dated.
+- **Kept apart from retention.** These rows measure setup → first use. `retention_report`'s D1/D7 count from the
+  first routine (acquisition) or the first full routine (activation), whether or not setup happened. A device in both
+  is measured from different days 0, and neither report changes the other.
+
+**Limitations.**
+
+- The intended first morning isn't known: the reminder time and date stay on the phone, and many people set no
+  reminder. Someone who planned to start on day 3 (a weekend, a night shift) counts as a miss in
+  `first_routine_by_day1` and shows only in the day-7 rows. That's stated here rather than guessed.
+- Only devices with the counts on are visible. Counts-off visitors are in no report.
+- Clearing site data, a private window or a new phone makes a new
+  `device_id`. That device's routines then don't join its setup.
 
 ## The beta-2 app (live until beta-5 ships): `legacy_retention_report`
 

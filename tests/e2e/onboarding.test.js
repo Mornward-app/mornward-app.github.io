@@ -13,12 +13,19 @@ const text = (x) => x.p.innerText("#card");
 const ticked = (x) => x.p.$$eval('.chip.pick[aria-pressed="true"] span', (l) => l.map((e) => e.textContent));
 async function jump(x, when) { await x.p.clock.setSystemTime(new Date(when)); await x.p.reload(); await x.t(700); }
 const click = async (x, sel) => { await x.p.click(sel); await x.t(700); };
-// Welcome → step 1 (Instagram) → step 2 (keep the two suggestions) → step 3 (Continue) → done
+// Welcome → step 1 (keep the two suggestions) → step 2 (Continue) → ready, with the optional invitation (Instagram)
 async function setupAll(x, { app = "instagram" } = {}) {
   await click(x, "#setupGo");
-  if (app) await x.p.click(`[data-app="${app}"]`);
-  await click(x, "#stepNext"); await click(x, "#stepNext"); await click(x, "#stepNext");
+  await click(x, "#stepNext"); await click(x, "#stepNext");
+  if (app) await pickApps(x, [app]);
 }
+// The optional "Personalize your morning invitation" section (ready and prepared screens)
+async function pickApps(x, apps) {
+  if (!(await x.p.$("#prefsSec[open]"))) await x.p.click("#prefsSec summary");
+  for (const a of apps) { await x.p.click(`#prefApps [data-app="${a}"]`); await x.t(50); }
+}
+const pressed = (x) => x.p.$$eval('#prefApps [data-app][aria-pressed="true"]', (l) => l.map((e) => e.dataset.app));
+const snapshot = (x) => x.p.evaluate(() => JSON.stringify(Object.keys(localStorage).sort().map((k) => [k, localStorage.getItem(k)])));
 const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
 
 (async () => {
@@ -30,52 +37,81 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
   { const x = await open(); await x.goto();
     ok("welcome: the setup-first copy", (await h1(x)) === "A calmer start, before the scroll." &&
       (await text(x)).includes("Mornward is a one-minute morning reset: three breaths, then a few small tasks you choose.") &&
-      (await text(x)).includes("Set it up now. Start when you wake.") && (await x.p.textContent("#setupGo")) === "Set up my morning" &&
-      (await x.p.textContent("#beginNow")) === "Already starting your day? Begin now");
+      (await text(x)).includes("Set it up now. Start when you wake.") && (await x.p.textContent("#setupGo")) === "Prepare my morning" &&
+      (await x.p.textContent("#beginNow")) === "Starting your day now? Begin now");
     ok("welcome: the counts choice is there before anything is sent", !!(await x.p.$("#preToggle")) && x.bodies.length === 0);
     ok("welcome: no 'demo', 'test' or 'practice' wording", !/demo|test run|practice/i.test(await text(x)));
+    // The preview: folded away, an explanation only
+    ok("preview: closed at first, under 'See what your morning looks like'", (await x.p.textContent("#previewSec summary")).trim() === "See what your morning looks like" &&
+      !(await x.p.$("#previewSec[open]")) && (await x.p.$$("#card .primary")).length === 1);
+    const before = await snapshot(x);
+    await x.p.click("#previewSec summary"); await x.t(300);
+    const steps = await x.p.$$eval("#previewSteps li", (l) => l.map((e) => e.textContent.replace(/\s+/g, " ").trim()));
+    ok("preview: Pause, Choose, Go with their lines", JSON.stringify(steps) === JSON.stringify(["Pause Follow three guided breaths.",
+      "Choose Confirm a few small tasks for your morning.", "Go Leave with a simple plan."]), steps);
+    ok("preview: the 'Example mini tasks' card", (await x.p.textContent("#exampleListT")) === "Example mini tasks" &&
+      JSON.stringify(await x.p.$$eval("#exampleList li", (l) => l.map((e) => e.textContent))) === '["Step outside","Read one page"]');
+    ok("preview: the examples are text, not tappable picks", (await x.p.$$("#previewSec button, #previewSec [data-idea], #previewSec input")).length === 0);
+    await x.t(5000); await drain(x);
+    ok("preview: opening it changes nothing on the phone (no routine, tasks, history, setup or agreement)", (await snapshot(x)) === before);
+    ok("preview: ...starts no breathing and sends nothing", !(await x.p.$("#bpause")) && (await h1(x)) === "A calmer start, before the scroll." && x.bodies.length === 0);
+    await x.p.click("#previewSec summary"); await x.t(200);
+    ok("preview: closes again; Prepare my morning still the one primary action", !(await x.p.$("#previewSec[open]")) && (await x.p.textContent("#card .primary")) === "Prepare my morning");
     await click(x, "#setupGo");
-    ok("step 1: the question, the choices, Continue and Skip", (await h1(x)) === "Where does your morning scroll usually start?" &&
-      (await x.p.$$("[data-app]")).length === 8 && (await x.p.textContent("#stepNext")) === "Continue" && (await x.p.textContent("#stepSkip")) === "Skip");
-    ok("step 1: neutral wording, and says it can't block or detect apps", /doesn't block, watch or detect/.test(await text(x)) && !/addict|problem|bad habit/i.test(await text(x)));
-    await x.p.click('[data-app="instagram"]'); await x.p.click('[data-app="tiktok"]'); await x.p.click('[data-app="unsure"]');
-    ok("step 1: 'I'm not sure' stands alone", JSON.stringify(await x.p.$$eval('[data-app][aria-pressed="true"]', (l) => l.map((e) => e.dataset.app))) === '["unsure"]');
-    await x.p.click('[data-app="instagram"]');
-    ok("step 1: choosing an app clears 'I'm not sure'", JSON.stringify(await x.p.$$eval('[data-app][aria-pressed="true"]', (l) => l.map((e) => e.dataset.app))) === '["instagram"]');
-    await click(x, "#stepNext");
-    ok("step 2: the question and the shared task picker", (await h1(x)) === "What would you like to make room for?" &&
-      (await text(x)).includes("Choose up to three mini tasks for your next morning. You can change them later.") && (await x.p.textContent("#stepSkip")) === "Choose in the morning");
-    // Back keeps what was chosen; the typing is kept too
+    ok("step 1 is the tasks: the question and the shared task picker", (await h1(x)) === "What would you like to make room for?" &&
+      (await x.p.textContent(".stepnum")) === "Step 1 of 2" &&
+      (await text(x)).includes("Choose up to three mini tasks for your next morning. You can change them later.") &&
+      (await x.p.textContent("#stepNext")) === "Save my morning plan" && (await x.p.textContent("#stepSkip")) === "Choose in the morning");
+    ok("step 1: no 'where your scroll starts' question in the way", !(await x.p.$("[data-app]")) && !/scroll usually start/.test(await text(x)));
+    ok("step 1: the preview's examples aren't saved or forced", !(await x.ls("prepared")) && JSON.stringify(await ticked(x)) !== '["Step outside","Read one page"]');
+    // Back to Welcome keeps what was chosen; the typing is kept too
     await S.untickAll(x); await x.p.click(".chip.pick >> nth=4"); await x.p.fill("#prepIntent", "Call Mum"); await x.t(100);
     const chosen = await ticked(x);
     await click(x, "#stepBack");
-    ok("back to step 1: Instagram still chosen", (await x.p.getAttribute('[data-app="instagram"]', "aria-pressed")) === "true");
-    await click(x, "#stepNext");
+    ok("back from step 1: Welcome", (await h1(x)) === "A calmer start, before the scroll.");
+    await click(x, "#setupGo");
     ok("forward again: ticks and typing kept", JSON.stringify(await ticked(x)) === JSON.stringify(chosen) && (await x.p.inputValue("#prepIntent")) === "Call Mum");
     // Reload in the middle of setup: it resumes on the same step with the same choices
     await x.p.reload(); await x.t(700);
-    ok("reload mid-setup: back on step 2, choices kept", (await h1(x)) === "What would you like to make room for?" && (await x.p.inputValue("#prepIntent")) === "Call Mum" && JSON.stringify(await ticked(x)) === JSON.stringify(chosen));
+    ok("reload mid-setup: back on step 1, choices kept", (await h1(x)) === "What would you like to make room for?" && (await x.p.inputValue("#prepIntent")) === "Call Mum" && JSON.stringify(await ticked(x)) === JSON.stringify(chosen));
     await click(x, "#stepNext");
-    ok("step 3: the question, a time, the first date in words, Skip reminder", (await h1(x)) === "Make room for your first morning." &&
+    ok("step 2: 'Make it easy to return.', a time, the first date in words, Skip for now", (await h1(x)) === "Make it easy to return." &&
+      (await x.p.textContent(".stepnum")) === "Step 2 of 2" &&
       !!(await x.p.$("#remAt")) && !!(await x.p.$("#remDate")) && /^First reminder: Monday, October 5 at 7:00/.test(await x.p.textContent("#remWhen")) &&
-      (await x.p.textContent("#stepSkip")) === "Skip reminder");
-    ok("step 3: one visually primary action (Continue); calendar and home screen are secondary", (await x.p.$$("#card .primary")).length === 1 &&
+      (await x.p.textContent("#stepSkip")) === "Skip for now");
+    ok("step 2: suggests tomorrow (Sunday evening → Monday) at the time shown", (await x.p.inputValue("#remDate")) === "2026-10-05" && (await x.p.inputValue("#remAt")) === "07:00");
+    ok("step 2: one visually primary action (Continue); calendar and home screen are secondary", (await x.p.$$("#card .primary")).length === 1 &&
       (await x.p.textContent("#card .primary")) === "Continue" && !!(await x.p.$("#addSec")));
+    ok("step 2: no hard-coded 'tomorrow'", !/tomorrow/i.test(await text(x)));
     // Choose Tuesday 07:00 instead, then open Google Calendar (never saved there)
     await x.p.fill("#remDate", "2026-10-06"); await x.p.dispatchEvent("#remDate", "change");
-    ok("step 3: the first date can be moved", /^First reminder: Tuesday, October 6 at 7:00/.test(await x.p.textContent("#remWhen")));
+    ok("step 2: the first date can be moved", /^First reminder: Tuesday, October 6 at 7:00/.test(await x.p.textContent("#remWhen")));
     const g = decodeURIComponent(await x.p.getAttribute("#remGoogle", "href"));
-    ok("step 3: the Google link starts on the chosen date, carries no setup answers or IDs", g.includes("dates=20261006T070000") && !/instagram|Call Mum|#r=/i.test(g));
+    ok("step 2: the Google link starts on the chosen date, carries no setup answers or IDs", g.includes("dates=20261006T070000") && !/instagram|Call Mum|#r=/i.test(g));
     await x.p.click("#remGoogle"); await x.t(300);
     ok("11 calendar opened: says to finish saving there (no 'reminder set')", (await x.p.textContent("#remMsg")) === "Calendar opened—finish saving your reminder there.");
+    // The calendar hand-off can reload the page (back from the calendar app): the tasks are still prepared
+    await x.p.reload(); await x.t(700);
+    ok("after the calendar hand-off and a reload: still step 2, the date kept, the tasks prepared", (await h1(x)) === "Make it easy to return." &&
+      (await x.p.inputValue("#remDate")) === "2026-10-06" && JSON.stringify((await x.ls("prepared")).tasks) === JSON.stringify([...chosen, "Call Mum"]));
     await click(x, "#stepNext");
-    ok("setup complete: the copy, Done for now, Edit setup, Begin your reset", (await h1(x)) === "You’re ready for your first morning." &&
-      (await text(x)).includes("When you wake, open Mornward before your usual scroll. Your mini tasks will be waiting.") &&
+    ok("ready: the copy, Done for now, Edit setup (secondary), Begin your reset", (await h1(x)) === "Ready for your first morning." &&
+      (await text(x)).includes("When you wake, open Mornward before your usual scroll. Take three breaths, then confirm your mini tasks.") &&
       (await x.p.textContent("#setupDone")) === "Done for now" && (await x.p.textContent("#setupEdit")) === "Edit setup" &&
+      (await x.p.getAttribute("#setupEdit", "class")) === "secondary" &&
       (await x.p.textContent("#beginNow")) === "Starting your day now? Begin your reset");
-    ok("setup complete: no sun, count, timeline, %, streak or 'complete' claim", !(await x.p.$(".sunrise")) && !(await x.p.$(".progress")) &&
-      !/%|streak|reset complete|resets completed/i.test(await text(x)));
-    ok("11 setup complete: no claim that a reminder is set", !/reminder (is )?(set|saved|on)\b|you'll be reminded/i.test(await text(x)));
+    ok("ready: the prepared tasks are shown", JSON.stringify(await x.p.$$eval("#prepList li", (l) => l.map((e) => e.textContent))) === JSON.stringify([...chosen, "Call Mum"]));
+    ok("ready: the reminder status says what's known (calendar opened, check it's saved)", /^Your planned first morning: Tuesday, October 6 at 7:00.*You opened your calendar for a reminder; check it’s saved there\.$/.test(await x.p.textContent("#remStatus")));
+    ok("ready: no sun, circles, count, timeline, %, streak, 'complete' claim or 'tomorrow'", !(await x.p.$(".sunrise")) && !(await x.p.$(".progress")) && !(await x.p.$(".dot")) &&
+      !/%|streak|reset complete|resets completed|tomorrow/i.test(await text(x)));
+    ok("11 ready: no claim that a reminder is set", !/reminder (is )?(set|saved|on)\b|you'll be reminded/i.test(await text(x)));
+    // The optional invitation, folded away
+    ok("ready: 'Personalize your morning invitation' is closed and optional", (await x.p.textContent("#prefsSec summary")).trim() === "Personalize your morning invitation" && !(await x.p.$("#prefsSec[open]")));
+    await pickApps(x, ["instagram", "tiktok", "unsure"]);
+    ok("personalize: 'I'm not sure' stands alone", JSON.stringify(await pressed(x)) === '["unsure"]');
+    await pickApps(x, ["instagram"]);
+    ok("personalize: choosing an app clears 'I'm not sure'; saved on the phone", JSON.stringify(await pressed(x)) === '["instagram"]' && JSON.stringify((await x.ls("onboard")).apps) === '["instagram"]');
+    ok("personalize: neutral wording, and says it can't block or detect apps", /doesn't block, watch or detect/.test(await text(x)) && !/addict|problem|bad habit/i.test(await text(x)));
     await drain(x);
     ok("1 setup recorded no routine: no routine, days, full days or start day", !(await x.ls("routine")) && !(await x.ls("days")) && !(await x.ls("fullDays")) && !(await x.ls("startDay")));
     ok("1 ...and no routine events: only setup_started, setup_completed, reminder_setup", JSON.stringify(x.kinds().sort()) === '["reminder_setup","setup_completed","setup_started"]', x.kinds());
@@ -91,7 +127,7 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     // Reopen Monday (before the planned Tuesday): same prepared screen, nothing overdue
     await jump(x, MON);
     ok("6 reopened before the planned morning: setup kept, no overdue or missed message", (await h1(x)) === "A minute before the scroll." && !NOT_LATE.test(await text(x)));
-    ok("6 ...setup isn't repeated", !(await x.p.$("#setupGo")) && !(await x.p.$("[data-app]")));
+    ok("6 ...setup isn't repeated", !(await x.p.$("#setupGo")) && !(await x.p.$("#stepNext")));
     // 2: Monday morning: the prepared tasks are offered, ticked, but not confirmed
     await S.begin(x); await S.breatheAll(x);
     ok("2 Monday: after breathing, the prepared tasks are ticked, waiting for a tap", JSON.stringify((await ticked(x)).sort()) === JSON.stringify([...chosen, "Call Mum"].sort()) &&
@@ -133,7 +169,7 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     ok("4 ...the usual task step (two suggestions)", /Two picked to start/.test(await x.p.textContent("#pickHint")));
     await S.keep(x); await S.finish(x);
     await jump(x, "2026-10-06T07:00:00");
-    ok("4 ...next visit: Begin, never sent into setup", !!(await x.p.$("#begin")) && !(await x.p.$("#setupGo")) && !(await x.p.$("[data-app]")));
+    ok("4 ...next visit: Begin, never sent into setup", !!(await x.p.$("#begin")) && !(await x.p.$("#setupGo")) && !(await x.p.$("#stepNext")));
     await x.p.click("#begin").catch(() => {}); await x.t(700); await S.skipBreathing(x); await S.keep(x); await S.finish(x);
     await x.p.click("#prefsSec summary");
     await x.p.click('#prefApps [data-app="youtube"]');
@@ -144,25 +180,27 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
 
   // 5: skip everything and still finish
   { const x = await open(); await x.goto();
-    await click(x, "#setupGo"); await click(x, "#stepSkip"); await click(x, "#stepSkip"); await click(x, "#stepSkip");
-    ok("5 skip all three: setup still finishes", (await h1(x)) === "You’re ready for your first morning." && (await text(x)).includes("You can choose your mini tasks then.") && !(await x.p.$("#prepList")));
+    await click(x, "#setupGo"); await click(x, "#stepSkip"); await click(x, "#stepSkip");
+    ok("5 skip tasks and reminder (the invitation untouched): setup still finishes", (await h1(x)) === "Ready for your first morning." &&
+      (await text(x)).includes("Take three breaths, then choose your mini tasks.") && !(await x.p.$("#prepList")));
+    ok("5 ...no reminder: 'Open Mornward when you start your day.'", (await x.p.textContent("#remStatus")) === "Open Mornward when you start your day." && !(await x.ls("remPlan")));
     await click(x, "#setupDone");
-    ok("5 prepared screen: the plain line, no task card, no planned date", !(await x.p.$("#invite")) && !(await x.p.$("#prepList")) && !(await x.p.$("#planned")));
+    ok("5 prepared screen: the plain line, no task card, no planned date", !(await x.p.isVisible("#invite")) && !(await x.p.$("#prepList")) && !(await x.p.$("#planned")));
     await jump(x, MON); await S.begin(x); await S.breatheAll(x);
     ok("5 first morning: the usual two suggestions", /Two picked to start/.test(await x.p.textContent("#pickHint")));
     await x.c.close(); }
 
   // Several apps or none: the plain line. Edit setup keeps answers.
   { const x = await open(); await x.goto();
-    await click(x, "#setupGo"); await x.p.click('[data-app="reddit"]'); await x.p.click('[data-app="x"]'); await click(x, "#stepNext");
-    await click(x, "#stepNext"); await click(x, "#stepNext"); await click(x, "#setupDone");
-    ok("two apps: the plain line only", !(await x.p.$("#invite")));
+    await setupAll(x, { app: null }); await pickApps(x, ["reddit", "x"]); await click(x, "#setupDone");
+    ok("two apps: the plain line only", !(await x.p.isVisible("#invite")));
+    // The invitation can also be changed on the prepared screen; the line follows straight away
+    await pickApps(x, ["x"]);
+    ok("prepared: personalize there too; the line updates at once", (await x.p.textContent("#invite")) === "Before Reddit, take a minute for yourself.");
     await click(x, "#setupEdit");
-    ok("Edit setup: answers kept", JSON.stringify(await x.p.$$eval('[data-app][aria-pressed="true"]', (l) => l.map((e) => e.dataset.app))) === '["reddit","x"]');
-    await x.p.click('[data-app="x"]'); await click(x, "#stepNext");
-    ok("Edit setup: the saved tasks are ticked", (await ticked(x)).length === 2);
+    ok("Edit setup: starts at the tasks, the saved tasks ticked", (await h1(x)) === "What would you like to make room for?" && (await ticked(x)).length === 2);
     await click(x, "#stepNext"); await click(x, "#stepNext");
-    ok("Edit setup: done again, the line updated", (await h1(x)) === "You’re ready for your first morning.");
+    ok("Edit setup: ready again, the invitation kept", (await h1(x)) === "Ready for your first morning." && JSON.stringify((await x.ls("onboard")).apps) === '["reddit"]');
     await click(x, "#setupDone");
     ok("Edit setup: Reddit line", (await x.p.textContent("#invite")) === "Before Reddit, take a minute for yourself.");
     await drain(x);
@@ -206,53 +244,74 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
         return set.call(this, k, v);
       };
     } });
-    await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext");
+    await x.goto(); await click(x, "#setupGo");
     await x.p.fill("#prepIntent", "Water the plants"); await x.t(100);
     await x.p.evaluate(() => { window.__fail = ["prepared"]; }); await click(x, "#stepNext");
-    ok("10 prepared tasks can't be saved: Retry, still on step 2, typing kept", (await x.p.textContent("#stepNext")) === "Retry" &&
+    ok("10 prepared tasks can't be saved: Retry, still on step 1, typing kept", (await x.p.textContent("#stepNext")) === "Retry" &&
       (await h1(x)) === "What would you like to make room for?" && (await x.p.inputValue("#prepIntent")) === "Water the plants" && /Couldn't save/.test(await x.p.textContent("#imsg")));
     await x.p.evaluate(() => { window.__fail = []; }); await click(x, "#stepNext");
-    ok("10 ...Retry works", (await h1(x)) === "Make room for your first morning." && (await x.ls("prepared")).tasks.includes("Water the plants"));
+    ok("10 ...Retry works", (await h1(x)) === "Make it easy to return." && (await x.ls("prepared")).tasks.includes("Water the plants"));
     await x.p.evaluate(() => { window.__fail = ["onboard"]; }); await click(x, "#stepNext");
-    ok("10 setup can't be saved as finished: no 'You're ready', a message and Retry", (await h1(x)) === "Make room for your first morning." &&
+    ok("10 setup can't be saved as finished: no 'Ready', a message and Retry", (await h1(x)) === "Make it easy to return." &&
       /Couldn't save your setup/.test(await x.p.textContent("#remMsg")) && (await x.p.textContent("#stepNext")) === "Retry");
     await x.p.evaluate(() => { window.__fail = []; }); await click(x, "#stepNext");
-    ok("10 ...Retry finishes setup", (await h1(x)) === "You’re ready for your first morning." && (await x.ls("onboard")).status === "done");
+    ok("10 ...Retry finishes setup", (await h1(x)) === "Ready for your first morning." && (await x.ls("onboard")).status === "done");
     await x.c.close(); }
 
   // 11: a calendar hand-off that fails doesn't trap anyone; a downloaded file isn't a saved reminder
   { const x = await open(); await x.c.unroute(/calendar\.google\.com/); await x.c.route(/calendar\.google\.com/, (r) => r.abort());
-    await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext"); await click(x, "#stepNext");
+    await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext");
     const pages = x.c.pages().length;
     await x.p.click("#remGoogle"); await x.t(500);
-    ok("11 Google Calendar couldn't open: the setup page still works", (await h1(x)) === "Make room for your first morning." && !!(await x.p.$("#stepNext")));
+    ok("11 Google Calendar couldn't open: the setup page still works", (await h1(x)) === "Make it easy to return." && !!(await x.p.$("#stepNext")));
     for (const p of x.c.pages().slice(pages)) await p.close();
     const dl = x.p.waitForEvent("download"); await x.p.click("#remIcsAlt"); await dl;
     ok("11 calendar file: 'downloaded—open it to add your reminder'", (await x.p.textContent("#remMsg")) === "Calendar file downloaded—open it to add your reminder.");
     await click(x, "#stepNext");
-    ok("11 ...setup finishes, without claiming a reminder", (await h1(x)) === "You’re ready for your first morning." && !/reminder (is )?(set|saved|on)\b/i.test(await text(x)));
+    ok("11 ...setup finishes, without claiming a reminder", (await h1(x)) === "Ready for your first morning." && !/reminder (is )?(set|saved|on)\b/i.test(await text(x)));
     await x.c.close(); }
 
-  // 12: computer → phone: honest about what moves
+  // 12: computer → phone: offered before any personal choice; opening isn't installing; nothing moves
   { const x = await ctx(b, site.url, { when: SUN_EVE, device: "Desktop Chrome" }); await x.p.setViewportSize({ width: 1280, height: 800 }); await x.goto();
-    const card = await x.p.innerText("#handoff");
-    ok("12 computer: 'Keep it where your morning starts.' + scan copy", card.includes("Keep it where your morning starts.") && card.includes("Scan this code to set up Mornward on your phone."));
-    ok("12 ...says choices made here stay here (nothing transfers)", /stays on this computer/.test(card) && !/transfer|sync|carry over/i.test(card));
+    ok("12 computer, Welcome: Prepare my morning, no choices yet", (await x.p.textContent("#setupGo")) === "Prepare my morning" && !(await x.p.$("#prepIntent")));
+    await click(x, "#setupGo");
+    ok("12 ...first: 'Set up where you’ll use it.' / 'Scan to open Mornward on your phone.'", (await h1(x)) === "Set up where you’ll use it." &&
+      (await text(x)).includes("Scan to open Mornward on your phone.") && !!(await x.p.$("#card #handoff .qr")));
+    ok("12 ...before any personal choice: no setup state, no setup event, no task picker", !(await x.ls("onboard")) && !(await x.p.$("#prepIntent")) && !x.kinds().includes("setup_started"));
+    const note = await x.p.textContent("#hoNote");
+    ok("12 ...says the code opens it and installs nothing; the home screen is a separate step", /opens Mornward in your phone’s browser; it doesn’t install anything/.test(note) && /home screen is a separate step, on the phone/.test(note));
+    ok("12 ...says nothing moves to the phone (no sync claimed)", /Nothing you choose on this computer moves to the phone/.test(note) && !/transfer|sync|carry over/i.test(await text(x)));
+    ok("12 ...'Continue on this device' is there", (await x.p.textContent("#hereGo")) === "Continue on this device");
     await x.p.locator("#handoff .qr").screenshot({ path: "/tmp/mw-qr-onb.png" });
     let url = "";
     try { url = execFileSync("python3", ["-c", "import cv2,sys\nimg=cv2.imread(sys.argv[1]); img=cv2.resize(img,None,fx=2,fy=2,interpolation=cv2.INTER_NEAREST)\nv,_,_=cv2.QRCodeDetector().detectAndDecode(img); print(v)", "/tmp/mw-qr-onb.png"]).toString().trim(); } catch {}
-    ok("12 ...the code opens the real site, with nothing personal in it", url === "https://mornward.app/?from=qr" || url === "", url || "(OpenCV not available: skipped)");
-    await setupAll(x); await click(x, "#setupDone");
-    ok("12 ...after setup on the computer, the phone card is still offered", !!(await x.p.$("#handoff")));
+    ok("12 ...the code opens the real site, with nothing personal or any ID in it", url === "https://mornward.app/?from=qr" || url === "", url || "(OpenCV not available: skipped)");
+    ok("12 ...the code's address in the page has no ID either", !(await x.p.content()).match(/mornward\.app\/\?from=qr[^"'<\s]*(#|&|i=)/));
+    await click(x, "#hereGo");
+    ok("12 Continue on this device: step 1, setup started", (await h1(x)) === "What would you like to make room for?" && (await x.ls("onboard")).status === "started");
+    await click(x, "#stepNext"); await click(x, "#stepNext"); await click(x, "#setupDone");
+    ok("12 ...after setup on the computer, the phone card is still offered beside the app", !!(await x.p.$("#handoffSlot #handoff")) &&
+      (await x.p.textContent("#hoTitle")) === "Set up where you’ll use it.");
     await x.c.close(); }
+  for (const device of ["Pixel 7", "iPhone 13"]) {
+    const x = await open({ device }); await x.goto();
+    const seen = [!!(await x.p.$("#handoff"))];
+    await click(x, "#setupGo"); seen.push(!!(await x.p.$("#handoff")));
+    ok(`12 ${device}: Prepare my morning goes straight to step 1`, (await h1(x)) === "What would you like to make room for?");
+    await click(x, "#stepNext"); seen.push(!!(await x.p.$("#handoff"))); await click(x, "#stepNext"); seen.push(!!(await x.p.$("#handoff")));
+    await click(x, "#setupDone"); seen.push(!!(await x.p.$("#handoff")));
+    ok(`12 ${device}: never shows the phone-transfer code`, seen.every((v) => !v), seen);
+    await x.c.close();
+  }
 
   // 13: large text, keyboard, screen readers, dark mode, narrow phones
-  for (const [label, opt] of [["320 px phone", { device: "iPhone SE" }], ["dark mode", { scheme: "dark" }], ["200% text", { init: () => { document.addEventListener("DOMContentLoaded", () => { document.documentElement.style.fontSize = "200%"; }); } }]]) {
-    const x = await open(opt); await x.goto();
+  for (const [label, opt] of [["320 px phone", { device: "iPhone SE" }], ["dark mode", { scheme: "dark" }], ["reduced motion", { init: () => { window.__reduce = true; } }], ["200% text", { init: () => { document.addEventListener("DOMContentLoaded", () => { document.documentElement.style.fontSize = "200%"; }); } }]]) {
+    const x = await open(opt); if (label === "reduced motion") await x.p.emulateMedia({ reducedMotion: "reduce" }); await x.goto();
     const fit = async () => x.p.evaluate(() => document.scrollingElement.scrollWidth <= innerWidth + 1);
     const res = [await fit()];
+    await x.p.click("#previewSec summary"); await x.t(200); res.push(await fit());
     await click(x, "#setupGo"); res.push(await fit()); await click(x, "#stepNext"); res.push(await fit());
-    await click(x, "#stepNext"); res.push(await fit()); await click(x, "#stepNext"); res.push(await fit());
+    await click(x, "#stepNext"); res.push(await fit()); await pickApps(x, ["instagram"]); res.push(await fit());
     await click(x, "#setupDone"); res.push(await fit());
     ok(`13 ${label}: every setup screen fits without sideways scrolling`, res.every(Boolean), res);
     await x.c.close();
@@ -261,16 +320,59 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     await x.p.keyboard.press("Tab"); let f = "";
     for (let i = 0; i < 6 && f !== "setupGo"; i++) { f = await x.p.evaluate(() => document.activeElement.id); if (f !== "setupGo") await x.p.keyboard.press("Tab"); }
     await x.p.keyboard.press("Enter"); await x.t(700);
-    ok("13 keyboard: Tab to 'Set up my morning', Enter opens step 1", (await h1(x)) === "Where does your morning scroll usually start?");
+    ok("13 keyboard: Tab to 'Prepare my morning', Enter opens step 1", (await h1(x)) === "What would you like to make room for?");
     ok("13 screen readers: focus moves to the new heading, the step is announced", (await x.p.evaluate(() => document.activeElement.tagName)) === "H1" &&
-      /Step 1 of 3/.test(await x.p.textContent("#announce")));
-    ok("13 screen readers: the choices are a labelled group of toggle buttons", (await x.p.getAttribute("#apps", "role")) === "group" && !!(await x.p.getAttribute("#apps", "aria-label")) &&
-      (await x.p.$$eval("[data-app]", (l) => l.every((e) => e.tagName === "BUTTON" && e.hasAttribute("aria-pressed")))));
-    await x.p.focus('[data-app="facebook"]'); await x.p.keyboard.press("Space"); await x.t(100);
-    ok("13 keyboard: Space toggles a choice", (await x.p.getAttribute('[data-app="facebook"]', "aria-pressed")) === "true");
+      /Step 1 of 2/.test(await x.p.textContent("#announce")));
+    ok("13 screen readers: the task choices are a labelled group of toggle buttons", (await x.p.getAttribute("#ideas", "role")) === "group" && !!(await x.p.getAttribute("#ideas", "aria-label")) &&
+      (await x.p.$$eval("[data-idea]", (l) => l.every((e) => e.tagName === "BUTTON" && e.hasAttribute("aria-pressed")))));
+    const was = await x.p.getAttribute('[data-idea="3"]', "aria-pressed");
+    await x.p.focus('[data-idea="3"]'); await x.p.keyboard.press("Space"); await x.t(100);
+    ok("13 keyboard: Space toggles a choice", (await x.p.getAttribute('[data-idea="3"]', "aria-pressed")) !== was);
     const small = await x.p.evaluate(() => [...document.querySelectorAll("#card button")].filter((e) => e.offsetParent).filter((e) => e.getBoundingClientRect().height < 44).map((e) => e.textContent.trim()));
     ok("13 every button on step 1 is at least 44 px tall", small.length === 0, small);
     await x.c.close(); }
+  // Keyboard: the preview opens and closes with Enter, and the personalize chips are labelled toggles
+  { const x = await open(); await x.goto();
+    await x.p.focus("#previewSec summary"); await x.p.keyboard.press("Enter"); await x.t(200);
+    ok("13 keyboard: Enter opens the preview", !!(await x.p.$("#previewSec[open]")));
+    await x.p.keyboard.press("Enter"); await x.t(200);
+    ok("13 keyboard: Enter closes it", !(await x.p.$("#previewSec[open]")));
+    await setupAll(x, { app: null });
+    await x.p.focus("#prefsSec summary"); await x.p.keyboard.press("Enter"); await x.t(200);
+    await x.p.focus('#prefApps [data-app="facebook"]'); await x.p.keyboard.press("Space"); await x.t(100);
+    ok("13 keyboard: personalize opens and toggles with the keyboard", (await x.p.getAttribute('#prefApps [data-app="facebook"]', "aria-pressed")) === "true" &&
+      (await x.p.getAttribute("#prefApps", "role")) === "group" && !!(await x.p.getAttribute("#prefApps", "aria-label")));
+    await x.c.close(); }
+
+  // 7 routing, all four cases on one phone: set up, not started → interrupted → finished today → a later day
+  { const x = await open(); await x.goto(); await setupAll(x); await click(x, "#setupDone");
+    await jump(x, MON);
+    ok("7a setup done, no routine yet: the first-morning invitation", (await h1(x)) === "A minute before the scroll." && (await x.p.textContent("#begin")) === "Begin my morning");
+    await S.begin(x); await x.t(2000);
+    await x.p.reload(); await x.t(700);
+    ok("7b interrupted mid-breathing: back on breathing, paused, nothing counted", (await x.p.textContent("#bpause")) === "Resume" && (await h1(x)) === "Paused" && !(await x.ls("fullDays")));
+    await x.p.click("#bpause"); await S.breatheAll(x);
+    await x.p.reload(); await x.t(700);
+    ok("7b interrupted on the tasks: the task step again, the prepared tasks still unconfirmed", !!(await x.p.$("#isave")) && !(await x.ls("intent:2026-10-05")));
+    await S.keep(x); await S.finish(x); await x.p.reload(); await x.t(700);
+    ok("7c finished today: Today", (await h1(x)) === "Done for today.");
+    await jump(x, "2026-10-08T07:00:00");
+    ok("7d a later day: a new morning invitation (Begin, 'Welcome back.' after missed days), no setup", (await h1(x)) === "Welcome back." && !!(await x.p.$("#begin")) && !(await x.p.$("#stepNext")));
+    ok("7d ...progress starts Monday (no Sunday), missed days hollow, one completed morning", JSON.stringify(await x.p.$$eval(".progress li", (l) => l.map((e) => e.className.split(" ")[0]))) === '["full","none","none","none"]' &&
+      (await x.p.textContent("#progCount")) === "1 morning reset completed");
+    await x.c.close(); }
+
+  // The suggested first date is the next morning, worked out from the real date and time
+  for (const [when, want, label] of [["2026-10-05T06:00:00", "2026-10-06", "setting up at 6 AM suggests tomorrow"],
+    ["2026-10-05T01:30:00", "2026-10-05", "setting up at 1:30 AM suggests the morning about to come"],
+    ["2026-12-31T21:00:00", "2027-01-01", "New Year's Eve suggests January 1 (with the year)"]]) {
+    const x = await open({ when }); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext");
+    const [y, m, d] = want.split("-").map(Number);
+    const words = new Date(y, m - 1, d).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+    ok(`step 2: ${label}`, (await x.p.inputValue("#remDate")) === want && (await x.p.textContent("#remWhen")).startsWith(`First reminder: ${words}`), await x.p.textContent("#remWhen"));
+    if (want === "2027-01-01") ok("step 2: ...the year is written out", /2027/.test(await x.p.textContent("#remWhen")));
+    await x.c.close();
+  }
 
   // Privacy: prepared tasks and answers never leave the phone; deleting on the phone removes them
   { const x = await open(); await x.goto(); await setupAll(x); await click(x, "#setupDone");

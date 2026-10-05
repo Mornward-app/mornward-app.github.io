@@ -270,12 +270,20 @@
     .handoff { position: fixed; top: 96px; left: calc(50% + 264px); width: 300px; margin: 0; flex-direction: column; align-items: flex-start;
       max-height: calc(100vh - 120px); overflow: auto; }
     .handoff .qr { width: 200px; }
+    .handoff.inline { position: static; width: auto; max-height: none; flex-direction: row; align-items: center; }
+    .handoff.inline .qr { width: 160px; }
   }
   .seg + .support { margin-top: -6px; }
   .rempane { display: flex; flex-direction: column; gap: 12px; }
   .rempane[hidden] { display: none; }
   .vsteps.four li { font-size: 0.75rem; line-height: 1rem; }
   .vsteps li span { overflow-wrap: anywhere; }
+  .vsteps.explain { flex-direction: column; gap: 12px; }
+  .vsteps.explain li { flex-direction: row; align-items: center; text-align: left; gap: 14px; }
+  .vsteps.explain b { display: block; color: var(--text); }
+  .vsteps.explain .g { flex: none; }
+  details.section .inner .setupcard { color: var(--text); }
+  details.section .inner .setupcard ul { padding-left: 0; gap: 0; }
   /* Large text: the four Shortcut steps go two by two */
   .vsteps.four { flex-wrap: wrap; row-gap: 14px; }
   .vsteps.four li { flex: 1 1 calc(50% - 8px); }
@@ -873,9 +881,10 @@
   // ---------- first visit: prepare now, practise in the morning ----------
   // Explicit state, on the phone only (never inferred from the stats, so it works offline and with counts off):
   //   fl.onboard   missing                          a new visitor (or someone from before setup existed)
-  //                { status: "started", step }      setup in progress; step: scroll | tasks | remind
+  //                { status: "started", step }      setup in progress; step: tasks | remind (an older "scroll" step,
+  //                                                 from before the scroll question became optional, reads as tasks)
   //                { status: "done" }               setup finished
-  //                plus apps (where the scroll starts), tasksSkipped, remindSkipped, startedOn, doneOn
+  //                plus apps (where the scroll starts, optional), tasksSkipped, remindSkipped, startedOn, doneOn
   //   fl.prepared  { tasks, on, used }              tasks chosen in setup for the first morning. Separate from dated
   //                                                 tasks (intent:DAY) and from every completion record: they start
   //                                                 nothing, confirm nothing and fill no circle. The first morning
@@ -883,7 +892,8 @@
   //   fl.prepDraft { sel, typed, touched }          unsaved ticks and typing on the setup task step
   // Where someone lands (entryState, below): new → Welcome; setup → its step; prepared → "A minute before the
   // scroll"; routine → breathing or tasks; today → Today; returning → Begin. Anyone with routine history skips setup.
-  const SETUP_STEPS = ["scroll", "tasks", "remind"];
+  const SETUP_STEPS = ["tasks", "remind"];
+  const setupStep = (s) => (SETUP_STEPS.includes(s) ? s : "tasks");
   const isOnboard = (v) => typeof v === "object" && (v.status === "started" || v.status === "done");
   const getOb = () => store.get("onboard", null, isOnboard);
   const setOb = (patch) => { const next = { v: 1, ...(getOb() || {}), ...patch }; return store.set("onboard", next) ? next : null; };
@@ -906,17 +916,31 @@
   function emitSetup(kind, data = {}) { if (statsOn()) queueRow("setup#" + kind, kind, dayKey(), 0, data); }
   // A planned first morning, if one was picked with a calendar action and it's still ahead. Phrased as the plan,
   // never as a reminder that's set: Mornward can't see the calendar.
-  function plannedLine() {
+  function plannedDate() {
     const p = store.get("remPlan", null, (v) => typeof v === "object" && isAlarmTime(v.at) && isDay(v.first));
-    if (!p) return "";
+    if (!p) return null;
     const d = nextAlarm(p.at, p.first);
-    if (dayKey(d) !== p.first) return "";
-    return `<p class="planned" id="planned">Your planned first morning: ${esc(whenText(d))}. Start any time you're up.</p>`;
+    return dayKey(d) === p.first ? d : null;
   }
-  const taskCard = (title, tasks) => `<section class="setupcard" aria-labelledby="tcTitle"><h2 id="tcTitle">${title}</h2>
-        <ul id="prepList">${tasks.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></section>`;
+  function plannedLine() {
+    const d = plannedDate();
+    return d ? `<p class="planned" id="planned">Your planned first morning: ${esc(whenText(d))}. Start any time you're up.</p>` : "";
+  }
+  const taskCard = (title, tasks, id = "prepList") => `<section class="setupcard" aria-labelledby="${id}T"><h2 id="${id}T">${title}</h2>
+        <ul id="${id}">${tasks.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></section>`;
   const stepTop = (n) => `<div class="steptop"><button class="link back" id="stepBack" type="button">${icon("back")}<span>Back</span></button>
-        <p class="stepnum">Step ${n} of 3</p></div>`;
+        ${n ? `<p class="stepnum">Step ${n} of ${SETUP_STEPS.length}</p>` : ""}</div>`;
+
+  // What a morning looks like, folded away on Welcome. An explanation, not a demo: opening it starts no breathing,
+  // saves no task, starts no history and counts nothing. The example tasks are text, never offered as picks.
+  const previewHtml = () => `<details class="section" id="previewSec"><summary><span class="sl">${icon("sun")}See what your morning looks like</span></summary><div class="inner">
+        <ol class="vsteps explain" id="previewSteps">
+          <li><span class="g">${icon("breath")}</span><span><b>Pause</b> Follow three guided breaths.</span></li>
+          <li><span class="g">${icon("pen")}</span><span><b>Choose</b> Confirm a few small tasks for your morning.</span></li>
+          <li><span class="g">${icon("sun")}</span><span><b>Go</b> Leave with a simple plan.</span></li>
+        </ol>
+        ${taskCard("Example mini tasks", ["Step outside", "Read one page"], "exampleList")}
+      </div></details>`;
 
   function renderWelcome() {
     show(`
@@ -925,41 +949,56 @@
       <h1>A calmer start, before the scroll.</h1>
       <p class="lede">Mornward is a one-minute morning reset: three breaths, then a few small tasks you choose.</p>
       <p class="body">Set it up now. Start when you wake.</p>
+      ${previewHtml()}
       <div class="push">
-        <button class="primary" id="setupGo" type="button">Set up my morning</button>
-        <button class="link" id="beginNow" type="button">Already starting your day? Begin now</button>
+        <button class="primary" id="setupGo" type="button">Prepare my morning</button>
+        <button class="link" id="beginNow" type="button">Starting your day now? Begin now</button>
         <p class="msg err" id="welcomeMsg" role="status"></p>
         ${hasAgreed() ? `<p class="consent" id="preStats"></p>` : consentBlock("Continuing")}
       </div>`, "Mornward. A calmer start, before the scroll.");
     wirePre();
-    $("#setupGo").onclick = startSetup;
+    // On a computer, the phone comes first: before any personal choice is made here
+    $("#setupGo").onclick = () => (computerView() ? renderPhoneStep() : startSetup());
     $("#beginNow").onclick = begin;
-    renderHandoff();
+  }
+  // A computer: open it on the phone (the code opens the app; it installs nothing), or carry on here
+  function renderPhoneStep() {
+    show(`${stepTop(0)}
+      <h1>Set up where you’ll use it.</h1>
+      <p class="lede">Scan to open Mornward on your phone.</p>
+      ${handoffHtml(true)}
+      <div class="push">
+        <button class="secondary" id="hereGo" type="button">Continue on this device</button>
+      </div>`, "Set up where you’ll use it.");
+    wireHandoff();
+    $("#stepBack").onclick = renderWelcome;
+    $("#hereGo").onclick = startSetup;
   }
   // Opens setup. Starts no routine; counts setup_started once, if the counts are on.
   function startSetup() {
     agree("setup");
     const o = getOb();
     // Without saved setup state nothing could be resumed or finished: say so instead of pretending
-    if (!o && !setOb({ status: "started", step: "scroll", startedOn: dayKey(), apps: [] })) {
+    if (!o && !setOb({ status: "started", step: "tasks", startedOn: dayKey(), apps: [] })) {
+      if (!$("#welcomeMsg")) renderWelcome(); // from the computer's phone step
       $("#welcomeMsg").textContent = "This browser isn't saving anything right now (private mode or full storage). Setup needs that. You can still Begin now.";
       return;
     }
     if (!o) emitSetup("setup_started");
     prepareIconStart();
-    renderSetup(o && o.status === "started" && SETUP_STEPS.includes(o.step) ? o.step : "scroll");
+    renderSetup(o && o.status === "started" ? setupStep(o.step) : "tasks");
   }
   // editing: changing a finished setup (from the prepared screen); its answers are kept as they're changed
   function renderSetup(step, editing = false) {
+    step = setupStep(step);
     const o = getOb();
     if (o && o.status === "started" && !editing) setOb({ step });
     prepareIconStart(); // the icon's start address follows the step (see setupForIcon)
-    if (step === "tasks") renderPrepTasks(editing);
-    else if (step === "remind") renderRemind(editing);
-    else renderScroll(editing);
+    if (step === "remind") renderRemind(editing);
+    else renderPrepTasks(editing);
   }
 
-  // Step 1: where the morning scroll starts (optional; stays on the phone; only words the invitation)
+  // Where the morning scroll starts: optional, folded away, kept on the phone, only words the invitation
   const appChips = (sel) => SCROLL_APPS.map(([k, l]) => `<button class="chip pick" type="button" data-app="${k}" aria-pressed="${sel.includes(k)}">
           <svg class="i ck" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg><span>${esc(l)}</span></button>`).join("");
   // "I'm not sure" stands alone: choosing it clears the others, and choosing another clears it
@@ -968,32 +1007,8 @@
     const rest = sel.filter((x) => x !== "unsure");
     return rest.includes(k) ? rest.filter((x) => x !== k) : [...rest, k];
   }
-  function renderScroll(editing) {
-    let sel = appsChosen();
-    show(`${stepTop(1)}
-      <h1>Where does your morning scroll usually start?</h1>
-      <p class="body">Choose any that fit. You can skip this.</p>
-      <div class="chips picks" id="apps" role="group" aria-label="Where your morning scroll usually starts">${appChips(sel)}</div>
-      <p class="support">Only used to word your morning invitation. It stays on this phone. Mornward doesn't block, watch or detect other apps.</p>
-      <p class="msg err" id="stepMsg" role="status"></p>
-      <div class="actions sticky">
-        <button class="primary" id="stepNext" type="button">Continue</button>
-        <button class="link" id="stepSkip" type="button">Skip</button>
-      </div>`, "Step 1 of 3. Where does your morning scroll usually start?");
-    const redraw = () => card.querySelectorAll("[data-app]").forEach((b) => b.setAttribute("aria-pressed", String(sel.includes(b.dataset.app))));
-    card.querySelectorAll("[data-app]").forEach((b) => (b.onclick = () => { sel = toggleApp(sel, b.dataset.app); redraw(); setOb({ apps: sel }); }));
-    // Moves on only once the answer is saved; otherwise the choices stay and it offers Retry
-    const go = (apps, skipping) => {
-      if (setOb({ apps })) { renderSetup("tasks", editing); return; }
-      $("#stepMsg").textContent = skipping ? "Couldn't save on this phone. Tap Skip again." : "Couldn't save on this phone. Your choices are still here.";
-      if (!skipping) $("#stepNext").textContent = "Retry";
-    };
-    $("#stepNext").onclick = () => go(sel);
-    $("#stepSkip").onclick = () => go([], true);
-    $("#stepBack").onclick = () => (editing ? renderPrepared() : renderWelcome());
-  }
 
-  // Step 2: tasks for the first morning. Same suggestions, limits and checks as the routine; saved apart from it.
+  // Step 1: tasks for the first morning. Same suggestions, limits and checks as the routine; saved apart from it.
   const isPrepDraft = (v) => typeof v === "object" && Array.isArray(v.sel) && v.sel.every(isText) && isText(v.typed);
   function renderPrepTasks(editing) {
     const set = todaysSet(dayKey());
@@ -1004,7 +1019,7 @@
     const options = [...sel.filter((x) => !set.includes(x)), ...set];
     for (let i = options.length - 1; options.length > CHIP_MAX && i >= 0; i--) if (!sel.includes(options[i])) options.splice(i, 1);
     let retry = false;
-    show(`${stepTop(2)}
+    show(`${stepTop(1)}
       <h1>What would you like to make room for?</h1>
       <p class="body" id="pickHint">Choose up to three mini tasks for your next morning. You can change them later.</p>
       <div class="chips picks" id="ideas" role="group" aria-label="Mini tasks for your next morning, up to ${PICK_MAX}">
@@ -1018,9 +1033,9 @@
         <p class="msg" id="imsg" role="status"></p>
       </div>
       <div class="actions sticky">
-        <button class="primary" id="stepNext" type="button">Save my tasks</button>
+        <button class="primary" id="stepNext" type="button">Save my morning plan</button>
         <button class="link" id="stepSkip" type="button">Choose in the morning</button>
-      </div>`, "Step 2 of 3. What would you like to make room for?");
+      </div>`, `Step 1 of ${SETUP_STEPS.length}. What would you like to make room for?`);
     const field = $("#prepIntent");
     const msg = (t, err = false) => { $("#imsg").textContent = t; $("#imsg").className = "msg" + (err ? " err" : ""); };
     const grow = () => { field.style.height = "auto"; field.style.height = field.scrollHeight + 4 + "px"; };
@@ -1030,7 +1045,7 @@
     };
     const redraw = () => {
       card.querySelectorAll("[data-idea]").forEach((b) => b.setAttribute("aria-pressed", String(sel.includes(options[b.dataset.idea]))));
-      $("#stepNext").textContent = retry ? "Retry" : "Save my tasks";
+      $("#stepNext").textContent = retry ? "Retry" : "Save my morning plan";
     };
     card.querySelectorAll("[data-idea]").forEach((b) => (b.onclick = () => {
       const x = options[b.dataset.idea];
@@ -1061,22 +1076,22 @@
       store.del("prepDraft");
       renderSetup("remind", editing);
     };
-    $("#stepBack").onclick = () => { keepDraft(); renderSetup("scroll", editing); };
+    $("#stepBack").onclick = () => { keepDraft(); if (editing) renderPrepared(); else renderWelcome(); };
   }
 
-  // Step 3: a reminder (optional), then the home screen (optional, quieter). One primary action: Continue.
+  // Step 2: a way back in the morning. A reminder (optional), then the home screen (optional, quieter).
   function renderRemind(editing) {
-    show(`${stepTop(3)}
-      <h1>Make room for your first morning.</h1>
-      <p class="body">Choose a reminder time that fits when you wake.</p>
-      <div class="remsetup" id="remSetup">${reminderControls()}</div>
-      <p class="support">A reminder is optional. Mornward works without one and never asks for notification permission.</p>
+    show(`${stepTop(2)}
+      <h1>Make it easy to return.</h1>
+      <p class="body">Set a calendar reminder for when you wake. You can change the time and date.</p>
+      <div class="remsetup" id="remSetup">${reminderControls(true)}</div>
+      <p class="support">Both are optional. Mornward works without them and never asks for notification permission.</p>
       ${installOptional()}
       <div class="actions sticky">
         <button class="primary" id="stepNext" type="button">Continue</button>
-        <button class="link" id="stepSkip" type="button">Skip reminder</button>
-      </div>`, "Step 3 of 3. Make room for your first morning.");
-    wireReminder();
+        <button class="link" id="stepSkip" type="button">Skip for now</button>
+      </div>`, `Step 2 of ${SETUP_STEPS.length}. Make it easy to return.`);
+    wireReminder(true);
     syncQuiet();
     const done = (skipped) => {
       if (setOb({ remindSkipped: skipped }) && skipped) { store.del("remPlan"); store.del("remDate"); }
@@ -1099,22 +1114,30 @@
     renderSetupDone();
     return true;
   }
-  // Not the morning reset: no sun, no count, no history, nothing claimed about the reminder
+  // What's known about the reminder, and no more: Mornward only knows a calendar was opened, never that it saved
+  function reminderStatus() {
+    const d = plannedDate();
+    return d ? `<p class="planned" id="remStatus">Your planned first morning: ${esc(whenText(d))}. You opened your calendar for a reminder; check it’s saved there.</p>`
+      : `<p class="planned" id="remStatus">Open Mornward when you start your day.</p>`;
+  }
+  // Not the morning reset: no sun, no circles, no count, no history, no "tomorrow"
   function renderSetupDone() {
     const p = preparedTasks();
     show(`
       <p class="wordmark">mornward</p>
-      <h1>You’re ready for your first morning.</h1>
-      <p class="lede">When you wake, open Mornward before your usual scroll. ${p ? "Your mini tasks will be waiting." : "You can choose your mini tasks then."}</p>
-      ${p ? taskCard("Waiting for your morning", p.tasks) : ""}
-      ${plannedLine()}
+      <h1>Ready for your first morning.</h1>
+      <p class="lede">When you wake, open Mornward before your usual scroll. Take three breaths, then ${p ? "confirm" : "choose"} your mini tasks.</p>
+      ${p ? taskCard("Your morning plan", p.tasks) : ""}
+      ${reminderStatus()}
+      ${prefsSection("Personalize your morning invitation")}
       <button class="link start" id="beginNow" type="button">Starting your day now? Begin your reset</button>
       <div class="push">
         <button class="primary" id="setupDone" type="button">Done for now</button>
-        <button class="link" id="setupEdit" type="button">Edit setup</button>
-      </div>`, "You’re ready for your first morning.");
+        <button class="secondary" id="setupEdit" type="button">Edit setup</button>
+      </div>`, "Ready for your first morning.");
+    wirePrefs();
     $("#setupDone").onclick = () => home();
-    $("#setupEdit").onclick = () => renderSetup("scroll", true);
+    $("#setupEdit").onclick = () => renderSetup("tasks", true);
     $("#beginNow").onclick = (e) => { if (settled(e)) begin(); };
   }
   // Setup done, no routine yet: a quiet invitation. Nothing starts until Begin; no "late" or "missed".
@@ -1125,7 +1148,7 @@
       ${SUN(false)}
       <h1>A minute before the scroll.</h1>
       <p class="lede">Take three breaths, then choose what comes next.</p>
-      ${personalLine() ? `<p class="body" id="invite">${esc(personalLine())}</p>` : ""}
+      <p class="body" id="invite"${personalLine() ? "" : " hidden"}>${esc(personalLine())}</p>
       ${p ? taskCard("Ready for your morning", p.tasks) : ""}
       ${plannedLine()}
       <div class="push">
@@ -1133,18 +1156,19 @@
         <p class="support center tag">${icon("clock")}About one minute</p>
         <button class="link" id="setupEdit" type="button">Edit setup</button>
         ${hasAgreed() ? "" : consentBlock("Tapping Begin")}
-        <div class="more">${themeSection()}${privacySection()}</div>
+        <div class="more">${prefsSection("Personalize your morning invitation")}${themeSection()}${privacySection()}</div>
       </div>`, "A minute before the scroll.");
     // Another tab may have started a routine since this screen was drawn: then go where that leads instead
     $("#begin").onclick = (e) => { if (!settled(e)) return; if (entryState() !== "prepared") { home(); return; } begin(); };
-    $("#setupEdit").onclick = () => { if (entryState() !== "prepared") { home(); return; } renderSetup("scroll", true); };
-    wirePre(); wireTheme(); wirePrivacy();
+    $("#setupEdit").onclick = () => { if (entryState() !== "prepared") { home(); return; } renderSetup("tasks", true); };
+    wirePre(); wireTheme(); wirePrivacy(); wirePrefs();
     renderHandoff();
   }
-  // Morning preferences under Today: the same question as setup step 1, saved as it's changed
-  function prefsSection() {
-    return `<details class="section" id="prefsSec"><summary><span class="sl">${icon("pen")}Morning preferences</span></summary><div class="inner">
-        <p>Where does your morning scroll usually start? Only used to word Begin. Stays on this phone.</p>
+  // Where the morning scroll starts: folded away on the ready and prepared screens, and under Today as Morning
+  // preferences. Saved as it's changed, on the phone only (never sent).
+  function prefsSection(title = "Morning preferences") {
+    return `<details class="section" id="prefsSec"><summary><span class="sl">${icon("pen")}${esc(title)}</span></summary><div class="inner">
+        <p>Where does your morning scroll usually start? Optional. Only used to word your morning invitation, and it stays on this phone. Mornward doesn't block, watch or detect other apps.</p>
         <div class="chips picks" id="prefApps" role="group" aria-label="Where your morning scroll usually starts">${appChips(appsChosen())}</div>
         <p class="support" id="prefsMsg" role="status"></p>
       </div></details>`;
@@ -1156,6 +1180,8 @@
       card.querySelectorAll("#prefApps [data-app]").forEach((x) => x.setAttribute("aria-pressed", String(sel.includes(x.dataset.app))));
       const ok = setOb(getOb() ? { apps: sel } : { status: "done", apps: sel });
       $("#prefsMsg").textContent = ok ? "Saved on this phone." : "Couldn't save on this phone.";
+      const inv = $("#invite");
+      if (inv) { inv.textContent = personalLine(); inv.hidden = !personalLine(); }
     }));
   }
 
@@ -1847,8 +1873,8 @@
     const sec = $("#addSec");
     if (!sec) return;
     const st = installState();
-    if (st === "home" || st === "installed") { sec.querySelector(".inner").innerHTML = `<p role="status">Added. Open it from your home screen tomorrow.</p>`; return; }
-    sec.querySelector("p").textContent = installNote || "Opens in one tap tomorrow, no feed first.";
+    if (st === "home" || st === "installed") { sec.querySelector(".inner").innerHTML = `<p role="status">Added. Open it from your home screen in the morning.</p>`; return; }
+    sec.querySelector("p").textContent = installNote || "Opens in one tap, no feed first.";
     const b = $("#addQuiet");
     b.textContent = st === "accepted" ? "Adding…" : "Add to home screen";
     b.onclick = () => startAdd(b);
@@ -1856,10 +1882,10 @@
   // After someone said no to the box: a closed row under Today, so it's still there when they want it
   const quietAdd = (always = false) => ((!always && store.get("installNo", false) !== true) || ["home", "installed"].includes(installState()) || computerView()) ? ""
     : `<details class="section" id="addSec"><summary><span class="sl">${icon("home")}Add to home screen${always ? " · optional" : ""}</span></summary><div class="inner">
-        <p>${esc(installNote || "Opens in one tap tomorrow, no feed first.")}</p>
+        <p>${esc(installNote || "Opens in one tap, no feed first.")}</p>
         <button class="secondary" id="addQuiet" type="button">${installState() === "accepted" ? "Adding…" : "Add to home screen"}</button></div></details>`;
 
-  // Setup step 3: the home screen as a quiet, optional row (the reminder comes first; neither is required)
+  // Setup step 2: the home screen as a quiet, optional row (the reminder comes first; neither is required)
   const installOptional = () => quietAdd(true);
 
   // ---------- on a computer: take it to the phone ----------
@@ -1869,14 +1895,15 @@
   // quieter alternatives. It never blocks the routine. The code opens mornward.app/?from=qr, so these visits are counted.
   const QR_SVG = `<svg viewBox="-4 -4 37 37" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><rect x="-4" y="-4" width="37" height="37" fill="#FFFFFF"/><path fill="#18222F" d="M0 0h1v1h-1zM1 0h1v1h-1zM2 0h1v1h-1zM3 0h1v1h-1zM4 0h1v1h-1zM5 0h1v1h-1zM6 0h1v1h-1zM9 0h1v1h-1zM13 0h1v1h-1zM14 0h1v1h-1zM15 0h1v1h-1zM17 0h1v1h-1zM18 0h1v1h-1zM22 0h1v1h-1zM23 0h1v1h-1zM24 0h1v1h-1zM25 0h1v1h-1zM26 0h1v1h-1zM27 0h1v1h-1zM28 0h1v1h-1zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h1v1h-1zM11 1h1v1h-1zM12 1h1v1h-1zM15 1h1v1h-1zM17 1h1v1h-1zM20 1h1v1h-1zM22 1h1v1h-1zM28 1h1v1h-1zM0 2h1v1h-1zM2 2h1v1h-1zM3 2h1v1h-1zM4 2h1v1h-1zM6 2h1v1h-1zM8 2h1v1h-1zM9 2h1v1h-1zM14 2h1v1h-1zM16 2h1v1h-1zM18 2h1v1h-1zM19 2h1v1h-1zM20 2h1v1h-1zM22 2h1v1h-1zM24 2h1v1h-1zM25 2h1v1h-1zM26 2h1v1h-1zM28 2h1v1h-1zM0 3h1v1h-1zM2 3h1v1h-1zM3 3h1v1h-1zM4 3h1v1h-1zM6 3h1v1h-1zM8 3h1v1h-1zM9 3h1v1h-1zM11 3h1v1h-1zM12 3h1v1h-1zM14 3h1v1h-1zM15 3h1v1h-1zM17 3h1v1h-1zM19 3h1v1h-1zM22 3h1v1h-1zM24 3h1v1h-1zM25 3h1v1h-1zM26 3h1v1h-1zM28 3h1v1h-1zM0 4h1v1h-1zM2 4h1v1h-1zM3 4h1v1h-1zM4 4h1v1h-1zM6 4h1v1h-1zM9 4h1v1h-1zM12 4h1v1h-1zM13 4h1v1h-1zM14 4h1v1h-1zM15 4h1v1h-1zM19 4h1v1h-1zM22 4h1v1h-1zM24 4h1v1h-1zM25 4h1v1h-1zM26 4h1v1h-1zM28 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM11 5h1v1h-1zM12 5h1v1h-1zM13 5h1v1h-1zM14 5h1v1h-1zM16 5h1v1h-1zM17 5h1v1h-1zM18 5h1v1h-1zM20 5h1v1h-1zM22 5h1v1h-1zM28 5h1v1h-1zM0 6h1v1h-1zM1 6h1v1h-1zM2 6h1v1h-1zM3 6h1v1h-1zM4 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM23 6h1v1h-1zM24 6h1v1h-1zM25 6h1v1h-1zM26 6h1v1h-1zM27 6h1v1h-1zM28 6h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM18 7h1v1h-1zM19 7h1v1h-1zM20 7h1v1h-1zM0 8h1v1h-1zM6 8h1v1h-1zM8 8h1v1h-1zM11 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM15 8h1v1h-1zM17 8h1v1h-1zM19 8h1v1h-1zM21 8h1v1h-1zM22 8h1v1h-1zM25 8h1v1h-1zM26 8h1v1h-1zM27 8h1v1h-1zM0 9h1v1h-1zM2 9h1v1h-1zM4 9h1v1h-1zM5 9h1v1h-1zM8 9h1v1h-1zM9 9h1v1h-1zM11 9h1v1h-1zM12 9h1v1h-1zM14 9h1v1h-1zM17 9h1v1h-1zM18 9h1v1h-1zM19 9h1v1h-1zM20 9h1v1h-1zM21 9h1v1h-1zM23 9h1v1h-1zM24 9h1v1h-1zM26 9h1v1h-1zM27 9h1v1h-1zM0 10h1v1h-1zM3 10h1v1h-1zM4 10h1v1h-1zM6 10h1v1h-1zM8 10h1v1h-1zM10 10h1v1h-1zM17 10h1v1h-1zM0 11h1v1h-1zM2 11h1v1h-1zM4 11h1v1h-1zM8 11h1v1h-1zM9 11h1v1h-1zM14 11h1v1h-1zM15 11h1v1h-1zM16 11h1v1h-1zM21 11h1v1h-1zM22 11h1v1h-1zM23 11h1v1h-1zM25 11h1v1h-1zM1 12h1v1h-1zM5 12h1v1h-1zM6 12h1v1h-1zM10 12h1v1h-1zM11 12h1v1h-1zM13 12h1v1h-1zM14 12h1v1h-1zM19 12h1v1h-1zM22 12h1v1h-1zM23 12h1v1h-1zM28 12h1v1h-1zM7 13h1v1h-1zM9 13h1v1h-1zM13 13h1v1h-1zM14 13h1v1h-1zM17 13h1v1h-1zM18 13h1v1h-1zM19 13h1v1h-1zM20 13h1v1h-1zM22 13h1v1h-1zM23 13h1v1h-1zM24 13h1v1h-1zM27 13h1v1h-1zM28 13h1v1h-1zM0 14h1v1h-1zM2 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM6 14h1v1h-1zM8 14h1v1h-1zM11 14h1v1h-1zM13 14h1v1h-1zM14 14h1v1h-1zM15 14h1v1h-1zM16 14h1v1h-1zM21 14h1v1h-1zM25 14h1v1h-1zM26 14h1v1h-1zM1 15h1v1h-1zM2 15h1v1h-1zM4 15h1v1h-1zM7 15h1v1h-1zM9 15h1v1h-1zM11 15h1v1h-1zM12 15h1v1h-1zM13 15h1v1h-1zM14 15h1v1h-1zM16 15h1v1h-1zM20 15h1v1h-1zM21 15h1v1h-1zM22 15h1v1h-1zM24 15h1v1h-1zM26 15h1v1h-1zM28 15h1v1h-1zM2 16h1v1h-1zM3 16h1v1h-1zM4 16h1v1h-1zM5 16h1v1h-1zM6 16h1v1h-1zM8 16h1v1h-1zM10 16h1v1h-1zM11 16h1v1h-1zM14 16h1v1h-1zM15 16h1v1h-1zM17 16h1v1h-1zM18 16h1v1h-1zM20 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM26 16h1v1h-1zM0 17h1v1h-1zM1 17h1v1h-1zM4 17h1v1h-1zM9 17h1v1h-1zM10 17h1v1h-1zM12 17h1v1h-1zM16 17h1v1h-1zM17 17h1v1h-1zM19 17h1v1h-1zM20 17h1v1h-1zM21 17h1v1h-1zM22 17h1v1h-1zM23 17h1v1h-1zM24 17h1v1h-1zM26 17h1v1h-1zM27 17h1v1h-1zM28 17h1v1h-1zM0 18h1v1h-1zM1 18h1v1h-1zM2 18h1v1h-1zM5 18h1v1h-1zM6 18h1v1h-1zM7 18h1v1h-1zM9 18h1v1h-1zM13 18h1v1h-1zM14 18h1v1h-1zM16 18h1v1h-1zM17 18h1v1h-1zM19 18h1v1h-1zM21 18h1v1h-1zM22 18h1v1h-1zM25 18h1v1h-1zM28 18h1v1h-1zM0 19h1v1h-1zM2 19h1v1h-1zM3 19h1v1h-1zM4 19h1v1h-1zM9 19h1v1h-1zM10 19h1v1h-1zM14 19h1v1h-1zM15 19h1v1h-1zM16 19h1v1h-1zM22 19h1v1h-1zM23 19h1v1h-1zM0 20h1v1h-1zM4 20h1v1h-1zM5 20h1v1h-1zM6 20h1v1h-1zM8 20h1v1h-1zM9 20h1v1h-1zM11 20h1v1h-1zM12 20h1v1h-1zM16 20h1v1h-1zM17 20h1v1h-1zM20 20h1v1h-1zM21 20h1v1h-1zM22 20h1v1h-1zM23 20h1v1h-1zM24 20h1v1h-1zM26 20h1v1h-1zM27 20h1v1h-1zM28 20h1v1h-1zM8 21h1v1h-1zM9 21h1v1h-1zM10 21h1v1h-1zM12 21h1v1h-1zM13 21h1v1h-1zM16 21h1v1h-1zM20 21h1v1h-1zM24 21h1v1h-1zM25 21h1v1h-1zM0 22h1v1h-1zM1 22h1v1h-1zM2 22h1v1h-1zM3 22h1v1h-1zM4 22h1v1h-1zM5 22h1v1h-1zM6 22h1v1h-1zM9 22h1v1h-1zM10 22h1v1h-1zM12 22h1v1h-1zM13 22h1v1h-1zM14 22h1v1h-1zM15 22h1v1h-1zM16 22h1v1h-1zM18 22h1v1h-1zM19 22h1v1h-1zM20 22h1v1h-1zM22 22h1v1h-1zM24 22h1v1h-1zM25 22h1v1h-1zM26 22h1v1h-1zM0 23h1v1h-1zM6 23h1v1h-1zM9 23h1v1h-1zM10 23h1v1h-1zM11 23h1v1h-1zM13 23h1v1h-1zM19 23h1v1h-1zM20 23h1v1h-1zM24 23h1v1h-1zM27 23h1v1h-1zM0 24h1v1h-1zM2 24h1v1h-1zM3 24h1v1h-1zM4 24h1v1h-1zM6 24h1v1h-1zM10 24h1v1h-1zM13 24h1v1h-1zM15 24h1v1h-1zM16 24h1v1h-1zM19 24h1v1h-1zM20 24h1v1h-1zM21 24h1v1h-1zM22 24h1v1h-1zM23 24h1v1h-1zM24 24h1v1h-1zM25 24h1v1h-1zM0 25h1v1h-1zM2 25h1v1h-1zM3 25h1v1h-1zM4 25h1v1h-1zM6 25h1v1h-1zM11 25h1v1h-1zM16 25h1v1h-1zM20 25h1v1h-1zM21 25h1v1h-1zM25 25h1v1h-1zM26 25h1v1h-1zM27 25h1v1h-1zM0 26h1v1h-1zM2 26h1v1h-1zM3 26h1v1h-1zM4 26h1v1h-1zM6 26h1v1h-1zM9 26h1v1h-1zM11 26h1v1h-1zM12 26h1v1h-1zM13 26h1v1h-1zM14 26h1v1h-1zM17 26h1v1h-1zM18 26h1v1h-1zM19 26h1v1h-1zM20 26h1v1h-1zM21 26h1v1h-1zM22 26h1v1h-1zM23 26h1v1h-1zM24 26h1v1h-1zM25 26h1v1h-1zM26 26h1v1h-1zM27 26h1v1h-1zM0 27h1v1h-1zM6 27h1v1h-1zM12 27h1v1h-1zM14 27h1v1h-1zM15 27h1v1h-1zM18 27h1v1h-1zM21 27h1v1h-1zM22 27h1v1h-1zM23 27h1v1h-1zM24 27h1v1h-1zM25 27h1v1h-1zM26 27h1v1h-1zM28 27h1v1h-1zM0 28h1v1h-1zM1 28h1v1h-1zM2 28h1v1h-1zM3 28h1v1h-1zM4 28h1v1h-1zM5 28h1v1h-1zM6 28h1v1h-1zM8 28h1v1h-1zM9 28h1v1h-1zM11 28h1v1h-1zM13 28h1v1h-1zM18 28h1v1h-1zM21 28h1v1h-1zM23 28h1v1h-1zM26 28h1v1h-1z"/></svg>`;
   const PHONE_URL = "https://mornward.app/?from=qr";
-  function handoffHtml() {
+  // inline: inside the computer's phone step (its heading is the page's), not the card beside the app
+  function handoffHtml(inline = false) {
     if (!computerView()) return "";
-    return `<aside class="handoff" id="handoff" aria-labelledby="hoTitle">
+    return `<aside class="handoff${inline ? " inline" : ""}" id="handoff" ${inline ? `aria-label="Open Mornward on your phone"` : `aria-labelledby="hoTitle"`}>
         <div class="qr" role="img" aria-label="QR code that opens mornward.app">${QR_SVG}</div>
         <div class="hotext">
-          <h2 id="hoTitle">Keep it where your morning starts.</h2>
-          <p>Scan this code to set up Mornward on your phone.</p>
-          <p class="support">It opens fresh there: anything you choose on this computer stays on this computer.</p>
+          ${inline ? "" : `<h2 id="hoTitle">Set up where you’ll use it.</h2>
+          <p>Scan to open Mornward on your phone.</p>`}
+          <p class="support" id="hoNote">The code opens Mornward in your phone’s browser; it doesn’t install anything. Adding it to your home screen is a separate step, on the phone. Nothing you choose on this computer moves to the phone.</p>
           <div class="horow">
             ${navigator.share ? `<button class="secondary" id="hoSend" type="button">Send to my phone</button>` : ""}
             <button class="link start" id="hoCopy" type="button">Copy link</button>
@@ -1889,7 +1916,9 @@
   function renderHandoff() {
     const slot = $("#handoffSlot");
     slot.innerHTML = handoffHtml();
-    if (!slot.firstElementChild) return;
+    if (slot.firstElementChild) wireHandoff();
+  }
+  function wireHandoff() {
     const msg = (t) => { $("#hoMsg").textContent = t; };
     if ($("#hoSend")) $("#hoSend").onclick = async () => {
       try { await navigator.share({ title: "Mornward", text: "Before the scroll, a few mini tasks.", url: PHONE_URL }); msg("Sent. Open it on your phone."); }
@@ -2030,12 +2059,15 @@
   //            that automation, so the app shows the steps and copies the link to paste.
   // None of these can be confirmed from here, so nothing says "set". The tap is counted (reminder_setup), as a tap.
   const alarmLink = () => "https://mornward.app/?via=alarm";
-  // The reminder controls. In Today they sit in a closed section; in setup (step 3) they're the page itself.
-  function reminderControls() {
+  // The reminder controls. In Today they sit in a closed section; in setup (step 2) they’re the page itself.
+  // In setup the first date suggested is the next morning: tomorrow (or, after midnight and before 4 AM, the
+  // morning about to come). Worked out from the real date each time, never stored as "tomorrow".
+  const nextMorning = () => (now().getHours() < 4 ? dayKey() : addDays(dayKey(), 1));
+  function reminderControls(setup = false) {
     const at = store.get("alarmAt", "", isAlarmTime) || "07:00";
     const os = isIOS ? "ios" : "android";
-    // A first date picked earlier (kept while it's still ahead), else the next time `at` comes round
-    const first = nextAlarm(at, store.get("remDate", null, isDay));
+    // A first date picked earlier (kept while it's still ahead), else the suggestion, else the next time `at` comes round
+    const first = nextAlarm(at, store.get("remDate", null, isDay) || (setup ? nextMorning() : null));
     const S = (g, t) => `<li><span class="g">${GLYPH[g]}</span><span>${t}</span></li>`;
     return `<div class="seg" role="group" aria-label="Your phone">
           <button type="button" data-rem-os="ios" aria-pressed="${os === "ios"}">iPhone</button>
@@ -2081,7 +2113,7 @@
         ${reminderControls()}
       </div></details>`;
   }
-  function wireReminder() {
+  function wireReminder(setup = false) {
     const g = $("#remGoogle");
     if (!g) return;
     const msg = (t) => { $("#remMsg").textContent = t; };
@@ -2089,13 +2121,13 @@
     const dateField = $("#remDate");
     // Time and first date are kept as they're changed (on the phone only), so a reload or midnight doesn't lose them
     let dateTouched = !!store.get("remDate", null, isDay);
-    const date = () => (dateTouched && isDay(dateField.value) ? dateField.value : null);
+    const date = () => (dateTouched && isDay(dateField.value) ? dateField.value : setup ? nextMorning() : null);
     // The first reminder in words, from the real date and time (never a hard-coded "tomorrow")
     const point = () => {
       if (!isAlarmTime(time())) { $("#remWhen").textContent = "Pick a time to see your first reminder."; g.removeAttribute("href"); return; }
       const first = nextAlarm(time(), date());
       // A chosen date that's now in the past falls back to the next occurrence, and stops being "chosen"
-      if (dateTouched && dayKey(first) !== dateField.value) { dateTouched = false; store.del("remDate"); }
+      if (dateTouched && dayKey(first) !== dateField.value) { dateTouched = false; store.del("remDate"); return point(); }
       if (dayKey(first) !== dateField.value) dateField.value = dayKey(first);
       dateField.min = dayKey();
       $("#remWhen").textContent = `First reminder: ${whenText(first)}, then daily for ${REMIND_DAYS} mornings.`;
@@ -2290,7 +2322,7 @@
     const st = entryState();
     if (st === "routine") { if (routine.phase === "breathe") renderBreathe(true); else renderChoose(); }
     else if (st === "today") renderToday();
-    else if (st === "setup") { const o = getOb(); renderSetup(SETUP_STEPS.includes(o.step) ? o.step : "scroll"); }
+    else if (st === "setup") { const o = getOb(); renderSetup(o.step); }
     else if (st === "prepared") renderPrepared();
     else if (st === "new") renderWelcome();
     else renderBegin();
