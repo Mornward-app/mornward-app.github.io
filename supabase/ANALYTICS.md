@@ -127,7 +127,11 @@ People can turn stats off at the bottom of the done screen. Clearing browser dat
 1. Supabase dashboard → **SQL Editor** → **New query**.
 2. Paste all of [`setup.sql`](setup.sql) and click **Run**. It's safe to run again later.
 
-Already set up? Run only the newest file in [`migrations/`](migrations/) the same way (also safe to run again).
+Already set up (production today)? Run the files in [`migrations/`](migrations/) the same way, oldest first:
+`20261004…`, then `20261005…`, then `20261006…`. After `20261005…` has run, re-run only the newest one.
+
+Then paste [`staging-check.sql`](staging-check.sql) and **Run**: one table, every row should say PASS. It adds a few
+test rows as the app would, checks what's accepted and refused, and deletes them again.
 
 ## Reading your data
 
