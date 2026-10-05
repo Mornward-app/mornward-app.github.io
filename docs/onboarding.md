@@ -53,6 +53,11 @@ words: task names (shuffled per phone), folded sections and screen-reader-only t
   The same time is the same file for everyone, so it carries no ID.
 - **The button:** "Continue" (with Skip for now) until a calendar is opened, then "Done" with no Skip, there and on
   the "All set to return" card.
+- **See you tomorrow:** after the first setup, Ready's main button is "See you tomorrow" (set up between midnight
+  and 4 AM: "See you in the morning"). Tapping it says "All set. You can close Mornward now." and starts nothing;
+  "Or try it now" starts the routine. Opened again the same evening, it's still this screen. From 4 AM (stored as
+  `doneAt` in `fl.onboard`, the first setup only, so a later edit never moves it) the morning screen with "Begin my
+  morning" shows, also in a tab left open overnight.
 - **No second step 2:** once a reminder was added, step 2 isn't shown again (back from the calendar, a reload, or
   Edit setup): it goes straight to Ready. The one exception is "All set to return" (reminder and home screen both
   done). The reminder can still be changed from Today's Morning reminder.
