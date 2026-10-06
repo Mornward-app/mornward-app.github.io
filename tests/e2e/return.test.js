@@ -20,6 +20,15 @@ async function drain(x) { for (let i = 0; i < 40 && ((await x.ls("outbox")) || [
       (await x.p.textContent("#remShortcut summary")).trim() === "Open Mornward when my alarm stops");
     await x.p.click("#remShortcut summary"); await x.t(200);
     ok("...tapping it opens the four steps and the copy button in place", await x.p.isVisible("#remShortcut .vsteps") && await x.p.isVisible("#remCopy"));
+    await x.t(800); await x.p.waitForTimeout(400);
+    ok("...opening it scrolls Copy and Open Shortcuts clear of the sticky buttons", await x.p.evaluate(() => {
+      const bar = document.querySelector(".actions.sticky").getBoundingClientRect(), r = document.querySelector("#remShortcut .horow").getBoundingClientRect();
+      return r.bottom <= bar.top && r.top >= 0; }));
+    ok("...nothing in the box spills past its edge", await x.p.evaluate(() => { const box = document.querySelector("#remShortcut").getBoundingClientRect();
+      return [...document.querySelectorAll("#remShortcut *")].every((e) => { const r = e.getBoundingClientRect(); return !r.width || (r.left >= box.left - 1 && r.right <= box.right + 1); }); }));
+    ok("...Copy Mornward link and Open Shortcuts on one row", await x.p.evaluate(() => {
+      const a = document.querySelector("#remCopy").getBoundingClientRect(), c = document.querySelector("#remShortcuts").getBoundingClientRect();
+      return Math.abs((a.top + a.bottom) / 2 - (c.top + c.bottom) / 2) < 4 && c.left >= a.right; }));
     ok("...the steps don't split words (each step is one row, inside the box)", await x.p.evaluate(() => {
       const box = document.querySelector("#remShortcut").getBoundingClientRect();
       return [...document.querySelectorAll("#remShortcut .vsteps li")].every((li) => { const r = li.getBoundingClientRect(); return r.width > box.width * 0.7 && r.right <= box.right + 1; }); }));
@@ -28,6 +37,13 @@ async function drain(x) { for (let i = 0; i < 40 && ((await x.ls("outbox")) || [
     ok("...the copied link carries the setup after # (opens Safari, which may not have it)", /^https:\/\/mornward\.app\/\?via=alarm#r=/.test(await x.p.evaluate(() => navigator.clipboard.readText())));
     await x.p.reload(); await x.t(700);
     ok("...after a reload: still Done (kept on the phone)", (await x.p.textContent("#stepNext")) === "Done");
+    await x.c.close(); }
+  { const x = await open({ device: "iPhone SE" }); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext");
+    await x.p.click("#remShortcut summary"); await x.t(800); await x.p.waitForTimeout(400);
+    ok("iPhone SE: opened, the box stays inside its edges and Copy link clears the sticky buttons", await x.p.evaluate(() => {
+      const box = document.querySelector("#remShortcut").getBoundingClientRect(), bar = document.querySelector(".actions.sticky").getBoundingClientRect();
+      const inside = [...document.querySelectorAll("#remShortcut *")].every((e) => { const r = e.getBoundingClientRect(); return !r.width || (r.left >= box.left - 1 && r.right <= box.right + 1); });
+      return inside && document.querySelector("#remShortcut .horow").getBoundingClientRect().bottom <= bar.top; }));
     await x.c.close(); }
   { const x = await open({ device: "Pixel 7" }); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext");
     ok("Android step 2: no Shortcut (it's iPhone only); Google Calendar first", !(await x.p.isVisible("#remShortcut summary")) && await x.p.isVisible("#remGoogle"));
@@ -40,23 +56,24 @@ async function drain(x) { for (let i = 0; i < 40 && ((await x.ls("outbox")) || [
 
   // Item 3: "leave this page open", only where it's true
   { const x = await open(); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext"); await click(x, "#stepNext");
-    ok("Safari, Ready: 'Tip: leave this page open tonight.'", (await x.p.textContent("#leaveOpen")) === "Tip: leave this page open tonight.");
+    ok("Safari, Ready: no tip before the tap (kept to the word budget)", !(await x.p.$("#leaveOpen")));
     await x.p.click("#seeYou"); await x.t(200);
-    ok("...See you tomorrow: 'All set. Lock your phone with this page open.' (the tip isn't repeated)",
-      (await x.p.textContent("#seeYouMsg")).trim() === "All set. Lock your phone with this page open. It'll be here when you unlock." && !(await x.p.isVisible("#leaveOpen")));
+    ok("...See you tomorrow: 'All set. Lock your phone with this page open. It'll be here when you unlock.'",
+      (await x.p.textContent("#seeYouMsg")).trim() === "All set. Lock your phone with this page open. It'll be here when you unlock.");
     await x.c.close(); }
   { const x = await open(); await x.goto("?from=reddit"); await click(x, "#setupGo"); await click(x, "#stepNext"); await click(x, "#stepNext");
-    ok("Reddit's browser (the Safari card shows): no 'leave this page open'", !!(await x.p.$("#moveCard")) && !(await x.p.$("#leaveOpen")));
+    ok("Reddit's browser: the Safari card shows", !!(await x.p.$("#moveCard")));
     await x.p.click("#seeYou"); await x.t(200);
     ok("...See you tomorrow points to the card: 'Copy your link above so Safari has it tomorrow.'", (await x.p.textContent("#seeYouMsg")).trim() === "All set. Copy your link above so Safari has it tomorrow.");
     await x.c.close(); }
   { const x = await open({ device: "Desktop Chrome" }); await x.p.setViewportSize({ width: 1280, height: 800 }); await x.goto();
     await click(x, "#setupGo"); await click(x, "#stepNext"); await click(x, "#stepNext");
-    ok("computer: no 'leave this page open'", !(await x.p.$("#leaveOpen")));
+    await x.p.click("#seeYou"); await x.t(200);
+    ok("computer: no 'lock your phone' (it says you can close it)", (await x.p.textContent("#seeYouMsg")).trim() === "All set. You can close Mornward now.");
     await x.c.close(); }
   { const x = await open({ when: MON }); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext"); await click(x, "#stepNext");
     await x.p.clock.setSystemTime(new Date("2026-10-06T07:05:00")); await x.p.reload(); await x.t(700);
-    ok("the next morning (Begin my morning): no tip", !(await x.p.$("#leaveOpen")) && (await x.p.textContent("#begin")) === "Begin my morning");
+    ok("the next morning: Begin my morning, no See you tomorrow", !(await x.p.$("#seeYou")) && (await x.p.textContent("#begin")) === "Begin my morning");
     await x.c.close(); }
 
   // Item 4: tick tasks off on Finish and Today

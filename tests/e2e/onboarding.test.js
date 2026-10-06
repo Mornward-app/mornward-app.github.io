@@ -33,7 +33,7 @@ const snapshot = (x) => x.p.evaluate(() => JSON.stringify(Object.keys(localStora
 const words = (x) => x.p.evaluate(() => { const c = document.querySelector("#card").cloneNode(true);
   c.querySelectorAll(".sr-only, .chip.pick span, #prepList li").forEach((e) => e.remove());
   document.body.appendChild(c); const t = c.innerText; c.remove(); return t.split(/\s+/).filter((w) => /[A-Za-z0-9]/.test(w)).length; });
-const BUDGET = { welcome: 45, tasks: 25, ret: 35, ready: 45, prepared: 40, morning: 25 };
+const BUDGET = { welcome: 45, tasks: 25, ret: 35, ready: 40, prepared: 40, morning: 25 };
 const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
 
 (async () => {

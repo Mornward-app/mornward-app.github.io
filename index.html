@@ -501,9 +501,16 @@
   .remalt[open] { border: 2px solid var(--button); border-radius: var(--radius); padding: 0 14px 12px; }
   .remalt[open] > summary { border: 0; margin: 0 -14px 4px; border-bottom: 1px solid var(--line, rgba(0,0,0,.12)); }
   /* Inside the box the four steps stack as rows (icon, then words), so no word is split */
-  .remalt .vsteps.four { flex-direction: column; flex-wrap: nowrap; gap: 12px; margin: 10px 0; }
-  .remalt .vsteps.four li { flex: none; flex-direction: row; align-items: center; gap: 14px; text-align: left; font-size: 0.9375rem; line-height: 1.3rem; }
+  .remalt .vsteps.four { flex-direction: column; flex-wrap: nowrap; gap: 8px; margin: 8px 0 10px; }
+  .remalt .vsteps.four li { flex: none; flex-direction: row; align-items: center; gap: 12px; text-align: left; font-size: 0.9375rem; line-height: 1.3rem; min-height: 0; padding: 0; }
+  .remalt .vsteps .g { width: 34px; height: 34px; flex: none; }
+  .remalt .vsteps .g .i { width: 18px; height: 18px; }
+  .remalt > p { margin: 8px 0 0; }
   .remalt .vsteps li span { overflow-wrap: normal; }
+  /* Copy and Open Shortcuts side by side, so the box stays short enough to clear the sticky buttons */
+  .remalt .horow { flex-wrap: nowrap; justify-content: space-between; gap: 8px; }
+  .remalt .horow .secondary { flex: none; white-space: nowrap; }
+  .remalt .horow .link { margin: 0; padding-inline: 4px; min-width: 0; text-align: right; }
   .setupcard h2 { font-size: 1.0625rem; line-height: 1.5rem; margin: 0; }
   .setupcard ul { list-style: none; margin: 0; padding: 0; }
   .setupcard li { padding: 8px 0; overflow-wrap: break-word; }
@@ -1257,7 +1264,8 @@
     const wait = waitingForMorning();
     justSet = justSet || wait;
     // In Safari or Chrome itself, a page left open is what the phone shows on unlock; the morning screen comes by
-    // itself (checkDay). Not inside another app's browser (it's gone once they back out), the home-screen app or a computer.
+    // itself (checkDay). Said once, when See you tomorrow is tapped. Not inside another app's browser (it's gone once
+    // they back out), the home-screen app or a computer.
     const leaveOpen = wait && !onHomeScreen && !computerView() && !likelyInApp();
     const p = preparedTasks();
     const head = justSet ? "Ready for your first morning." : "A minute before the scroll.";
@@ -1274,8 +1282,7 @@
       <div class="push">
         ${wait ? `<button class="primary" id="seeYou" type="button">${esc(seeYouLabel())}</button>
         <p class="hometick" id="seeYouMsg" hidden>${GLYPH.ok}<span>${leaveOpen ? "All set. Lock your phone with this page open. It'll be here when you unlock." : likelyInApp() ? `All set. Copy your link above so ${isIOS ? "Safari" : "Chrome"} has it tomorrow.` : "All set. You can close Mornward now."}</span></p>
-        <button class="link" id="begin" type="button">Or try it now</button>
-        ${leaveOpen ? `<p class="support center" id="leaveOpen">Tip: leave this page open tonight.</p>` : ""}`
+        <button class="link" id="begin" type="button">Or try it now</button>`
         : `<button class="primary" id="begin" type="button">Begin my morning</button>`}
         <button class="link" id="setupEdit" type="button">Edit setup</button>
         ${hasAgreed() ? "" : consentBlock("Tapping Begin")}
@@ -1283,7 +1290,7 @@
       </div>`, head);
     // Another tab may have started a routine since this screen was drawn: then go where that leads instead
     $("#begin").onclick = (e) => { if (!settled(e)) return; if (entryState() !== "prepared") { home(); return; } begin(); };
-    if ($("#seeYou")) $("#seeYou").onclick = () => { $("#seeYou").hidden = true; $("#seeYouMsg").hidden = false; if ($("#leaveOpen")) $("#leaveOpen").hidden = true; };
+    if ($("#seeYou")) $("#seeYou").onclick = () => { $("#seeYou").hidden = true; $("#seeYouMsg").hidden = false; };
     // Edit setup waits for a settled tap too: a slow double tap on the last step mustn't send someone back into setup
     $("#setupEdit").onclick = (e) => { if (!settled(e)) return; if (entryState() !== "prepared") { home(); return; } renderSetup("tasks", true); };
     wirePre(); wirePrivacy(); wirePrefs(); wireMove();
@@ -2261,7 +2268,7 @@
             ${S("share", "<b>Open URLs</b>: paste the link, <b>Done</b>")}
           </ol>
           <div class="horow">
-            <button class="secondary" id="remCopy" type="button">Copy Mornward link</button>
+            <button class="secondary" id="remCopy" type="button" aria-label="Copy Mornward link">Copy link</button>
             <a class="link" id="remShortcuts" href="shortcuts://">Open Shortcuts</a>
           </div>
           <input type="text" readonly aria-label="Mornward link for Shortcuts" id="remField" hidden>
@@ -2368,6 +2375,19 @@
       emitDay("reminder_setup", { action: "calendar_file" }, "calendar_file");
     };
     ics.forEach((a) => (a.onclick = file));
+    // Opening the Shortcut steps: scroll just enough that Copy and Open Shortcuts clear the sticky buttons below,
+    // without pushing the box's own heading off the top
+    const sc = $("#remShortcut");
+    if (sc) sc.addEventListener("toggle", () => {
+      if (!sc.open) return;
+      requestAnimationFrame(() => {
+        const bar = document.querySelector(".actions.sticky");
+        const limit = bar ? bar.getBoundingClientRect().top : innerHeight;
+        const row = sc.querySelector(".horow").getBoundingClientRect(), top = sc.getBoundingClientRect().top;
+        const need = row.bottom + 12 - limit;
+        if (need > 0) window.scrollBy({ top: Math.min(need, top - 8), behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      });
+    });
     $("#remCopy").onclick = async () => {
       const url = alarmLink();
       store.set("shortcutCopied", dayKey());
