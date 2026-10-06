@@ -21,7 +21,10 @@ No fingerprinting and no accounts. Where identities **can't** be linked, the sam
   `#`, on the phone only) when the install steps are opened, so the icon usually keeps the same id. Not verified on a
   real iPhone. Tasks and history are never carried, so the two keep separate task lists.
 - **In-app browsers** (Reddit, Instagram, …) vs the phone's browser: separate storage, nothing carried.
-- **Reminder links** (calendar, alarm Shortcut) carry no id from beta-5. If one opens in a browser with different
+- **Carried setups:** the alarm Shortcut's link and "Copy link for Safari" carry the id, setup done, and the chosen
+  suggested tasks as bank positions (`#r=`, never words). A blank browser opened from them keeps the same `device_id`.
+  The calendar links carry nothing.
+- **Reminder links** (calendar) carry no id from beta-5. If one opens in a browser with different
   storage, that's a new `device_id` whose first routine has `via` set. Those devices are left out of the acquisition
   cohort and counted under `report_exclusions` ("first counted routine opened from a reminder").
 - **Cleared site data, a new phone, private windows:** a new `device_id`.
