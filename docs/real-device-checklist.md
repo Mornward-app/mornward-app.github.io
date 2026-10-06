@@ -91,3 +91,10 @@ passes, treat it as **unverified**.
 - [ ] **Added once (both phones):** add Mornward to the home screen, tap "I've added it" (iPhone), then open
       mornward.app in Safari / Chrome again: no "Add to home screen" box, row or steps anywhere. Android: open it once
       from the icon, then in Chrome: no box.
+
+## Morning card
+
+- [ ] Evening, after setup: Ready shows "Tomorrow's card" with the first question only.
+- [ ] Next morning (Ready or Begin): "Today's card", the same question, "Unlocks after your 3 breaths".
+- [ ] After the routine (Finish, then Today): the answer, "That's all for today.", the source, and "Tomorrow's card: …".
+- [ ] The morning after: the next question. A missed day doesn't skip a card.
