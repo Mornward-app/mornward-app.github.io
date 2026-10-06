@@ -57,7 +57,7 @@ alter table public.events add constraint events_kind_check check (kind in (
   -- beta-5
   'tasks_saved', 'tasks_skipped', 'reminder_setup',
   -- setup-first onboarding (20261006): listed here too, so re-running this file after it never fails on setup rows
-  'setup_started', 'setup_completed'));
+  'setup_started', 'setup_completed', 'tasks_ticked'));
 
 -- 3. Payload shape ------------------------------------------------------------------------------------------------
 
@@ -124,11 +124,16 @@ begin
         when 'core_routine_completed.def'     then mornward_private.is_int(v, 1, 99)
         when 'install_prompt.outcome'         then mornward_private.is_one_of(v, array['accepted', 'dismissed'])
         when 'reminder_setup.action'          then mornward_private.is_one_of(v, array['google_link', 'calendar_file', 'shortcut_link'])
+        when 'tasks_ticked.ticked'            then mornward_private.is_int(v, 1, 3)
+        when 'tasks_ticked.total'             then mornward_private.is_int(v, 1, 3)
         else false
       end;
     end if;
     if not coalesce(ok, false) then return false; end if;
   end loop;
+  -- tasks_ticked: both numbers, and never more ticked than there are tasks
+  if p_kind = 'tasks_ticked' and not (p_data ? 'ticked' and p_data ? 'total'
+      and (p_data->>'ticked')::int <= (p_data->>'total')::int) then return false; end if;
   return true;
 end
 $$;

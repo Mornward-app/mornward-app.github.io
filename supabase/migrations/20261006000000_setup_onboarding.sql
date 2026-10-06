@@ -22,7 +22,7 @@ alter table public.events add constraint events_kind_check check (kind in (
   'routine_finished', 'core_routine_completed', 'install_prompt', 'app_installed',
   'tasks_saved', 'tasks_skipped', 'reminder_setup',
   -- setup-first onboarding
-  'setup_started', 'setup_completed'));
+  'setup_started', 'setup_completed', 'tasks_ticked'));
 
 create or replace function mornward_private.event_payload_ok(p_kind text, p_data jsonb, p_version text) returns boolean
 language plpgsql immutable as $$
@@ -69,11 +69,16 @@ begin
         when 'core_routine_completed.def'     then mornward_private.is_int(v, 1, 99)
         when 'install_prompt.outcome'         then mornward_private.is_one_of(v, array['accepted', 'dismissed'])
         when 'reminder_setup.action'          then mornward_private.is_one_of(v, array['google_link', 'calendar_file', 'shortcut_link'])
+        when 'tasks_ticked.ticked'            then mornward_private.is_int(v, 1, 3)
+        when 'tasks_ticked.total'             then mornward_private.is_int(v, 1, 3)
         else false
       end;
     end if;
     if not coalesce(ok, false) then return false; end if;
   end loop;
+  -- tasks_ticked: both numbers, and never more ticked than there are tasks
+  if p_kind = 'tasks_ticked' and not (p_data ? 'ticked' and p_data ? 'total'
+      and (p_data->>'ticked')::int <= (p_data->>'total')::int) then return false; end if;
   return true;
 end
 $$;

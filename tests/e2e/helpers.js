@@ -49,7 +49,7 @@ function freshDb(name) {
   const url = dbUrl(name);
   for (const f of ["tests/db/supabase_roles.sql", "tests/db/fixtures/production_baseline_main.sql",
     "supabase/migrations/20261004000000_intention_routine.sql", "supabase/migrations/20261005000000_reliability_metrics.sql",
-    "supabase/migrations/20261006000000_setup_onboarding.sql"]) {
+    "supabase/migrations/20261006000000_setup_onboarding.sql", "supabase/migrations/20261007000000_task_ticks.sql"]) {
     psql(url, ["-f", f]);
   }
   return url;

@@ -28,6 +28,14 @@ async function drain(x) { for (let i = 0; i < 60 && ((await x.ls("outbox")) || [
     ok("every stored row has its own event_id", forDevice(id, "select count(*) = count(distinct event_id) and count(*) filter (where event_id is null) = 0 from events where device_id = $ID") === "t");
     ok("the first send really was stored before the app retried it (the retry was skipped by the database)",
       x.bodies.length >= 2 && JSON.parse(x.bodies[0]).length >= 1 && forDevice(id, `select count(*) from events where event_id = '${JSON.parse(x.bodies[0])[0].event_id}'`) === "1");
+    // Ticking tasks off: the app's real rows are accepted; untick and tick again sends nothing new; the report reads the high
+    const n = (await x.p.$$("[data-task]")).length;
+    await x.p.click('[data-task="0"]'); await x.t(200); await x.p.click('[data-task="0"]'); await x.t(200); await x.p.click('[data-task="0"]'); await x.t(200);
+    await x.p.click('[data-task="1"]'); await x.t(200); await drain(x);
+    const ticks = forDevice(id, "select string_agg((data->>'ticked') || '/' || (data->>'total'), ',' order by data->>'ticked') from events where device_id = $ID and kind = 'tasks_ticked'");
+    ok("ticks: the app's tasks_ticked rows are stored, one per new high (1, then 2), numbers only", n === 2 && ticks === "1/2,2/2" &&
+      forDevice(id, "select bool_and(array(select jsonb_object_keys(data)) <@ array['run','rid','home_screen','test','ticked','total']) from events where device_id = $ID and kind = 'tasks_ticked'") === "t", ticks);
+    ok("ticks: task_ticks reads the highest (2 of 2)", forDevice(id, "select ticked || '/' || total from task_ticks where device_id = $ID") === "2/2");
     // Two routines the same day: two runs, one day
     await x.p.click("#again"); await x.t(700); await S.skipBreathing(x); await S.skipTasks(x); await drain(x);
     ok("two routines on one day stay two routines", forDevice(id, "select count(*) from routine_runs where device_id = $ID") === "2");

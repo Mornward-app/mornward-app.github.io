@@ -38,6 +38,13 @@ passes, treat it as **unverified**.
 - [ ] **iPhone:** tap Add to Apple Calendar again for the same time and add it. Note whether Calendar updates the event or adds a second one.
 - [ ] **iPhone, Shortcut:** follow the four steps with the copied link. Set an alarm 2 minutes ahead and stop it.
       Note whether Mornward opens in Safari, and whether "Run Immediately" exists on this iOS version.
+- [ ] **iPhone, Shortcut from Reddit's browser:** open `mornward.app/?from=reddit` from a Reddit post (the Reddit app),
+      set up there, copy the Shortcut link on step 2 and add the automation. Next alarm: Safari should open on the
+      morning screen with the same plan (not Welcome).
+- [ ] **iPhone, Copy link for Safari:** in the same Reddit setup, tap Copy link for Safari on Ready and paste it into
+      Safari. Safari should show Ready with the same suggested tasks (typed ones stay behind).
+- [ ] **iPhone, leave it open:** on Ready in Safari, tap See you tomorrow and lock the phone with Safari open. Next
+      morning, unlock: Mornward should be on screen, on the morning screen.
 - [ ] Both: delete the event or automation. Nothing fires the next morning.
 
 ## Privacy and stats (with a dev Supabase project, or rows marked `?test=1`)
