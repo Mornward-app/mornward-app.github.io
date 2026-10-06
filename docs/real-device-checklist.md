@@ -95,6 +95,7 @@ passes, treat it as **unverified**.
 ## Morning card
 
 - [ ] Evening, after setup: Ready shows "Tomorrow's card" with the first question only.
-- [ ] Next morning (Ready or Begin): "Today's card", the same question, "Unlocks after your 3 breaths".
-- [ ] After the routine (Finish, then Today): the answer, "That's all for today.", the source, and "Tomorrow's card: …".
+- [ ] Next morning (Ready or Begin): "Today's card", the same question, "Unlocks when you finish your morning tasks".
+- [ ] After the routine (Finish): still locked until every task is ticked; the last tick shows the answer, "That's all
+      for today.", the source, and "Tomorrow's card: …".
 - [ ] The morning after: the next question. A missed day doesn't skip a card.

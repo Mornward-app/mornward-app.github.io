@@ -78,8 +78,10 @@ words: task names (shuffled per phone), folded sections and screen-reader-only t
   many, never which.
 - **Morning card:** 14 short, sourced facts (`MORNING_CARDS` in index.html), one per completed morning in order,
   starting again after the 14th. The question shows the night before on Ready ("Tomorrow's card") and in the morning
-  before Begin ("Today's card", "Unlocks after your 3 breaths"); the two-sentence answer, "That's all for today." and
-  the source show on Finish and Today, with tomorrow's question under it. A second routine the same day keeps the card;
+  before Begin ("Today's card", "Unlocks when you finish your morning tasks"). After the routine it stays locked on
+  Finish and Today ("Unlocks when you tick off your mini tasks", "Tick off your remaining task to unlock", or with no
+  tasks "Add and tick a mini task to unlock today's card") until every task is ticked; then, in place, the two-sentence
+  answer, "That's all for today.", the source, and tomorrow's question. Unticking locks it again. A second routine the same day keeps the card;
   a missed day doesn't skip one. Nothing about the cards is sent. Card text is content, so it's left out of the word
   budgets (like the task names).
 - **No second step 2:** once a reminder was added, step 2 isn't shown again (back from the calendar, a reload, or
