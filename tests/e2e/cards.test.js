@@ -53,6 +53,16 @@ const Q1 = "How long does a new habit really take?", Q2 = "What happens to a hab
   ok("...unlocks the second card; tomorrow's is the third", (await txt(x, "#mcard h2")) === Q2 && (await txt(x, "#cardNext")) === "Tomorrow's card: " + Q3);
   await x.c.close();
 
+  // A card that wasn't unlocked comes back: finished the routine but didn't tick everything → same card tomorrow
+  { const y = await ctx(b, site.url, { when: "2026-10-05T07:05:00", device: "Pixel 7" }); await y.goto();
+    await S.begin(y); await S.skipBreathing(y); await S.keep(y);
+    await y.p.click('[data-task="0"]'); await y.t(200); // one of two: card 1 stays locked
+    await y.p.clock.setSystemTime(new Date("2026-10-06T07:05:00")); await y.p.reload(); await y.t(700);
+    ok("a morning finished without ticking everything: the next morning shows the same card (none skipped)", (await txt(y, "#cardTeaser .q")) === Q1);
+    await S.begin(y); await S.skipBreathing(y); await S.keep(y); await tickAll(y);
+    ok("...unlocked this time; tomorrow's is the second", (await txt(y, "#mcard h2")) === Q1 && (await txt(y, "#cardNext")) === "Tomorrow's card: " + Q2);
+    await y.c.close(); }
+
   // Tasks skipped: the card says how to unlock it
   { const y = await ctx(b, site.url, { when: "2026-10-05T07:05:00", device: "Pixel 7" }); await y.goto();
     await S.begin(y); await S.skipBreathing(y); await y.p.click("#iskip"); await y.t(700);

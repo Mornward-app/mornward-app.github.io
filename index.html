@@ -1285,14 +1285,14 @@
       <div class="push">
         ${wait ? `<button class="primary" id="seeYou" type="button">${esc(seeYouLabel())}</button>
         <p class="hometick" id="seeYouMsg" hidden>${GLYPH.ok}<span>${leaveOpen ? "All set. Tomorrow, open Mornward from your home screen." : likelyInApp() ? `All set. Copy your link above so ${isIOS ? "Safari" : "Chrome"} has it tomorrow.` : "All set. You can close Mornward now."}</span></p>
-        <button class="link" id="begin" type="button">Or try it now</button>`
+`
         : `<button class="primary" id="begin" type="button">Begin my morning</button>`}
         <button class="link" id="setupEdit" type="button">Edit setup</button>
         ${hasAgreed() ? "" : consentBlock("Tapping Begin")}
         <div class="more">${prefsSection("Personalize")}${privacySection()}</div>
       </div>`, head);
     // Another tab may have started a routine since this screen was drawn: then go where that leads instead
-    $("#begin").onclick = (e) => { if (!settled(e)) return; if (entryState() !== "prepared") { home(); return; } begin(); };
+    if ($("#begin")) $("#begin").onclick = (e) => { if (!settled(e)) return; if (entryState() !== "prepared") { home(); return; } begin(); };
     if ($("#seeYou")) $("#seeYou").onclick = () => { $("#seeYou").hidden = true; $("#seeYouMsg").hidden = false; };
     // Edit setup waits for a settled tap too: a slow double tap on the last step mustn't send someone back into setup
     $("#setupEdit").onclick = (e) => { if (!settled(e)) return; if (entryState() !== "prepared") { home(); return; } renderSetup("tasks", true); };
@@ -1660,7 +1660,7 @@
 
   // ---------- the morning card: one short, sourced fact a day ----------
   // Its question shows the night before (Ready) and in the morning before Begin; the answer unlocks after the routine
-  // (Finish, Today), ending with a clear stop. One card per completed morning, in order, so everyone starts at the
+  // (Finish, Today), ending with a clear stop. One card per unlocked morning, in order, so everyone starts at the
   // first and none is skipped; after the last it starts again. Every fact comes from the source named under it.
   const MORNING_CARDS = [
     { q: "How long does a new habit really take?",
@@ -1706,8 +1706,9 @@
       a: "Partly. A 2019 study of nearly 700,000 people linked 351 regions of DNA to being a morning person.",
       src: "Jones et al., Nature Communications, 2019" }
   ];
-  // The card for a day: how many mornings were completed before it (so a second routine the same day keeps the card)
-  const cardFor = (day) => MORNING_CARDS[[...doneDays()].filter((d) => d < day).length % MORNING_CARDS.length];
+  // The card for a day: how many cards were unlocked before it (mornings with every mini task ticked off), so a card
+  // that was never unlocked comes back the next morning instead of being skipped; a second routine keeps the card
+  const cardFor = (day) => MORNING_CARDS[[...doneDays()].filter((d) => d < day && allTicked(d)).length % MORNING_CARDS.length];
   // The question only: "Tomorrow's card" the night before, "Today's card" in the morning
   const cardTeaser = (when) => {
     const c = cardFor(when === "tomorrow" ? addDays(dayKey(), 1) : dayKey());
@@ -1779,13 +1780,10 @@
       const slot = $("#cardSlot");
       if (slot) slot.innerHTML = cardBody(day);
       if (next.length > now.length) { buzz(); countTicks(day, next.length, tasks.length); }
-      // On Finish, everything ticked is the end of the morning: no extra Done to reach a near-identical screen
-      const fin = $("#finish");
-      if (fin) {
-        const all = next.length === tasks.length;
-        if (all && routine && routine.day === day && routine.phase === "finish") { routine.phase = "done"; saveRoutine(); }
-        fin.closest(".push").hidden = all;
-      }
+      // Everything ticked is the end of the morning; Today's heading follows ("Your mini tasks." → "Done for today.")
+      if (next.length === tasks.length && routine && routine.day === day && routine.phase === "finish") { routine.phase = "done"; saveRoutine(); }
+      const head = $("#todayHead");
+      if (head) head.textContent = todayWords(day);
     }));
   }
   function countTicks(day, ticked, total) {
@@ -1819,17 +1817,40 @@
       ${morningCard(routine.day)}
       <p class="msg ok" role="status">${esc(note)}</p>
       ${progressSection()}
-      <div class="push"${text && allTicked(routine.day) ? " hidden" : ""}>
+      ${text ? todayMore(routine.day) : `<div class="push">
         <button class="primary" id="finish" type="button">Done</button>
-      </div>`, head.replace("<br>", " ").replace(/<[^>]+>/g, ""));
+      </div>`}`, head.replace("<br>", " ").replace(/<[^>]+>/g, ""));
     ($("#iedit") || $("#iadd")).onclick = () => renderChoose(true, renderFinish);
     wireTicks(routine.day);
-    // Done only moves to Today: everything was recorded when this screen was reached, so extra taps change nothing
-    $("#finish").onclick = () => {
+    // With mini tasks there's no Done: "Done for today" would come before the tasks are done. Ticking them is the end
+    // (and Today's sections are right here). Without tasks, Done moves to Today; everything was already recorded.
+    if ($("#finish")) $("#finish").onclick = () => {
       if (routine.phase === "finish") { routine.phase = "done"; saveRoutine(); }
       renderToday();
     };
+    if (text) wireTodayMore(false);
   }
+  // The bottom of Today (also under Finish when there are mini tasks): again, earlier tasks, reminder, preferences
+  const todayMore = (day) => `<button class="chip" id="again" type="button">${icon("again")}<span>Do the routine again</span></button>
+      <div class="more">
+        ${earlierSection(day)}
+        ${quietAdd()}
+        ${reminderSection()}
+        ${prefsSection()}
+        ${privacySection()}
+      </div>`;
+  // install: the home-screen box (Today only; never on the Finish moment itself)
+  function wireTodayMore(install) {
+    $("#again").onclick = begin;
+    if (install) renderInstall();
+    syncQuiet();
+    renderHandoff();
+    wireReminder();
+    wirePrefs();
+    wirePrivacy();
+  }
+  // "Done for today." only once the mini tasks are done (or there are none)
+  const todayWords = (day) => (tasksOf(intentionFor(day)).length && !allTicked(day) ? "Your mini tasks." : "Done for today.");
 
   // ---------- completed for today (also what a same-day reopen shows) ----------
   function renderToday(note = "") {
@@ -1837,28 +1858,15 @@
     const text = intentionFor(routine.day);
     show(`
       <div class="row"><p class="wordmark">Mornward</p><p class="support">${esc(fmtDay(routine.day))}</p></div>
-      <h1>Done for today.</h1>
+      <h1 id="todayHead">${todayWords(routine.day)}</h1>
       ${text ? intentionBlock(text, routine.day) + tickHint(routine.day, text) : `<p class="body">No task today.</p>${addButton}`}
       ${morningCard(routine.day)}
       <p class="msg ok" role="status">${esc(note)}</p>
       ${progressSection()}
-      <button class="chip" id="again" type="button">${icon("again")}<span>Do the routine again</span></button>
-      <div class="more">
-        ${earlierSection(routine.day)}
-        ${quietAdd()}
-        ${reminderSection()}
-        ${prefsSection()}
-        ${privacySection()}
-      </div>`, "Done for today.");
+      ${todayMore(routine.day)}`, todayWords(routine.day));
     ($("#iedit") || $("#iadd")).onclick = () => renderChoose(true, renderToday);
     wireTicks(routine.day);
-    $("#again").onclick = begin;
-    renderInstall();
-    syncQuiet();
-    renderHandoff();
-    wireReminder();
-    wirePrefs();
-    wirePrivacy();
+    wireTodayMore(true);
   }
 
   // ---------- appearance: follows the phone, or pick light or dark ----------

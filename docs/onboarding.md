@@ -86,6 +86,13 @@ words: task names (shuffled per phone), folded sections and screen-reader-only t
   answer, "That's all for today.", the source, and tomorrow's question. Unticking locks it again. A second routine the same day keeps the card;
   a missed day doesn't skip one. Nothing about the cards is sent. Card text is content, so it's left out of the word
   budgets (like the task names).
+- **The evening before:** Ready has See you tomorrow and Edit setup, nothing to start: the routine (and the prepared
+  plan) waits for the morning. Before setup, Welcome's "Up already? Begin now" is still there.
+- **Finish with mini tasks:** no Done button ("Done for today" would come before the tasks are done); Today's sections
+  (Do the routine again, reminder, preferences, privacy) sit under it instead. Today's heading is "Your mini tasks."
+  until every task is ticked, then "Done for today." Without tasks, Finish keeps Done.
+- **Cards don't skip:** a card counts as used only once it was unlocked (every task ticked that day); otherwise the
+  same card comes back the next morning.
 - **No second step 2:** once a reminder was added, step 2 isn't shown again (back from the calendar, a reload, or
   Edit setup): it goes straight to Ready. The one exception is "All set to return" (reminder and home screen both
   done). The reminder can still be changed from Today's Morning reminder.

@@ -120,7 +120,8 @@ const steps = {
   skipBreathing: async (x) => { await x.p.click("#bskip"); await x.t(700); },
   keep: async (x) => { await x.p.click("#isave"); await x.t(700); },
   skipTasks: async (x) => { await x.p.click("#iskip"); await x.t(700); },
-  finish: async (x) => { await x.p.click("#finish"); await x.t(700); },
+  // Finish → Today: Done when there is one (no mini tasks); with mini tasks there's no Done, so reopen, like a person would
+  finish: async (x) => { if (await x.p.$("#finish")) await x.p.click("#finish"); else await x.p.reload(); await x.t(700); },
   untickAll: async (x) => { for (const b of await x.p.$$('.chip.pick[aria-pressed="true"]')) await b.click(); }
 };
 

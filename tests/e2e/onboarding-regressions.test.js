@@ -33,9 +33,8 @@ const failing = () => {
     for (const gap of [700, 700, 700, 500]) { await x.p.mouse.click(box.x + box.width / 2, box.y + box.height / 2); await x.t(gap); }
     ok(`double/triple/quadruple tap on Continue (${device}): no routine starts during setup`, !(await x.ls("routine")) && !(await x.ls("startDay")) && !(await x.p.$("#bpause")));
     ok(`...and they stay on the ready screen, not back in setup (${device})`, (await x.p.innerText("h1")).replace(/\s+/g, " ") === "Ready for your first morning.");
-    // (the stray taps land on the ready screen; its Begin waits for a settled tap)
-    await x.t(3100); await x.p.click("#begin"); await x.t(700);
-    ok(`...a deliberate tap a moment later still begins (${device})`, !!(await x.p.$("#bpause")));
+    // (the stray taps land on the ready screen, which has nothing to start the evening before)
+    ok(`...the evening before, Ready has no way to start the routine (${device})`, !(await x.p.$("#begin")) && !!(await x.p.$("#seeYou")));
     await x.c.close();
   }
 
@@ -79,7 +78,7 @@ const failing = () => {
     const tabB = await x.c.newPage(); await tabB.clock.install({ time: new Date(MON) }); await tabB.goto(site.url); await tabB.clock.runFor(700);
     await x.p.clock.setSystemTime(new Date(MON));
     await tabB.click("#begin"); await tabB.clock.runFor(700); await tabB.click("#bskip"); await tabB.clock.runFor(700);
-    await tabB.click("#isave"); await tabB.clock.runFor(700); await tabB.click("#finish"); await tabB.clock.runFor(700);
+    await tabB.click("#isave"); await tabB.clock.runFor(700); await tabB.reload(); await tabB.clock.runFor(700);
     await tabA.clock.runFor(2000);
     await tabA.click("#setupEdit"); await x.t(700);
     ok("stale tab: Edit setup after a routine started goes to Begin/Today instead", !(await tabA.$("#prepIntent")) && !!(await tabA.$("#again, #begin")));
@@ -138,8 +137,9 @@ const failing = () => {
 
   // Round 2: keyboard users aren't blocked by the stray-tap guard
   { const x = await open(); await x.goto(); await toReturn(x); await click(x, "#stepNext");
+    await x.p.clock.setSystemTime(new Date("2026-10-05T07:05:00")); await x.p.reload(); await x.t(700);
     await x.p.focus("#begin"); await x.p.keyboard.press("Enter"); await x.t(700);
-    ok("keyboard: Enter on Begin right after setup starts the routine", !!(await x.p.$("#bpause")));
+    ok("keyboard: Enter on Begin my morning starts the routine", !!(await x.p.$("#bpause")));
     await x.c.close(); }
 
   // Round 2: Retry after a failed skip doesn't save what was declined
@@ -185,7 +185,7 @@ const failing = () => {
     await click(x, "#stepNext");
     const clipped = await x.p.$$eval(".seg button", (l) => l.filter((e) => e.scrollWidth > e.clientWidth + 1).map((e) => e.textContent));
     ok("...the iPhone / Android switch isn't cut off", clipped.length === 0, clipped);
-    await click(x, "#stepNext"); await later(x); await x.t(1300); await S.begin(x); await S.skipBreathing(x); await S.keep(x); await S.finish(x);
+    await click(x, "#stepNext"); await x.p.clock.setSystemTime(new Date(MON)); await x.p.reload(); await x.t(1300); await S.begin(x); await S.skipBreathing(x); await S.keep(x); await S.finish(x);
     ok("...Today fits without sideways scrolling", await x.p.evaluate(() => document.scrollingElement.scrollWidth <= Math.min(innerWidth, screen.width) + 1));
     await x.c.close(); }
   { const x = await open(); await x.goto(); await toReturn(x);
