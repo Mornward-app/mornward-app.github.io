@@ -23,7 +23,7 @@ alter table public.events add constraint events_kind_check check (kind in (
   'routine_started', 'breathing_completed', 'breathing_skipped', 'intention_saved', 'intention_skipped',
   'routine_finished', 'core_routine_completed', 'install_prompt', 'app_installed',
   -- later kinds (20261005, 20261006), listed here too so re-running this file never fails on newer rows
-  'tasks_saved', 'tasks_skipped', 'reminder_setup', 'setup_started', 'setup_completed'));
+  'tasks_saved', 'tasks_skipped', 'reminder_setup', 'setup_started', 'setup_completed', 'tasks_ticked'));
 
 -- 2. Devices to leave out (you, family, test phones) --------------------------------------------------------
 -- Add yours from the dashboard:  insert into public.excluded_devices (device_id, note) values ('<id>', 'my phone');

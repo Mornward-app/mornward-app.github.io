@@ -60,6 +60,18 @@ words: task names (shuffled per phone), folded sections and screen-reader-only t
   6:30), the morning screen with "Begin my morning" shows, also in a tab left open overnight. Opened from the
   reminder or alarm link, it's always the morning screen. Based on `doneAt` in `fl.onboard` (the first setup only,
   so a later edit never moves it).
+- **Alarm Shortcut (iPhone):** right under Add to Apple Calendar, "Open Mornward when my alarm stops" opens the four
+  Shortcuts steps and Copy Mornward link in place. Copying the link counts as a way back (`fl.shortcutCopied`): the
+  button says Done. Its link carries the setup after `#` (see "Carried setups" in supabase/METRICS.md).
+- **Leave this page open:** on Ready, while waiting for the first morning, in Safari or Chrome itself (not inside
+  another app's browser, the home-screen app or a computer): "Leave this page open when you lock your phone." See
+  you tomorrow then says "All set. Lock your phone with this page open." Inside Reddit's browser it points to the
+  Copy link for Safari card instead.
+- **Opened from Reddit? (Copy link for Safari/Chrome):** on Ready when it's probably another app's built-in browser
+  (a recognised one, or on iPhone a link from a social app). The link carries the setup into the phone's own browser.
+- **Ticking tasks off:** on Finish and Today each mini task is a row to tick once it's done ("Go do your first task,
+  then come back and tick it."). Kept per day on the phone (`fl.doneTasks:DAY`, by name); `tasks_ticked` counts how
+  many, never which.
 - **No second step 2:** once a reminder was added, step 2 isn't shown again (back from the calendar, a reload, or
   Edit setup): it goes straight to Ready. The one exception is "All set to return" (reminder and home screen both
   done). The reminder can still be changed from Today's Morning reminder.

@@ -414,6 +414,16 @@
   .intention .rows { list-style: none; margin: 4px 0 0; padding: 0; }
   .intention .rows li { padding: 10px 0; font-size: 1.0625rem; line-height: 1.5rem; overflow-wrap: break-word; }
   .intention .rows li + li { border-top: 1px solid var(--rule); }
+  /* Mini tasks as rows to tick once they're done in real life */
+  .intention .rows li.tick { padding: 0; }
+  .taskrow { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 10px 0; border: 0; border-radius: 0;
+    background: none; color: var(--text); font: inherit; font-size: 1.0625rem; line-height: 1.5rem; text-align: left; justify-content: flex-start; }
+  .taskrow .box { flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--muted, currentColor); display: grid; place-items: center; }
+  .taskrow .box .i { width: 16px; height: 16px; opacity: 0; }
+  .taskrow[aria-pressed="true"] .box { background: var(--hl); border-color: var(--hl); color: var(--bg); }
+  .taskrow[aria-pressed="true"] .box .i { opacity: 1; }
+  .taskrow[aria-pressed="true"] .tt { text-decoration: line-through; text-decoration-thickness: 1px; opacity: .7; }
+  .taskrow .tt { overflow-wrap: break-word; min-width: 0; }
   .intention .text { font-size: 1.25rem; line-height: 1.75rem; font-weight: 600; overflow-wrap: break-word; hyphens: auto; }
   @media (max-width: 260px) { .intention { padding-inline: 14px; } .intention .text { font-size: 1.125rem; line-height: 1.5rem; } }
   .row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
@@ -480,6 +490,20 @@
   .planned { color: var(--text-2); margin: 0; }
   .setupcard { background: var(--field); border-radius: var(--radius); padding: 14px 18px; display: flex; flex-direction: column; gap: 4px; }
   .movecard .secondary { margin-top: 8px; }
+  /* The alarm Shortcut on iPhone: a second option under Apple Calendar, its steps opening in place */
+  .remalt { margin-top: 10px; }
+  .remalt > summary { list-style: none; font-weight: 600; min-height: 54px; padding: 14px 20px; border-radius: var(--radius);
+    border: 2px solid var(--button); display: flex; align-items: center; justify-content: center; cursor: pointer; text-align: center; }
+  .remalt > summary::-webkit-details-marker { display: none; }
+  .remalt > summary .i { width: 20px; height: 20px; margin-right: 8px; flex: none; }
+  .remalt[open] > summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+  .remalt > :not(summary) { margin-left: 2px; margin-right: 2px; }
+  .remalt[open] { border: 2px solid var(--button); border-radius: var(--radius); padding: 0 14px 12px; }
+  .remalt[open] > summary { border: 0; margin: 0 -14px 4px; border-bottom: 1px solid var(--line, rgba(0,0,0,.12)); }
+  /* Inside the box the four steps stack as rows (icon, then words), so no word is split */
+  .remalt .vsteps.four { flex-direction: column; flex-wrap: nowrap; gap: 12px; margin: 10px 0; }
+  .remalt .vsteps.four li { flex: none; flex-direction: row; align-items: center; gap: 14px; text-align: left; font-size: 0.9375rem; line-height: 1.3rem; }
+  .remalt .vsteps li span { overflow-wrap: normal; }
   .setupcard h2 { font-size: 1.0625rem; line-height: 1.5rem; margin: 0; }
   .setupcard ul { list-style: none; margin: 0; padding: 0; }
   .setupcard li { padding: 8px 0; overflow-wrap: break-word; }
@@ -652,6 +676,7 @@
       <li>Whether you opened it from the home screen, whether you added it there, and which link you came from (like "reddit"), if the link says so.</li>
       <li>Whether you tapped to set up a morning reminder (not whether it was saved or went off).</li>
       <li>Whether you started and finished setup, and how many mini tasks you prepared (not which ones).</li>
+      <li>How many of the day's mini tasks you ticked as done (not which ones).</li>
     </ul>`;
   const NOT_SENT = `<ul>
       <li>Your mini tasks, or anything else you write. Not a single word.</li>
@@ -1131,15 +1156,16 @@
       <div class="remsetup" id="remSetup">${reminderBlock(true, home)}</div>
       ${allSet ? "" : home ? `<p class="hometick" id="homeTick">${GLYPH.ok}<span>On your home screen</span></p>` : installOptional()}
       <div class="actions sticky">
-        <button class="primary" id="stepNext" type="button">${savedReminder() ? "Done" : "Continue"}</button>
-        ${savedReminder() ? "" : `<button class="link" id="stepSkip" type="button">Skip for now</button>`}
+        <button class="primary" id="stepNext" type="button">${wayBack() ? "Done" : "Continue"}</button>
+        ${wayBack() ? "" : `<button class="link" id="stepSkip" type="button">Skip for now</button>`}
       </div>`, `Step 2 of ${SETUP_STEPS.length}. Make it easy to return.`);
     wireReminder(true);
     syncQuiet();
-    // A calendar tap here: the reminder is added, so the button says Done (and there's nothing to skip)
-    card.querySelectorAll("#remGoogle, #remIcs, #remIcsAlt").forEach((a) => a.addEventListener("click", () => { if (!savedReminder()) return; $("#stepNext").textContent = "Done"; $("#stepSkip")?.remove(); }));
+    // A calendar tap or the Shortcut's link copied here: a way back is set up, so the button says Done (nothing to skip)
+    card.querySelectorAll("#remGoogle, #remIcs, #remIcsAlt, #remCopy").forEach((a) => a.addEventListener("click", () => setTimeout(() => {
+      if (!wayBack()) return; $("#stepNext").textContent = "Done"; $("#stepSkip")?.remove(); }, 0)));
     const done = (skipped) => {
-      if (setOb({ remindSkipped: skipped }) && skipped) store.del("remPlan");
+      if (setOb({ remindSkipped: skipped }) && skipped) { store.del("remPlan"); store.del("shortcutCopied"); }
       if (!getOb() || getOb().remindSkipped !== skipped || !finishSetup()) {
         const shown = $("#remDone") && !$("#remDone").hidden ? $("#remDoneMsg") : $("#remMsg");
         shown.textContent = "Couldn't save your setup on this phone. Try again.";
@@ -1230,6 +1256,9 @@
   function renderPrepared(justSet = false) {
     const wait = waitingForMorning();
     justSet = justSet || wait;
+    // In Safari or Chrome itself, a page left open is what the phone shows on unlock; the morning screen comes by
+    // itself (checkDay). Not inside another app's browser (it's gone once they back out), the home-screen app or a computer.
+    const leaveOpen = wait && !onHomeScreen && !computerView() && !likelyInApp();
     const p = preparedTasks();
     const head = justSet ? "Ready for your first morning." : "A minute before the scroll.";
     show(`
@@ -1244,8 +1273,9 @@
       ${justSet ? moveCard() : ""}
       <div class="push">
         ${wait ? `<button class="primary" id="seeYou" type="button">${esc(seeYouLabel())}</button>
-        <p class="hometick" id="seeYouMsg" hidden>${GLYPH.ok}<span>All set. You can close Mornward now.</span></p>
-        <button class="link" id="begin" type="button">Or try it now</button>`
+        <p class="hometick" id="seeYouMsg" hidden>${GLYPH.ok}<span>${leaveOpen ? "All set. Lock your phone with this page open. It'll be here when you unlock." : likelyInApp() ? `All set. Copy your link above so ${isIOS ? "Safari" : "Chrome"} has it tomorrow.` : "All set. You can close Mornward now."}</span></p>
+        <button class="link" id="begin" type="button">Or try it now</button>
+        ${leaveOpen ? `<p class="support center" id="leaveOpen">Tip: leave this page open tonight.</p>` : ""}`
         : `<button class="primary" id="begin" type="button">Begin my morning</button>`}
         <button class="link" id="setupEdit" type="button">Edit setup</button>
         ${hasAgreed() ? "" : consentBlock("Tapping Begin")}
@@ -1253,7 +1283,7 @@
       </div>`, head);
     // Another tab may have started a routine since this screen was drawn: then go where that leads instead
     $("#begin").onclick = (e) => { if (!settled(e)) return; if (entryState() !== "prepared") { home(); return; } begin(); };
-    if ($("#seeYou")) $("#seeYou").onclick = () => { $("#seeYou").hidden = true; $("#seeYouMsg").hidden = false; };
+    if ($("#seeYou")) $("#seeYou").onclick = () => { $("#seeYou").hidden = true; $("#seeYouMsg").hidden = false; if ($("#leaveOpen")) $("#leaveOpen").hidden = true; };
     // Edit setup waits for a settled tap too: a slow double tap on the last step mustn't send someone back into setup
     $("#setupEdit").onclick = (e) => { if (!settled(e)) return; if (entryState() !== "prepared") { home(); return; } renderSetup("tasks", true); };
     wirePre(); wirePrivacy(); wirePrefs(); wireMove();
@@ -1618,13 +1648,40 @@
   }
 
   // ---------- 4. Finish ----------
-  // The saved tasks in a white card, as plain rows (reminders, not checkboxes: nothing here tracks doing them)
-  function intentionBlock(text) {
+  // The saved tasks in a white card, as rows to tick once each is done in real life. Ticks are kept on the phone per
+  // day (doneTasks:DAY, by name, so an edit never moves a tick to another task); only how many is counted.
+  const doneKey = (day) => "doneTasks:" + day;
+  const doneFor = (day, tasks) => { const d = store.get(doneKey(day), [], Array.isArray); return tasks.filter((t) => d.includes(t)); };
+  function intentionBlock(text, day) {
+    const tasks = tasksOf(text), done = day ? doneFor(day, tasks) : [];
     return `<div class="intention">
         <div class="row"><h2 class="ctitle">Your mini tasks</h2>
           <button class="link" id="iedit" type="button" aria-label="Edit your mini tasks">Edit</button></div>
-        <ul class="rows" id="itext">${tasksOf(text).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
+        <ul class="rows" id="itext">${tasks.map((x, i) => day
+          ? `<li class="tick"><button class="taskrow" type="button" data-task="${i}" aria-pressed="${done.includes(x)}"><span class="box">${GLYPH.ok}</span><span class="tt">${esc(x)}</span></button></li>`
+          : `<li>${esc(x)}</li>`).join("")}</ul>
       </div>`;
+  }
+  // Tick or untick; each new highest number ticked that day is counted once (numbers only, never which task)
+  function wireTicks(day) {
+    const tasks = tasksOf(intentionFor(day));
+    card.querySelectorAll("[data-task]").forEach((b) => (b.onclick = () => {
+      const name = tasks[Number(b.dataset.task)];
+      if (name === undefined) return;
+      const now = doneFor(day, tasks);
+      const next = now.includes(name) ? now.filter((t) => t !== name) : now.concat([name]);
+      if (!store.set(doneKey(day), next)) return;
+      b.setAttribute("aria-pressed", String(next.includes(name)));
+      const hint = $("#tickHint");
+      if (hint) hint.hidden = next.length > 0;
+      if (next.length > now.length) countTicks(day, next.length, tasks.length);
+    }));
+  }
+  function countTicks(day, ticked, total) {
+    const data = { ticked, total };
+    previewNote("tasks_ticked", data);
+    if (!statsOn() || !routine || routine.day !== day) return;
+    queueRow(`${day}#${routine.rid || routine.run}#tasks_ticked#${ticked}`, "tasks_ticked", day, routine.run, data, routine.rid);
   }
   const addButton = `<button class="chip add" id="iadd" type="button">${icon("plus")}<span>Add mini tasks</span></button>`;
   // What the end of the routine says, from what this run actually recorded (never from an edit afterwards)
@@ -1646,13 +1703,15 @@
       <p class="dateline center">${esc(fmtDay(routine.day))}</p>
       <h1 class="center">${head}</h1>
       ${sub ? `<p class="body center" id="finishSub">${esc(sub)}</p>` : ""}
-      ${text ? intentionBlock(text) : addButton}
+      ${text ? intentionBlock(text, routine.day) : addButton}
+      ${text ? `<p class="support center" id="tickHint"${doneFor(routine.day, tasksOf(text)).length ? " hidden" : ""}>Go do your first task, then come back and tick it.</p>` : ""}
       <p class="msg ok" role="status">${esc(note)}</p>
       ${progressSection()}
       <div class="push">
         <button class="primary" id="finish" type="button">Done</button>
       </div>`, head.replace("<br>", " ").replace(/<[^>]+>/g, ""));
     ($("#iedit") || $("#iadd")).onclick = () => renderChoose(true, renderFinish);
+    wireTicks(routine.day);
     // Done only moves to Today: everything was recorded when this screen was reached, so extra taps change nothing
     $("#finish").onclick = () => {
       if (routine.phase === "finish") { routine.phase = "done"; saveRoutine(); }
@@ -1667,7 +1726,7 @@
     show(`
       <div class="row"><p class="wordmark">Mornward</p><p class="support">${esc(fmtDay(routine.day))}</p></div>
       <h1>Done for today.</h1>
-      ${text ? intentionBlock(text) : `<p class="body">No task today.</p>${addButton}`}
+      ${text ? intentionBlock(text, routine.day) : `<p class="body">No task today.</p>${addButton}`}
       <p class="msg ok" role="status">${esc(note)}</p>
       ${progressSection()}
       <button class="chip" id="again" type="button">${icon("again")}<span>Do the routine again</span></button>
@@ -1679,6 +1738,7 @@
         ${privacySection()}
       </div>`, "Done for today.");
     ($("#iedit") || $("#iadd")).onclick = () => renderChoose(true, renderToday);
+    wireTicks(routine.day);
     $("#again").onclick = begin;
     renderInstall();
     syncQuiet();
@@ -2175,7 +2235,8 @@
     // The first reminder: the next time `at` comes round (the calendar event repeats every morning from then)
     const first = nextAlarm(at);
     const S = (g, t) => `<li><span class="g">${GLYPH[g]}</span><span>${t}</span></li>`;
-    // One calendar button for this phone; the other phone, instructions and the Shortcut are folded under More options
+    // One calendar button for this phone; on iPhone, the alarm Shortcut right under it. The other phone and the
+    // calendar instructions are folded under More options.
     // One card: the time (with quick picks), then the first morning, each on its own row, then the first reminder
     const quick = REM_QUICK.map((t) => `<button class="chip pick" type="button" data-rem-quick="${t}" aria-pressed="${t === at}"><span>${esc(quickLabel(t))}</span></button>`).join("");
     return `<div class="remcard">
@@ -2190,6 +2251,22 @@
         </div>
         <div class="rempane" data-pane="ios"${os === "ios" ? "" : " hidden"}>
           <a class="button secondary" id="remIcs" href="${calFile(at)}">${icon("cal")}<span>Add to Apple Calendar</span></a>
+          <!-- The strongest morning prompt on iPhone: Mornward opens the moment the alarm is stopped -->
+        <details class="remalt" id="remShortcut"><summary>${icon("clock")}<span>Open Mornward when my alarm stops</span></summary>
+          <p>Apple's Shortcuts app can do this every morning. It takes a minute, once.</p>
+          <ol class="vsteps four">
+            ${S("out", "Open <b>Shortcuts</b>, then <b>Automation</b>")}
+            ${S("add", "<b>+</b>, <b>Alarm</b>, <b>Is Stopped</b>")}
+            ${S("ok", "<b>Run Immediately</b>, <b>Next</b>")}
+            ${S("share", "<b>Open URLs</b>: paste the link, <b>Done</b>")}
+          </ol>
+          <div class="horow">
+            <button class="secondary" id="remCopy" type="button">Copy Mornward link</button>
+            <a class="link" id="remShortcuts" href="shortcuts://">Open Shortcuts</a>
+          </div>
+          <input type="text" readonly aria-label="Mornward link for Shortcuts" id="remField" hidden>
+          <p class="support">Steps can differ a little between iOS versions. To stop it, delete it under Automation in Shortcuts.</p>
+        </details>
         </div>
         <p role="status" id="remMsg"></p>
         <details class="cantfind" id="remMore"><summary>More options</summary>
@@ -2203,27 +2280,14 @@
           </div>
           <div class="rempane" data-pane="ios"${os === "ios" ? "" : " hidden"}>
             <p>Opens Apple Calendar's own add sheet. Tap Add, and check the alert is “At time of event”.</p>
-            <details class="cantfind" id="remShortcut"><summary>Open Mornward when your alarm stops</summary>
-              <p>Apple's Shortcuts app can do this every morning. It takes a minute, once.</p>
-              <ol class="vsteps four">
-                ${S("out", "Open <b>Shortcuts</b>, then <b>Automation</b>")}
-                ${S("add", "<b>+</b>, <b>Alarm</b>, <b>Is Stopped</b>")}
-                ${S("ok", "<b>Run Immediately</b>, <b>Next</b>")}
-                ${S("share", "<b>Open URLs</b>: paste the link, <b>Done</b>")}
-              </ol>
-              <div class="horow">
-                <button class="secondary" id="remCopy" type="button">Copy Mornward link</button>
-                <a class="link" id="remShortcuts" href="shortcuts://">Open Shortcuts</a>
-              </div>
-              <input type="text" readonly aria-label="Mornward link for Shortcuts" id="remField" hidden>
-              <p class="support">Steps can differ a little between iOS versions. To stop it, delete it under Automation in Shortcuts.</p>
-            </details>
           </div>
           <p class="support">Repeats every morning until you delete it in your calendar. Mornward never asks for notification permission.</p>
         </details>`;
   }
   // A reminder already handed to the calendar from this phone (Mornward can't see the calendar: this is what was tapped)
   const savedReminder = () => store.get("remPlan", null, (v) => typeof v === "object" && isAlarmTime(v.at) && isDay(v.first));
+  // A way back set up from here: a calendar reminder, or the alarm Shortcut's link copied (kept on the phone only)
+  const wayBack = () => !!savedReminder() || isDay(store.get("shortcutCopied", null));
   const clock = (t) => { const [h, m] = t.split(":").map(Number); return new Date(2026, 0, 1, h, m).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); };
   // Once added, the reminder isn't asked for again: its time, and "Change" for a new time or to add it again
   // home: Mornward is already on the home screen too, so there's nothing left to do: one "All set" card
@@ -2306,6 +2370,7 @@
     ics.forEach((a) => (a.onclick = file));
     $("#remCopy").onclick = async () => {
       const url = alarmLink();
+      store.set("shortcutCopied", dayKey());
       try { await navigator.clipboard.writeText(url); msg("Copied. Paste it in the Open URLs step."); }
       catch { const f = $("#remField"); f.value = url; f.hidden = false; f.focus(); f.select(); msg("Copy this link, then paste it in the Open URLs step."); }
       emitDay("reminder_setup", { action: "shortcut_link" }, "shortcut_link");
@@ -2508,6 +2573,7 @@
     setup_started: () => "Started setup",
     setup_completed: (d) => `Finished setup (${d.tasks_prepared} tasks prepared)`,
     reminder_setup: () => "Tapped a reminder button",
+    tasks_ticked: (d) => `Ticked ${d.ticked} of ${d.total} mini tasks as done (not which)`,
     install_prompt: (d) => `Home-screen prompt: ${d.outcome}`,
     app_installed: () => "Added to the home screen"
   };

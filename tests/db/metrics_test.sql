@@ -133,7 +133,7 @@ select pg_temp.check('acquisition cohort members', string_agg(v.dev, ',' order b
 select pg_temp.check('activation days', string_agg(v.dev || '@' || (c.activation_day - current_date), ',' order by v.dev), 'A@-20,C@-15,D@-2,E@-3,K@-23')
   from public.routine_cohort c join devs v using (device_id) where c.in_acquisition_cohort and c.activation_day is not null;
 select pg_temp.check('exclusions', string_agg(reason || ':' || devices, ' | ' order by reason),
-  'first counted routine opened from a reminder (separate browser storage):1 | first counted routine was not the device''s first (counts were off, or carried in):1 | in the acquisition cohort:8 | test device (?test=1 or excluded_devices):2 | used an earlier version (not new):1')
+  'first counted routine opened from a reminder, with no setup on this ID (separate browser storage):1 | first counted routine was not the device''s first (counts were off, or carried in):1 | in the acquisition cohort:8 | test device (?test=1 or excluded_devices):2 | used an earlier version (not new):1')
   from public.report_exclusions;
 select pg_temp.check('week1_frequency', string_agg(active_days || ':' || devices, ',' order by active_days), '1:2,2:1,3:2')
   from public.week1_frequency;

@@ -1,4 +1,4 @@
--- Mornward: look at a database BEFORE the migrations (004 → 005 → 006). Read-only: it changes nothing.
+-- Mornward: look at a database BEFORE the migrations (004 → 005 → 006). Not needed for 007 alone (run 007, then staging-check.sql). Read-only: it changes nothing.
 -- Paste this whole file into Supabase → SQL Editor → New query → Run. Every row should say OK; anything else,
 -- stop and ask before running the migrations.
 
@@ -6,7 +6,7 @@ with allowed(kind) as (
   values ('morning_start'), ('morning_done'), ('setup_done'), ('rating'), ('door_open'), ('screen_view'),
          ('routine_started'), ('breathing_completed'), ('breathing_skipped'), ('intention_saved'), ('intention_skipped'),
          ('routine_finished'), ('core_routine_completed'), ('install_prompt'), ('app_installed'),
-         ('tasks_saved'), ('tasks_skipped'), ('reminder_setup'), ('setup_started'), ('setup_completed')
+         ('tasks_saved'), ('tasks_skipped'), ('reminder_setup'), ('setup_started'), ('setup_completed'), ('tasks_ticked')
 ),
 cols as (
   select string_agg(column_name, ', ' order by ordinal_position) as list

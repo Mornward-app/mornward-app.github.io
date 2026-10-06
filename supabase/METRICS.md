@@ -68,6 +68,7 @@ drafts, edits, alarm time, anything typed. The database refuses rows whose `data
 | `setup_started` | "Prepare my morning" the first time (once per device) | `run: 0` | A routine, a visit, or consent to anything beyond the counts |
 | `setup_completed` | Setup reaches its end the first time (once per device) | `tasks_prepared` 0–3, `run: 0` | That a routine was started, tasks were performed, or a reminder exists |
 | `reminder_setup` | A reminder setup tap, once per day per action | `action: google_link \| calendar_file \| shortcut_link`, `run: 0` | That a reminder was saved, is on, or will alert |
+| `tasks_ticked` | A mini task ticked as done on Finish or Today: one row each time the day's highest number ticked goes up (1, then 2…); unticking sends nothing | `ticked: 1-3`, `total: 1-3` (ticked ≤ total), `run`, `rid` | Which task, its words; that the task was really done (it's what was tapped) |
 
 Edits after the task step (Edit, Add mini tasks) save the tasks on the phone and send nothing. They never change
 `tasks`, `core`, the day's credit or the week strip.
@@ -96,7 +97,10 @@ includes only devices that:
 - aren't a test device;
 - sent nothing from an earlier version;
 - whose first counted routine is marked `first`;
-- whose first counted routine wasn't opened from a reminder.
+- whose first counted routine wasn't opened from a reminder, unless setup happened on the same ID (`set_up_here`).
+  Since migration 007: with setup first, the first routine is meant to come from the reminder, so those devices count.
+  A first routine from a reminder on an ID with no setup of its own (a returning person in a browser with other
+  storage) is still left out. A setup carried with `#r=` keeps its ID, so it counts.
 
 The terms are agreed with the first tap on "Prepare my morning", "Begin now" or Begin, and nothing is sent before it. The
 acquisition cohort starts at the first routine; setup-only visitors are counted in `setup_report`, and visitors who
@@ -217,6 +221,12 @@ and `testers.first_day` is the first event of any kind. Use `legacy_retention_re
   - Any later full routine: "Morning reset complete."
   - Partial routines say what was done ("Your mini tasks are saved.", "Three breaths taken.").
   - After a missed day, Begin says "Welcome back."
+
+## Mini tasks ticked (`task_ticks`, `task_ticks_report`, migration 007)
+
+- `task_ticks`: per device and local day, the highest number ticked (`max(ticked)`) and of how many. Test devices out.
+- `task_ticks_report`: per local day, devices that saved mini tasks in a routine, how many ticked at least one, and
+  how many ticked them all. A tick is a tap, not proof the task was done.
 
 ## Reminders
 

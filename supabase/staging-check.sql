@@ -1,4 +1,4 @@
--- Mornward: check a database after the migrations (004 → 005 → 006).
+-- Mornward: check a database after the migrations (004 → 005 → 006 → 007).
 -- Paste this whole file into Supabase → SQL Editor → New query → Run. It shows one table: every row should say PASS.
 -- It adds a few rows as the app would (as the public "anon" role), checks what the database accepts and refuses,
 -- then deletes every row it added. Nothing else is changed. Safe to run more than once, on a test project or on
@@ -25,12 +25,13 @@ begin
       (gen_random_uuid(), dev, current_date, 'tasks_saved',            jsonb_build_object('run',1,'rid',rid,'count',2,'kept_defaults',false,'prepared',true,'own',false,'test',true), 'beta-5'),
       (gen_random_uuid(), dev, current_date, 'routine_finished',       jsonb_build_object('run',1,'rid',rid,'breathing','completed','tasks','saved','core',true,'def',2,'seconds',70,'test',true), 'beta-5'),
       (gen_random_uuid(), dev, current_date, 'core_routine_completed', jsonb_build_object('run',1,'rid',rid,'def',2,'test',true), 'beta-5'),
-      (gen_random_uuid(), dev, current_date, 'reminder_setup',         '{"run":0,"action":"google_link","test":true}', 'beta-5');
+      (gen_random_uuid(), dev, current_date, 'reminder_setup',         '{"run":0,"action":"google_link","test":true}', 'beta-5'),
+      (gen_random_uuid(), dev, current_date, 'tasks_ticked',           jsonb_build_object('run',1,'rid',rid,'ticked',1,'total',2,'test',true), 'beta-5');
     reset role;
-    insert into mw_check values (1, 'The new app''s rows are accepted (setup, routine, tasks, reminder)', 'PASS');
+    insert into mw_check values (1, 'The new app''s rows are accepted (setup, routine, tasks, reminder, ticks)', 'PASS');
   exception when others then
     reset role;
-    insert into mw_check values (1, 'The new app''s rows are accepted (setup, routine, tasks, reminder)', 'FAIL: ' || sqlerrm);
+    insert into mw_check values (1, 'The new app''s rows are accepted (setup, routine, tasks, reminder, ticks)', 'FAIL: ' || sqlerrm);
   end;
 
   -- 2. The old app (beta-2, live until the merge) still works
@@ -90,9 +91,11 @@ begin
     perform 1 from public.week1_frequency limit 1;
     perform 1 from public.report_exclusions limit 1;
     perform 1 from public.routine_runs limit 1;
-    insert into mw_check values (6, 'All reports exist (retention, setup, legacy, week 1, exclusions, runs)', 'PASS');
+    perform 1 from public.task_ticks_report limit 1;
+    perform set_up_here from public.routine_cohort limit 1;
+    insert into mw_check values (6, 'All reports exist (retention, setup, legacy, week 1, exclusions, runs, ticks)', 'PASS');
   exception when others then
-    insert into mw_check values (6, 'All reports exist (retention, setup, legacy, week 1, exclusions, runs)', 'FAIL: ' || sqlerrm);
+    insert into mw_check values (6, 'All reports exist (retention, setup, legacy, week 1, exclusions, runs, ticks)', 'FAIL: ' || sqlerrm);
   end;
 
   -- 7. Rows marked test are left out of the real numbers
