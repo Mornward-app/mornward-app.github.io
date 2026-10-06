@@ -72,6 +72,12 @@ words: task names (shuffled per phone), folded sections and screen-reader-only t
 - **Ticking tasks off:** on Finish and Today each mini task is a row to tick once it's done ("Go do your first task,
   then come back and tick it."). Kept per day on the phone (`fl.doneTasks:DAY`, by name); `tasks_ticked` counts how
   many, never which.
+- **Morning card:** 14 short, sourced facts (`MORNING_CARDS` in index.html), one per completed morning in order,
+  starting again after the 14th. The question shows the night before on Ready ("Tomorrow's card") and in the morning
+  before Begin ("Today's card", "Unlocks after your 3 breaths"); the two-sentence answer, "That's all for today." and
+  the source show on Finish and Today, with tomorrow's question under it. A second routine the same day keeps the card;
+  a missed day doesn't skip one. Nothing about the cards is sent. Card text is content, so it's left out of the word
+  budgets (like the task names).
 - **No second step 2:** once a reminder was added, step 2 isn't shown again (back from the calendar, a reload, or
   Edit setup): it goes straight to Ready. The one exception is "All set to return" (reminder and home screen both
   done). The reminder can still be changed from Today's Morning reminder.

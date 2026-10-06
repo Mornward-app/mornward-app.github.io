@@ -31,7 +31,7 @@ const snapshot = (x) => x.p.evaluate(() => JSON.stringify(Object.keys(localStora
 // The app's own words a person can see (task names, screen-reader-only text and folded sections left out: task names
 // are shuffled per phone, so they'd make the count vary)
 const words = (x) => x.p.evaluate(() => { const c = document.querySelector("#card").cloneNode(true);
-  c.querySelectorAll(".sr-only, .chip.pick span, #prepList li").forEach((e) => e.remove());
+  c.querySelectorAll(".sr-only, .chip.pick span, #prepList li, #cardTeaser, #mcard, #cardNext").forEach((e) => e.remove()); // content, not the app's own words
   document.body.appendChild(c); const t = c.innerText; c.remove(); return t.split(/\s+/).filter((w) => /[A-Za-z0-9]/.test(w)).length; });
 const BUDGET = { welcome: 45, tasks: 25, ret: 35, ready: 40, prepared: 40, morning: 25 };
 const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
@@ -105,9 +105,9 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     ok(`ready: few words besides the tasks (≤ ${BUDGET.ready})`, (await words(x)) <= BUDGET.ready, "words: " + await words(x));
     ok("ready: the prepared tasks are shown", JSON.stringify(await x.p.$$eval("#prepList li", (l) => l.map((e) => e.textContent))) === JSON.stringify([...chosen, "Call Mum"]));
     ok("ready: the reminder status says what's known (the date, and to check the calendar saved it)", /^Monday, October 5 at 7:00.*\. Check your calendar saved it\.$/.test(await x.p.textContent("#remStatus")));
-    ok("ready: no sun, circles, count, timeline, %, streak, 'complete' claim; 'tomorrow' only on the button", !(await x.p.$(".sunrise")) && !(await x.p.$(".progress")) && !(await x.p.$(".dot")) &&
+    ok("ready: no sun, circles, count, timeline, %, streak, 'complete' claim; 'tomorrow' only on the button and the card", !(await x.p.$(".sunrise")) && !(await x.p.$(".progress")) && !(await x.p.$(".dot")) &&
       !/%|streak|reset complete|resets completed/i.test(await text(x)) &&
-      !/tomorrow/i.test((await text(x)).replace("See you tomorrow", "")));
+      !/tomorrow/i.test((await text(x)).replace("See you tomorrow", "").replace(/Tomorrow's card/i, "")));
     ok("11 ready: no claim that a reminder is set", !/reminder (is )?(set|saved|on)\b|you'll be reminded/i.test(await text(x)));
     // The optional invitation, folded away
     ok("ready: 'Personalize' is closed and optional", (await x.p.textContent("#prefsSec summary")).trim() === "Personalize" && !(await x.p.$("#prefsSec[open]")));
