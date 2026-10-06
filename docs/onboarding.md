@@ -69,6 +69,10 @@ words: task names (shuffled per phone), folded sections and screen-reader-only t
   home-screen app, "You can close Mornward now."
 - **Opened from Reddit? (Copy link for Safari/Chrome):** on Ready when it's probably another app's built-in browser
   (a recognised one, or on iPhone a link from a social app). The link carries the setup into the phone's own browser.
+- **After ticking:** the line under the tasks (Finish and Today, announced to screen readers) says "Go do your first
+  task, then come back and tick it.", then "1 of 2 done. Go do the next one.", then, with a check, "All done. Lock your
+  phone and enjoy your morning." Today's circle in Your progress gets a check once every task is ticked; the phone
+  gives a short buzz on each tick (where it can). All ticked on Finish ends the morning there: no Done button.
 - **Ticking tasks off:** on Finish and Today each mini task is a row to tick once it's done ("Go do your first task,
   then come back and tick it."). Kept per day on the phone (`fl.doneTasks:DAY`, by name); `tasks_ticked` counts how
   many, never which.

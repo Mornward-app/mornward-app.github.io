@@ -85,16 +85,23 @@ async function drain(x) { for (let i = 0; i < 40 && ((await x.ls("outbox")) || [
       (await x.p.textContent("#tickHint")) === "Go do your first task, then come back and tick it.");
     await x.p.click('[data-task="0"]'); await x.t(200);
     const name0 = (await x.p.textContent('[data-task="0"] .tt')).trim();
-    ok("...tick one: ticked, the hint goes, kept on the phone by name for today", (await x.p.getAttribute('[data-task="0"]', "aria-pressed")) === "true" &&
-      !(await x.p.isVisible("#tickHint")) && JSON.stringify(await x.ls("doneTasks:2026-10-05")) === JSON.stringify([name0]));
+    ok("...tick one: ticked, '1 of 2 done. Go do the next one.' (spoken), kept on the phone by name for today", (await x.p.getAttribute('[data-task="0"]', "aria-pressed")) === "true" &&
+      (await x.p.textContent("#tickHint")) === "1 of 2 done. Go do the next one." && (await x.p.getAttribute("#tickHint", "aria-live")) === "polite" &&
+      JSON.stringify(await x.ls("doneTasks:2026-10-05")) === JSON.stringify([name0]) && await x.p.isVisible("#finish"));
     await x.p.click('[data-task="0"]'); await x.t(200);
     ok("...tap again: unticked", (await x.p.getAttribute('[data-task="0"]', "aria-pressed")) === "false" && JSON.stringify(await x.ls("doneTasks:2026-10-05")) === "[]");
+    ok("...the hint is back to the first step", (await x.p.textContent("#tickHint")) === "Go do your first task, then come back and tick it.");
     await x.p.click('[data-task="0"]'); await x.t(200);
     await S.finish(x);
-    ok("Today: the tick is still there", (await x.p.getAttribute('[data-task="0"]', "aria-pressed")) === "true");
+    ok("Today: the tick is still there, with the same status line", (await x.p.getAttribute('[data-task="0"]', "aria-pressed")) === "true" &&
+      (await x.p.textContent("#tickHint")) === "1 of 2 done. Go do the next one.");
+    ok("...today's circle: no check yet (not every task ticked)", !(await x.p.$(".progress li.now.ticked")));
     await x.p.click('[data-task="1"]'); await x.t(200);
+    ok("Today, all ticked: a check and 'All done. Lock your phone and enjoy your morning.'; today's circle gets a check",
+      (await x.p.textContent("#tickHint")).trim() === "All done. Lock your phone and enjoy your morning." && !!(await x.p.$("#tickHint .i")) &&
+      !!(await x.p.$(".progress li.now.ticked .dot .i")) && /mini tasks ticked off/.test(await x.p.textContent(".progress .sr-only")));
     await x.p.reload(); await x.t(700);
-    ok("...after a reload: both ticked", (await x.p.$$('[data-task][aria-pressed="true"]')).length === 2);
+    ok("...after a reload: both ticked, the check stays", (await x.p.$$('[data-task][aria-pressed="true"]')).length === 2 && !!(await x.p.$(".progress li.now.ticked")));
     await drain(x);
     // A row can go out twice while a send is in flight (same event_id; the database stores it once): count each once
     const seen = new Set();
@@ -108,6 +115,18 @@ async function drain(x) { for (let i = 0; i < 40 && ((await x.ls("outbox")) || [
     await x.p.click("#isave"); await x.t(700);
     const left = await x.p.$$eval("[data-task]", (l) => l.map((e) => [e.querySelector(".tt").textContent.trim(), e.getAttribute("aria-pressed")]));
     ok("after an edit: ticks stay with their task (by name)", left.length === 1 && left[0][1] === "true", left);
+    await x.c.close(); }
+  // Finish, all ticked right there: no extra Done to reach a near-identical screen; reopening shows Today
+  { const x = await open({ when: MON, device: "Pixel 7" }); await x.goto();
+    await S.begin(x); await S.skipBreathing(x); await S.keep(x);
+    await x.p.click('[data-task="0"]'); await x.t(200); await x.p.click('[data-task="1"]'); await x.t(200);
+    ok("Finish, all ticked: the stop line, and no Done button", (await x.p.textContent("#tickHint")).trim() === "All done. Lock your phone and enjoy your morning." &&
+      !(await x.p.isVisible("#finish")) && (await x.ls("routine")).phase === "done");
+    await x.p.click('[data-task="1"]'); await x.t(200);
+    ok("...untick one: Done is back", await x.p.isVisible("#finish"));
+    await x.p.click('[data-task="1"]'); await x.t(200);
+    await x.p.reload(); await x.t(700);
+    ok("...reopened: Today (Done for today), not Finish again", (await x.p.innerText("h1")).trim() === "Done for today.");
     await x.c.close(); }
   { const x = await open({ when: MON, device: "Pixel 7" }); await x.goto();
     await x.p.click("#preToggle"); await S.begin(x); await S.skipBreathing(x); await S.keep(x);
