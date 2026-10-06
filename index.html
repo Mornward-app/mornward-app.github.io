@@ -315,6 +315,13 @@
     background: transparent; display: grid; place-items: center; box-sizing: border-box; }
   /* A full routine: a solid warm-yellow circle */
   .progress .full .dot { background: var(--sun); border-color: var(--sun); }
+  .progress .dot { display: grid; place-items: center; }
+  .progress .ticked .dot .i { width: 60%; height: 60%; color: #18222F; stroke-width: 3; }
+  .progress .part.ticked .dot .i { color: var(--sun); }
+  .progress .part.ticked .dot::after { display: none; }
+  .tickhint { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0; text-align: center; font-size: 0.9375rem; line-height: 1.4rem; }
+  .tickhint.all { font-weight: 700; }
+  .tickhint .i { width: 20px; height: 20px; color: var(--hl); flex: none; }
   /* Reached the end with a step skipped (or a day from before steps were recorded): a small mark, never a full circle */
   .progress .part .dot { border-color: var(--sun); }
   .progress .part .dot::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--sun); }
@@ -1751,6 +1758,18 @@
           : `<li>${esc(x)}</li>`).join("")}</ul>
       </div>`;
   }
+  // The line under the tasks: what to do next, then a clear stop once everything is ticked
+  function tickStatus(done, total) {
+    if (!done) return "Go do your first task, then come back and tick it.";
+    if (done < total) return `${done} of ${total} done. Go do the next one.`;
+    return "All done. Lock your phone and enjoy your morning.";
+  }
+  const tickHint = (day, text) => {
+    const tasks = tasksOf(text), n = doneFor(day, tasks).length, all = n === tasks.length;
+    return `<p class="tickhint${all ? " all" : ""}" id="tickHint" role="status" aria-live="polite">${all ? GLYPH.ok : ""}<span>${esc(tickStatus(n, tasks.length))}</span></p>`;
+  };
+  // Every task of a day ticked (a day with no tasks never counts)
+  const allTicked = (day) => { const t = tasksOf(intentionFor(day)); return t.length > 0 && doneFor(day, t).length === t.length; };
   // Tick or untick; each new highest number ticked that day is counted once (numbers only, never which task)
   function wireTicks(day) {
     const tasks = tasksOf(intentionFor(day));
@@ -1762,8 +1781,18 @@
       if (!store.set(doneKey(day), next)) return;
       b.setAttribute("aria-pressed", String(next.includes(name)));
       const hint = $("#tickHint");
-      if (hint) hint.hidden = next.length > 0;
-      if (next.length > now.length) countTicks(day, next.length, tasks.length);
+      if (hint) hint.outerHTML = tickHint(day, tasks.join(SEP));
+      // Today's circle shows the tasks ticked off
+      const prog = card.querySelector(".progress");
+      if (prog) prog.outerHTML = progressSection();
+      if (next.length > now.length) { buzz(); countTicks(day, next.length, tasks.length); }
+      // On Finish, everything ticked is the end of the morning: no extra Done to reach a near-identical screen
+      const fin = $("#finish");
+      if (fin) {
+        const all = next.length === tasks.length;
+        if (all && routine && routine.day === day && routine.phase === "finish") { routine.phase = "done"; saveRoutine(); }
+        fin.closest(".push").hidden = all;
+      }
     }));
   }
   function countTicks(day, ticked, total) {
@@ -1793,11 +1822,11 @@
       <h1 class="center">${head}</h1>
       ${sub ? `<p class="body center" id="finishSub">${esc(sub)}</p>` : ""}
       ${text ? intentionBlock(text, routine.day) : addButton}
-      ${text ? `<p class="support center" id="tickHint"${doneFor(routine.day, tasksOf(text)).length ? " hidden" : ""}>Go do your first task, then come back and tick it.</p>` : ""}
+      ${text ? tickHint(routine.day, text) : ""}
       ${morningCard(routine.day)}
       <p class="msg ok" role="status">${esc(note)}</p>
       ${progressSection()}
-      <div class="push">
+      <div class="push"${text && allTicked(routine.day) ? " hidden" : ""}>
         <button class="primary" id="finish" type="button">Done</button>
       </div>`, head.replace("<br>", " ").replace(/<[^>]+>/g, ""));
     ($("#iedit") || $("#iadd")).onclick = () => renderChoose(true, renderFinish);
@@ -1816,7 +1845,7 @@
     show(`
       <div class="row"><p class="wordmark">Mornward</p><p class="support">${esc(fmtDay(routine.day))}</p></div>
       <h1>Done for today.</h1>
-      ${text ? intentionBlock(text, routine.day) : `<p class="body">No task today.</p>${addButton}`}
+      ${text ? intentionBlock(text, routine.day) + tickHint(routine.day, text) : `<p class="body">No task today.</p>${addButton}`}
       ${morningCard(routine.day)}
       <p class="msg ok" role="status">${esc(note)}</p>
       ${progressSection()}
@@ -2236,9 +2265,11 @@
       const wd = date.toLocaleDateString([], { weekday: "short" }).replace(/\.$/, "");
       const state = full.has(d) ? "full" : done.has(d) ? "part" : "none";
       const isToday = d === today;
+      // A morning that reached the end, with every mini task then ticked off: a check in its circle
+      const ticked = state !== "none" && allTicked(d);
       said.push(`${date.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })}${isToday ? " (today)" : ""}: ${
-        state === "full" ? "full morning reset" : state === "part" ? "reached the end, a step skipped" : "no reset"}`);
-      return `<li class="${state}${isToday ? " now" : ""}"><span class="dot"></span><span class="wd">${esc(wd)} ${dd}</span><span class="tl">${isToday ? "Today" : ""}</span></li>`;
+        state === "full" ? "full morning reset" : state === "part" ? "reached the end, a step skipped" : "no reset"}${ticked ? ", mini tasks ticked off" : ""}`);
+      return `<li class="${state}${isToday ? " now" : ""}${ticked ? " ticked" : ""}"><span class="dot">${ticked ? GLYPH.ok : ""}</span><span class="wd">${esc(wd)} ${dd}</span><span class="tl">${isToday ? "Today" : ""}</span></li>`;
     }).join("");
     const countText = rolling && total ? `Total: ${resetsLine(total)}` : resetsLine(total);
     return `<section class="progress" aria-labelledby="progTitle">
