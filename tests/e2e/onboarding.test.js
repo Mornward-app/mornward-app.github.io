@@ -98,9 +98,9 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     await x.p.reload(); await x.t(700);
     ok("after the calendar hand-off and a reload: straight to Ready (no second step 2, no second Done), the tasks prepared", (await h1(x)) === "Ready for your first morning." &&
       (await x.ls("onboard")).status === "done" && JSON.stringify((await x.ls("prepared")).tasks) === JSON.stringify([...chosen, "Call Mum"]));
-    ok("ready: one screen with the copy, See you tomorrow, Or try it now and Edit setup (no separate 'Done for now' step)", (await h1(x)) === "Ready for your first morning." &&
+    ok("ready: one screen with the copy, See you tomorrow and Edit setup; no way to start tonight (no separate 'Done for now' step)", (await h1(x)) === "Ready for your first morning." &&
       (await text(x)).includes("When you wake, open Mornward first.") && !(await x.p.$("#setupDone")) && !(await x.p.$("#beginNow")) &&
-      (await x.p.textContent("#seeYou")) === "See you tomorrow" && (await x.p.textContent("#begin")) === "Or try it now" && (await x.p.textContent("#setupEdit")) === "Edit setup" &&
+      (await x.p.textContent("#seeYou")) === "See you tomorrow" && !(await x.p.$("#begin")) && !/try it now/i.test(await text(x)) && (await x.p.textContent("#setupEdit")) === "Edit setup" &&
       (await x.p.$$("#card .primary")).length === 1);
     ok(`ready: few words besides the tasks (≤ ${BUDGET.ready})`, (await words(x)) <= BUDGET.ready, "words: " + await words(x));
     ok("ready: the prepared tasks are shown", JSON.stringify(await x.p.$$eval("#prepList li", (l) => l.map((e) => e.textContent))) === JSON.stringify([...chosen, "Call Mum"]));
@@ -155,7 +155,9 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     ok("3 ...routine_started marked first", x.rows().find((r) => r.kind === "routine_started").data.first === true);
     await S.finish(x);
     await x.p.reload(); await x.t(700);
-    ok("7 reopened after the first routine: Today", (await h1(x)) === "Done for today." && !!(await x.p.$("#again")));
+    ok("7 reopened after the first routine: Today ('Your mini tasks.' until they're ticked)", (await h1(x)) === "Your mini tasks." && !!(await x.p.$("#again")));
+    for (const t of await x.p.$$('[data-task][aria-pressed="false"]')) { await t.click(); await x.t(150); }
+    ok("7 ...every task ticked: 'Done for today.'", (await h1(x)) === "Done for today.");
     // The next day: the usual daily choice, not the prepared tasks again
     await jump(x, "2026-10-06T07:00:00");
     ok("next day: Begin (not setup, not the prepared screen)", !!(await x.p.$("#begin")) && (await x.p.textContent("#begin")) === "Begin");
@@ -243,7 +245,7 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     await x.p.click("#preToggle"); await x.t(100);
     await setupAll(x); await later(x);
     await jump(x, MON); await S.begin(x); await S.breatheAll(x); await S.keep(x); await S.finish(x); await x.p.waitForTimeout(400);
-    ok("9 counts off: the whole journey works", (await h1(x)) === "Done for today." && (await x.ls("fullDays")).length === 1);
+    ok("9 counts off: the whole journey works", ["Done for today.", "Your mini tasks."].includes(await h1(x)) && !!(await x.p.$("#again")) && (await x.ls("fullDays")).length === 1);
     ok("9 ...and nothing was sent or queued, no ID made", x.bodies.length === 0 && ((await x.ls("outbox")) || []).length === 0 && !(await x.ls("deviceId")));
     await x.c.close(); }
 
@@ -373,7 +375,7 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     await x.p.reload(); await x.t(700);
     ok("7b interrupted on the tasks: the task step again, the prepared tasks still unconfirmed", !!(await x.p.$("#isave")) && !(await x.ls("intent:2026-10-05")));
     await S.keep(x); await S.finish(x); await x.p.reload(); await x.t(700);
-    ok("7c finished today: Today", (await h1(x)) === "Done for today.");
+    ok("7c finished today: Today", ["Done for today.", "Your mini tasks."].includes(await h1(x)) && !!(await x.p.$("#again")));
     await jump(x, "2026-10-08T07:00:00");
     ok("7d a later day: a new morning invitation (Begin, 'Welcome back.' after missed days), no setup", (await h1(x)) === "Welcome back." && !!(await x.p.$("#begin")) && !(await x.p.$("#stepNext")));
     ok("7d ...progress starts Monday (no Sunday), missed days hollow, one completed morning", JSON.stringify(await x.p.$$eval(".progress li", (l) => l.map((e) => e.className.split(" ")[0]))) === '["full","none","none","none"]' &&
@@ -422,7 +424,9 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
   { const x = await open({ device: "iPhone 14" }); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext");
     await x.p.click("#addSec summary"); await x.p.click("#addHave"); await x.t(200);
     ok("home row: 'Already on my home screen' turns the row into a tick, remembered on the phone", !(await x.p.$("#addSec")) && !!(await x.p.$("#homeTick")) && (await x.ls("homeAdded")).how === "self");
-    await click(x, "#stepNext"); await x.t(3000); await click(x, "#begin"); await S.skipBreathing(x); await S.keep(x); await S.finish(x);
+    await click(x, "#stepNext"); await x.p.clock.setSystemTime(new Date(MON)); await x.p.reload(); await x.t(700);
+    ok("home row: ...next morning in Safari: points to the home screen first", /lives on your home screen/.test(await h1(x)));
+    await click(x, "#safariHere"); await click(x, "#begin"); await S.skipBreathing(x); await S.keep(x); await S.finish(x);
     ok("home row: ...no add-to-home-screen offer on Today afterwards", !(await x.p.$("[data-install-add]")) && !(await x.p.$("#addSec")));
     await x.c.close(); }
 
@@ -447,9 +451,8 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     ok("opened from the calendar link the same evening: the morning screen, not See you tomorrow", (await x.p.textContent("#begin")) === "Begin my morning" && !(await x.p.$("#seeYou")));
     await x.c.close(); }
   { const x = await open({ when: "2026-10-05T07:30:00" }); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext"); await click(x, "#stepNext");
-    ok("set up in the morning: See you tomorrow, with Or try it now", (await x.p.textContent("#seeYou")) === "See you tomorrow");
-    await x.t(3000); await click(x, "#begin");
-    ok("...Or try it now starts the routine", !!(await x.p.$("#bpause")));
+    ok("set up in the morning: See you tomorrow, and nothing to start until tomorrow (the plan stays for the first morning)",
+      (await x.p.textContent("#seeYou")) === "See you tomorrow" && !(await x.p.$("#begin")) && (await x.ls("prepared")).used === false && !(await x.ls("startDay")));
     await x.c.close(); }
   { const x = await open(); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext"); await click(x, "#stepNext");
     await jump(x, MON); await x.t(3000); await click(x, "#setupEdit"); await click(x, "#stepNext"); await click(x, "#stepNext");

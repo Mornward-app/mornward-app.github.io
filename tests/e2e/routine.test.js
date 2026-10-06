@@ -133,17 +133,18 @@ const todaySlot = (x) => x.p.$eval(".progress li.now", (l) => l.className.replac
       JSON.stringify(await x.p.$$eval('.chip.pick[aria-pressed="true"] span:not(.sr-only)', (l) => l.map((s) => s.textContent))) === JSON.stringify(ticked));
     await S.keep(x); await drain(x);
     ok("4 skip breathing + save: 'Your mini tasks are saved.'", (await x.p.textContent("h1")) === "Your mini tasks are saved.");
-    // Done tapped three times quickly
-    await x.p.click("#finish"); await x.p.click("body", { position: { x: 200, y: 600 } }).catch(() => {}); await x.t(100);
-    await x.p.click("body", { position: { x: 200, y: 600 } }).catch(() => {}); await x.t(700); await drain(x);
-    ok("4 Done tapped repeatedly: on Today once, nothing new recorded", !!(await x.p.$("#again")) && of(x, "routine_finished").length === 1 && (await x.ls("days")).length === 1 && (await x.ls("routine")).phase === "done");
+    // With mini tasks there's no Done (it would say "Done for today" before the tasks are done); Today's sections are here
+    ok("4 Finish with mini tasks: no Done button; Do the routine again and the sections are right here", !(await x.p.$("#finish")) && !!(await x.p.$("#again")) && !!(await x.p.$("#privSec")));
+    await x.p.click("body", { position: { x: 200, y: 600 } }).catch(() => {}); await x.t(100);
+    await x.p.reload(); await x.t(700); await drain(x);
+    ok("4 reopened: Today, nothing new recorded", !!(await x.p.$("#again")) && !(await x.p.$("#finish")) && of(x, "routine_finished").length === 1 && (await x.ls("days")).length === 1);
     const saved = await x.ls("intent:" + TODAY);
     await x.p.click("#iedit"); await x.t(700); await S.untickAll(x); await x.p.fill("#intent", "Something else"); await x.t(100);
     await x.p.click("#iskip"); await x.t(700);
     ok("4 edit, then 'Keep it as it was': tasks unchanged, the edit's draft dropped", (await x.ls("intent:" + TODAY)) === saved && !(await x.ls("draft:" + TODAY)) && !(await x.ls("picks:" + TODAY)));
     // Reopening the same day (a new tab) shows Today, not Begin or onboarding
     const p2 = await x.c.newPage(); await p2.clock.install({ time: new Date("2026-10-05T12:00:00") }); await p2.goto(site.url); await p2.clock.runFor(700);
-    ok("4 same-day reopen: Today with the saved tasks", !!(await p2.$("#again")) && !(await p2.$("#begin")) && (await p2.textContent("h1")) === "Done for today." && (await p2.$$("#itext li")).length === 2);
+    ok("4 same-day reopen: Today with the saved tasks, 'Your mini tasks.' while they're unticked", !!(await p2.$("#again")) && !(await p2.$("#begin")) && (await p2.textContent("h1")) === "Your mini tasks." && (await p2.$$("#itext li")).length === 2);
     await p2.close();
     // Reloading before Done: Today, not the celebration again, and nothing sent twice
     { const y = await open(); await y.goto(); await S.begin(y); await S.breatheAll(y); await S.keep(y); await drain(y);
