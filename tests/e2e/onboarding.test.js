@@ -122,8 +122,8 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     ok("setup events carry no answers", x.bodies.every((bd) => !/instagram|tiktok|Call Mum|07:00|"apps"/i.test(bd)) &&
       x.rows().find((r) => r.kind === "setup_completed").data.tasks_prepared === 2);
     await x.p.click("#seeYou"); await x.t(200);
-    ok("ready: See you tomorrow → 'All set. Lock your phone with this page open…' (nothing starts)", !(await x.p.isVisible("#seeYou")) &&
-      /^All set\. Lock your phone with this page open\./.test((await x.p.textContent("#seeYouMsg")).trim()) && !(await x.p.$("#bpause")));
+    ok("ready: See you tomorrow → 'All set. Tomorrow, open Mornward from your home screen.' (nothing starts)", !(await x.p.isVisible("#seeYou")) &&
+      /^All set\. Tomorrow, open Mornward from your home screen\./.test((await x.p.textContent("#seeYouMsg")).trim()) && !(await x.p.$("#bpause")));
     await later(x);
     ok("opened again the same evening: still Ready, See you tomorrow (not the morning screen)", (await h1(x)) === "Ready for your first morning." && (await x.p.textContent("#seeYou")) === "See you tomorrow");
     ok("6 the evening before: no late or missed", !NOT_LATE.test(await text(x)));

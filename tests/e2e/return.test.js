@@ -13,53 +13,56 @@ async function drain(x) { for (let i = 0; i < 40 && ((await x.ls("outbox")) || [
   const b = await chromium.launch();
   const open = (o = {}) => ctx(b, site.url, { when: EVE, device: "iPhone 14", ...o });
 
-  // Item 2: on iPhone the Shortcut sits right under Apple Calendar, not under More options
+  // Item 2 (reversed): no alarm Shortcut. On iPhone it can only open Safari, which shares nothing with the home-screen
+  // app; the calendar alert says to open Mornward from the home screen instead.
   { const x = await open(); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext");
-    ok("iPhone step 2: 'Open Mornward when my alarm stops' under Apple Calendar, outside More options",
-      await x.p.isVisible("#remShortcut summary") && !(await x.p.$("#remMore #remShortcut")) &&
-      (await x.p.textContent("#remShortcut summary")).trim() === "Open Mornward when my alarm stops");
-    await x.p.click("#remShortcut summary"); await x.t(200);
-    ok("...tapping it opens the four steps and the copy button in place", await x.p.isVisible("#remShortcut .vsteps") && await x.p.isVisible("#remCopy"));
-    await x.t(800); await x.p.waitForTimeout(400);
-    ok("...opening it scrolls Copy and Open Shortcuts clear of the sticky buttons", await x.p.evaluate(() => {
-      const bar = document.querySelector(".actions.sticky").getBoundingClientRect(), r = document.querySelector("#remShortcut .horow").getBoundingClientRect();
-      return r.bottom <= bar.top && r.top >= 0; }));
-    ok("...nothing in the box spills past its edge", await x.p.evaluate(() => { const box = document.querySelector("#remShortcut").getBoundingClientRect();
-      return [...document.querySelectorAll("#remShortcut *")].every((e) => { const r = e.getBoundingClientRect(); return !r.width || (r.left >= box.left - 1 && r.right <= box.right + 1); }); }));
-    ok("...Copy Mornward link and Open Shortcuts on one row", await x.p.evaluate(() => {
-      const a = document.querySelector("#remCopy").getBoundingClientRect(), c = document.querySelector("#remShortcuts").getBoundingClientRect();
-      return Math.abs((a.top + a.bottom) / 2 - (c.top + c.bottom) / 2) < 4 && c.left >= a.right; }));
-    ok("...the steps don't split words (each step is one row, inside the box)", await x.p.evaluate(() => {
-      const box = document.querySelector("#remShortcut").getBoundingClientRect();
-      return [...document.querySelectorAll("#remShortcut .vsteps li")].every((li) => { const r = li.getBoundingClientRect(); return r.width > box.width * 0.7 && r.right <= box.right + 1; }); }));
-    await x.p.click("#remCopy"); await x.t(200);
-    ok("...copying the link: Done, no Skip (a way back is set up)", (await x.p.textContent("#stepNext")) === "Done" && !(await x.p.$("#stepSkip")));
-    ok("...the copied link carries the setup after # (opens Safari, which may not have it)", /^https:\/\/mornward\.app\/\?via=alarm#r=/.test(await x.p.evaluate(() => navigator.clipboard.readText())));
-    await x.p.reload(); await x.t(700);
-    ok("...after a reload: still Done (kept on the phone)", (await x.p.textContent("#stepNext")) === "Done");
-    await x.c.close(); }
-  { const x = await open({ device: "iPhone SE" }); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext");
-    await x.p.click("#remShortcut summary"); await x.t(800); await x.p.waitForTimeout(400);
-    ok("iPhone SE: opened, the box stays inside its edges and Copy link clears the sticky buttons", await x.p.evaluate(() => {
-      const box = document.querySelector("#remShortcut").getBoundingClientRect(), bar = document.querySelector(".actions.sticky").getBoundingClientRect();
-      const inside = [...document.querySelectorAll("#remShortcut *")].every((e) => { const r = e.getBoundingClientRect(); return !r.width || (r.left >= box.left - 1 && r.right <= box.right + 1); });
-      return inside && document.querySelector("#remShortcut .horow").getBoundingClientRect().bottom <= bar.top; }));
+    ok("iPhone step 2: no alarm Shortcut anywhere (not on the page, not under More options)", !(await x.p.$("#remShortcut")) && !(await x.p.$("#remCopy")) &&
+      !/alarm stops|Shortcuts/i.test(await x.p.textContent("#card")));
+    ok("...Add to Apple Calendar is there", await x.p.isVisible("#remIcs"));
     await x.c.close(); }
   { const x = await open({ device: "Pixel 7" }); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext");
-    ok("Android step 2: no Shortcut (it's iPhone only); Google Calendar first", !(await x.p.isVisible("#remShortcut summary")) && await x.p.isVisible("#remGoogle"));
+    ok("Android step 2: Google Calendar first", await x.p.isVisible("#remGoogle"));
     await x.c.close(); }
-  { const x = await open(); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext");
-    await x.p.click("#remShortcut summary"); await x.p.click("#remCopy"); await x.t(200);
-    await x.p.click("#stepBack"); await x.t(700); await click(x, "#stepNext");
-    ok("Done stays after Back and forward", (await x.p.textContent("#stepNext")) === "Done");
+
+  // The Safari safety net (iPhone): Safari shares nothing with the home-screen app
+  const SAFARI_HOME = () => localStorage.setItem("fl.homeAdded", JSON.stringify({ how: "self", on: "2026-10-04" }));
+  { const x = await open({ init: SAFARI_HOME }); await x.goto(); await click(x, "#setupGo");
+    ok("during setup in Safari (icon already added): setup goes on, no interruption", !!(await x.p.$("#prepIntent")) || !!(await x.p.$("#stepNext")));
+    await click(x, "#stepNext"); await click(x, "#stepNext");
+    ok("...finishing setup: Ready as usual (the screen comes on the next open)", (await x.p.innerText("h1")).includes("Ready for your"));
+    await x.p.reload(); await x.t(700);
+    ok("Safari, set up and icon added, opened again: 'Mornward lives on your home screen.' 'Open it from there to keep your progress.'",
+      (await x.p.innerText("h1")).replace(/\s+/g, " ").trim() === "Mornward lives on your home screen." &&
+      (await x.p.textContent(".lede")).trim() === "Open it from there to keep your progress." && !!(await x.p.$(".hoicon")));
+    await click(x, "#safariHere");
+    ok("...'Continue here instead': the usual screen", (await x.p.innerText("h1")).includes("Ready for your"));
+    await x.p.reload(); await x.t(700);
+    ok("...and it doesn't ask again during this visit", (await x.p.innerText("h1")).includes("Ready for your"));
+    await x.c.close(); }
+  { const x = await open({ when: "2026-10-05T07:05:00" }); await x.goto("?via=calendar");
+    ok("Safari opened from an old calendar link, never seen Mornward: 'Added Mornward to your home screen?'",
+      (await x.p.innerText("h1")).replace(/\s+/g, " ").trim() === "Added Mornward to your home screen?");
+    await click(x, "#safariHere");
+    ok("...Continue here: Welcome", !!(await x.p.$("#setupGo")));
+    await x.c.close(); }
+  { const x = await open({ when: "2026-10-05T07:05:00" }); await x.goto();
+    ok("Safari, a first visit (no link, no icon): Welcome as usual", !!(await x.p.$("#setupGo")));
+    await x.c.close(); }
+  { const x = await open({ when: "2026-10-05T07:05:00", device: "Pixel 7", init: SAFARI_HOME }); await x.goto("?via=calendar");
+    ok("Android: never (links can open the installed app there)", !(await x.p.$("#safariHere")));
+    await x.c.close(); }
+  { const x = await open({ when: "2026-10-05T07:05:00", init: () => { localStorage.setItem("fl.homeAdded", JSON.stringify({ how: "self", on: "2026-10-04" }));
+      Object.defineProperty(navigator, "standalone", { get: () => true }); } });
+    await x.goto("?via=calendar");
+    ok("the home-screen app itself: never", !(await x.p.$("#safariHere")));
     await x.c.close(); }
 
   // Item 3: "leave this page open", only where it's true
   { const x = await open(); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext"); await click(x, "#stepNext");
     ok("Safari, Ready: no tip before the tap (kept to the word budget)", !(await x.p.$("#leaveOpen")));
     await x.p.click("#seeYou"); await x.t(200);
-    ok("...See you tomorrow: 'All set. Lock your phone with this page open. It'll be here when you unlock.'",
-      (await x.p.textContent("#seeYouMsg")).trim() === "All set. Lock your phone with this page open. It'll be here when you unlock.");
+    ok("...See you tomorrow: 'All set. Tomorrow, open Mornward from your home screen.'",
+      (await x.p.textContent("#seeYouMsg")).trim() === "All set. Tomorrow, open Mornward from your home screen.");
     await x.c.close(); }
   { const x = await open(); await x.goto("?from=reddit"); await click(x, "#setupGo"); await click(x, "#stepNext"); await click(x, "#stepNext");
     ok("Reddit's browser: the Safari card shows", !!(await x.p.$("#moveCard")));

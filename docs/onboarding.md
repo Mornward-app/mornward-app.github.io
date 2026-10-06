@@ -20,7 +20,7 @@ words: task names (shuffled per phone), folded sections and screen-reader-only t
 | --- | --- | --- | --- |
 | Welcome | 45 | ~43 | The sun; the promise; three icons (3 breaths · Mini tasks · Ready) |
 | 1 Pick tasks | 25 | ~22 | Six task chips (was ten); step bars instead of "Step 1 of 2" |
-| 2 Make it easy to return | 35 | ~32 | Time and date pickers; one calendar button for this phone. The other phone, the instructions, the file and the Shortcut are under **More options** |
+| 2 Make it easy to return | 35 | ~32 | Time and date pickers; one calendar button for this phone. The other phone, the instructions and the file are under **More options** |
 | Ready (right after setup) | 35 | ~28 | The plan card; a calendar icon with the date |
 | Prepared (next morning) | 40 | ~37 | The sun, the promise, the three icons, the plan card |
 | Morning tasks | 25 | ~20 | Six chips; one short hint |
@@ -44,7 +44,7 @@ words: task names (shuffled per phone), folded sections and screen-reader-only t
   7:00 AM. Check your calendar saved it." With no calendar tap, no line at all. Mornward can't see the calendar, so
   it never says a reminder is saved or will alert.
 - **More options** (step 2 and Today's Morning reminder): the iPhone / Android switch, what to do in the calendar
-  ("At time of event"), "Use a calendar file instead", the iPhone alarm Shortcut, and "Repeats every morning until
+  ("At time of event"), "Use a calendar file instead", and "Repeats every morning until
   you delete it in your calendar. Mornward never asks for notification permission."
 - **The reminder card:** the time with quick picks (6:00 to 8:00), and the first reminder in words. No day to pick:
   the event repeats every morning, so the first one is simply the next time it comes round.
@@ -60,12 +60,14 @@ words: task names (shuffled per phone), folded sections and screen-reader-only t
   6:30), the morning screen with "Begin my morning" shows, also in a tab left open overnight. Opened from the
   reminder or alarm link, it's always the morning screen. Based on `doneAt` in `fl.onboard` (the first setup only,
   so a later edit never moves it).
-- **Alarm Shortcut (iPhone):** right under Add to Apple Calendar, "Open Mornward when my alarm stops" opens the four
-  Shortcuts steps, Copy link and Open Shortcuts (one row) in place, scrolling just enough to clear the sticky buttons. Copying the link counts as a way back (`fl.shortcutCopied`): the
-  button says Done. Its link carries the setup after `#` (see "Carried setups" in supabase/METRICS.md).
-- **Leave this page open:** said once, when See you tomorrow is tapped, in Safari or Chrome itself: "All set. Lock
-  your phone with this page open. It'll be here when you unlock." (No line before the tap: Ready stays within 40
-  words.) Inside another app's browser it points to the Copy link for Safari card instead; on a computer or the
+- **Home screen, not Safari (iPhone):** Safari shares nothing with the home-screen app, and every link opens Safari. So
+  there's no alarm Shortcut (it could only open Safari), the Apple Calendar alert holds no link and says "Open Mornward
+  from your home screen", and See you tomorrow says "All set. Tomorrow, open Mornward from your home screen."
+- **Safari safety net (iPhone):** opened in Safari after setup when this Safari knows the icon was added: "Mornward
+  lives on your home screen. Open it from there to keep your progress." Opened from an old reminder link in a Safari
+  that doesn't know: "Added Mornward to your home screen?" Both offer "Continue here instead" (for that visit).
+  Never during setup or a routine, on Android, on a computer or in the home-screen app.
+- **See you tomorrow:** said once, when it's tapped. (No line before the tap: Ready stays within 40 words.) Inside another app's browser it points to the Copy link for Safari card instead; on a computer or the
   home-screen app, "You can close Mornward now."
 - **Opened from Reddit? (Copy link for Safari/Chrome):** on Ready when it's probably another app's built-in browser
   (a recognised one, or on iPhone a link from a social app). The link carries the setup into the phone's own browser.

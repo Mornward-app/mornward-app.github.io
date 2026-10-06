@@ -46,7 +46,7 @@ function icalParse(file) {
   ok("copy: Google — save it there, set the notification; how to stop it", /Save it there/.test(android) && /At time of event/.test(android) && /Repeats every morning until you delete it in your calendar/.test(more));
   ok("copy: Apple — its own add sheet, tap Add, check the alert; how to stop it", /Apple Calendar's own add sheet/.test(ios) && /Tap Add/.test(ios) && /check the alert/.test(ios) && !/pops up/.test(ios + android));
   ok("copy: the first reminder is stated as a real date and time", /^First reminder: \w+day, \w+ \d+ at /.test(await x.p.textContent("#remWhen")));
-  ok("copy: the Shortcut — how to remove it", /delete it under Automation in Shortcuts/.test(await x.p.textContent("#remShortcut")));
+  ok("no alarm Shortcut (it could only open Safari, not the home-screen app)", !(await x.p.$("#remShortcut")) && !/Shortcuts/.test(await x.p.textContent("#remindSec")));
 
   // Calendar file: a real link to a file on the site (cal/HHMM.ics), so iPhone shows Apple's add sheet; nothing is made on the phone
   await x.p.click('[data-rem-os="ios"]'); await x.p.fill("#remAt", "06:30");
@@ -61,7 +61,11 @@ function icalParse(file) {
   ok("calendar file: 06:30 floating local time, 5 minutes, every morning until deleted", /^\d{8}T063000$/.test(L.get("DTSTART")) && L.get("DURATION") === "PT5M" && L.get("RRULE") === "FREQ=DAILY");
   ok("calendar file: an alert at the event time", L.get("TRIGGER") === "PT0M" && L.get("ACTION") === "DISPLAY");
   ok("calendar file: DTSTAMP is UTC with seconds", /^\d{8}T\d{6}Z$/.test(L.get("DTSTAMP")));
-  ok("calendar file: text escaped correctly", unescape(L.get("DESCRIPTION")) === "Before the scroll: https://mornward.app/?via=calendar\nThree breaths, one mini task. About a minute.", L.get("DESCRIPTION"));
+  ok("calendar file: the alert says where to open Mornward: 'Open Mornward from your home screen'", L.get("SUMMARY") === "Open Mornward from your home screen" &&
+    one.ics.includes("BEGIN:VALARM\r\nACTION:DISPLAY\r\nDESCRIPTION:Open Mornward from your home screen\r\n"));
+  ok("calendar file: no link (on iPhone it would open Safari, not the home-screen app)", !/https?:|URL:/.test(one.ics) &&
+    unescape(L.get("DESCRIPTION")) === "Three breaths, one mini task. About a minute.", L.get("DESCRIPTION"));
+  ok("calendar file: SEQUENCE 1, so re-adding updates an older event with the same UID", L.get("SEQUENCE") === "1");
   ok("calendar file: one UID per time, the same for everyone (no ID of any kind)", L.get("UID") === "mornward-0630@mornward.app" && !one.ics.includes((await x.ls("deviceId")).replace(/-/g, "")) && !one.ics.includes(await x.ls("deviceId")));
   const parsed = icalParse(one.f);
   if (parsed) ok("calendar file: an independent parser (python icalendar) reads the same event", parsed.floating && /T06:30:00$/.test(parsed.start) &&
@@ -83,11 +87,9 @@ function icalParse(file) {
   await x.p.click("#remGoogle"); await x.t(200); await x.p.click("#remGoogle"); await x.t(200);
   await x.p.click('[data-rem-os="ios"]'); await x.p.click("#remIcs"); await x.t(200); await x.p.click("#remIcs"); await x.t(200);
   ok("calendar tap: the page stays put (the file opens on its own)", /\/(index\.html)?(\?|#|$)/.test(new URL(x.p.url()).pathname + new URL(x.p.url()).search) && !!(await x.p.$("#remIcs")), x.p.url());
-  await x.p.click("#remShortcut summary"); await x.p.click("#remCopy"); await x.t(200);
-  // the shortcut tap is counted after the clipboard write finishes (real time, not the page clock)
-  for (let i = 0; i < 50 && !x.rows().some((r) => r.data.action === "shortcut_link"); i++) { await drain(x); await x.p.waitForTimeout(100); await x.t(100); }
+  await drain(x);
   const taps = x.rows().filter((r) => r.kind === "reminder_setup").map((r) => r.data.action).sort();
-  ok("counted: one row per kind of tap per day (google_link, calendar_file, shortcut_link)", JSON.stringify(taps) === '["calendar_file","google_link","shortcut_link"]', taps);
+  ok("counted: one row per kind of tap per day (google_link, calendar_file)", JSON.stringify(taps) === '["calendar_file","google_link"]', taps);
   ok("counted: nothing claims a reminder exists", x.bodies.every((bd) => !/installed|delivered|reminder_on|saved_reminder/.test(bd)));
   await x.c.close();
   await b.close(); await site.close();

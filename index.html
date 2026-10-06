@@ -497,6 +497,7 @@
   .planned { color: var(--text-2); margin: 0; }
   .setupcard { background: var(--field); border-radius: var(--radius); padding: 14px 18px; display: flex; flex-direction: column; gap: 4px; }
   .movecard .secondary { margin-top: 8px; }
+  .hoicon { width: 72px; height: 72px; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,.15); }
   /* The morning card: a teaser (question only) before the routine, the answer after it */
   .mcteaser, .mcard { border-radius: var(--radius); padding: 14px 18px; display: flex; flex-direction: column; gap: 4px; }
   .mcteaser { border: 1.5px dashed var(--hl); }
@@ -511,27 +512,6 @@
   .mcard .end { font-weight: 700; margin-top: 4px; }
   .mcard .src { font-size: 0.8125rem; line-height: 1.2rem; opacity: .75; margin-top: 2px; }
   .mcnext { margin: 0; font-size: 0.9375rem; text-align: center; }
-  /* The alarm Shortcut on iPhone: a second option under Apple Calendar, its steps opening in place */
-  .remalt { margin-top: 10px; }
-  .remalt > summary { list-style: none; font-weight: 600; min-height: 54px; padding: 14px 20px; border-radius: var(--radius);
-    border: 2px solid var(--button); display: flex; align-items: center; justify-content: center; cursor: pointer; text-align: center; }
-  .remalt > summary::-webkit-details-marker { display: none; }
-  .remalt > summary .i { width: 20px; height: 20px; margin-right: 8px; flex: none; }
-  .remalt[open] > summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
-  .remalt > :not(summary) { margin-left: 2px; margin-right: 2px; }
-  .remalt[open] { border: 2px solid var(--button); border-radius: var(--radius); padding: 0 14px 12px; }
-  .remalt[open] > summary { border: 0; margin: 0 -14px 4px; border-bottom: 1px solid var(--line, rgba(0,0,0,.12)); }
-  /* Inside the box the four steps stack as rows (icon, then words), so no word is split */
-  .remalt .vsteps.four { flex-direction: column; flex-wrap: nowrap; gap: 8px; margin: 8px 0 10px; }
-  .remalt .vsteps.four li { flex: none; flex-direction: row; align-items: center; gap: 12px; text-align: left; font-size: 0.9375rem; line-height: 1.3rem; min-height: 0; padding: 0; }
-  .remalt .vsteps .g { width: 34px; height: 34px; flex: none; }
-  .remalt .vsteps .g .i { width: 18px; height: 18px; }
-  .remalt > p { margin: 8px 0 0; }
-  .remalt .vsteps li span { overflow-wrap: normal; }
-  /* Copy and Open Shortcuts side by side, so the box stays short enough to clear the sticky buttons */
-  .remalt .horow { flex-wrap: nowrap; justify-content: space-between; gap: 8px; }
-  .remalt .horow .secondary { flex: none; white-space: nowrap; }
-  .remalt .horow .link { margin: 0; padding-inline: 4px; min-width: 0; text-align: right; }
   .setupcard h2 { font-size: 1.0625rem; line-height: 1.5rem; margin: 0; }
   .setupcard ul { list-style: none; margin: 0; padding: 0; }
   .setupcard li { padding: 8px 0; overflow-wrap: break-word; }
@@ -1190,8 +1170,8 @@
       </div>`, `Step 2 of ${SETUP_STEPS.length}. Make it easy to return.`);
     wireReminder(true);
     syncQuiet();
-    // A calendar tap or the Shortcut's link copied here: a way back is set up, so the button says Done (nothing to skip)
-    card.querySelectorAll("#remGoogle, #remIcs, #remIcsAlt, #remCopy").forEach((a) => a.addEventListener("click", () => setTimeout(() => {
+    // A calendar tap here: a way back is set up, so the button says Done (nothing to skip)
+    card.querySelectorAll("#remGoogle, #remIcs, #remIcsAlt").forEach((a) => a.addEventListener("click", () => setTimeout(() => {
       if (!wayBack()) return; $("#stepNext").textContent = "Done"; $("#stepSkip")?.remove(); }, 0)));
     const done = (skipped) => {
       if (setOb({ remindSkipped: skipped }) && skipped) { store.del("remPlan"); store.del("shortcutCopied"); }
@@ -1285,9 +1265,9 @@
   function renderPrepared(justSet = false) {
     const wait = waitingForMorning();
     justSet = justSet || wait;
-    // In Safari or Chrome itself, a page left open is what the phone shows on unlock; the morning screen comes by
-    // itself (checkDay). Said once, when See you tomorrow is tapped. Not inside another app's browser (it's gone once
-    // they back out), the home-screen app or a computer.
+    // In Safari or Chrome itself: tomorrow belongs on the home screen (on iPhone the browser shares nothing with the
+    // home-screen app). Said once, when See you tomorrow is tapped. Not inside another app's browser (it points to
+    // the copy card instead), the home-screen app or a computer.
     const leaveOpen = wait && !onHomeScreen && !computerView() && !likelyInApp();
     const p = preparedTasks();
     const head = justSet ? "Ready for your first morning." : "A minute before the scroll.";
@@ -1304,7 +1284,7 @@
       ${justSet ? moveCard() : ""}
       <div class="push">
         ${wait ? `<button class="primary" id="seeYou" type="button">${esc(seeYouLabel())}</button>
-        <p class="hometick" id="seeYouMsg" hidden>${GLYPH.ok}<span>${leaveOpen ? "All set. Lock your phone with this page open. It'll be here when you unlock." : likelyInApp() ? `All set. Copy your link above so ${isIOS ? "Safari" : "Chrome"} has it tomorrow.` : "All set. You can close Mornward now."}</span></p>
+        <p class="hometick" id="seeYouMsg" hidden>${GLYPH.ok}<span>${leaveOpen ? "All set. Tomorrow, open Mornward from your home screen." : likelyInApp() ? `All set. Copy your link above so ${isIOS ? "Safari" : "Chrome"} has it tomorrow.` : "All set. You can close Mornward now."}</span></p>
         <button class="link" id="begin" type="button">Or try it now</button>`
         : `<button class="primary" id="begin" type="button">Begin my morning</button>`}
         <button class="link" id="setupEdit" type="button">Edit setup</button>
@@ -2318,8 +2298,8 @@
   // Continuity token: the iPhone home-screen icon's start address (prepareIconStart), and the links below. The icon
   // gets its own, empty storage; this lets it keep the same random ID, the terms version and the counts choice, so
   // one person isn't counted as two. It sits after "#" (never sent to a server) and holds no tasks, link source or
-  // alarm time. With the counts off it carries no ID at all. Also used by the alarm Shortcut's link and "Copy link for
-  // Safari" (both stay on the phone, after "#"). Calendar events carry nothing: Google receives a calendar link's text,
+  // alarm time. With the counts off it carries no ID at all. Also used by "Copy link for Safari" (on the phone, after
+  // "#"), and still read from alarm Shortcut links made before the Shortcut was dropped. Calendar events carry nothing: Google receives a calendar link's text,
   // and the Apple Calendar file is the same for everyone.
   // o: 1 once setup is done, or on its last step (where the home screen is offered): an icon added there opens on the
   // prepared screen. Earlier in setup, 0: the icon starts setup again (answers are never carried).
@@ -2351,13 +2331,11 @@
   // A morning reminder, set up for the person's phone (switchable):
   //   Android: a Google Calendar event, which pops up at the time (a real link, so it opens even where pages can't
   //            open windows), or a calendar file.
-  //   iPhone:  an Apple Calendar event with an alert (a calendar file made on the phone), or, better for the minute
-  //            after the alarm, a Shortcuts automation: "when my alarm stops, open Mornward". A website can't create
-  //            that automation, so the app shows the steps and copies the link to paste.
+  //   iPhone:  an Apple Calendar event with an alert (a calendar file on the site, cal/HHMM.ics). It holds no link:
+  //            on iPhone a link would open Safari, which doesn't share anything with the home-screen app, so the alert
+  //            just says to open Mornward from the home screen. (The alarm Shortcut was dropped for the same reason:
+  //            it can only open Safari.)
   // None of these can be confirmed from here, so nothing says "set". The tap is counted (reminder_setup), as a tap.
-  // It carries the setup (#r=, never sent to a server): the Shortcut opens the phone's own Safari, which may never
-  // have seen this setup (set up inside Reddit's or Instagram's built-in browser)
-  const alarmLink = () => `https://mornward.app/?via=alarm#r=${carryState()}`;
   // The reminder controls. In Today they sit in a closed section; in setup (step 2) they’re the page itself.
   // Quick picks for the time: one tap instead of the picker
   const REM_QUICK = ["06:00", "06:30", "07:00", "07:30", "08:00"];
@@ -2369,9 +2347,7 @@
     const os = isIOS ? "ios" : "android";
     // The first reminder: the next time `at` comes round (the calendar event repeats every morning from then)
     const first = nextAlarm(at);
-    const S = (g, t) => `<li><span class="g">${GLYPH[g]}</span><span>${t}</span></li>`;
-    // One calendar button for this phone; on iPhone, the alarm Shortcut right under it. The other phone and the
-    // calendar instructions are folded under More options.
+    // One calendar button for this phone. The other phone and the calendar instructions are folded under More options.
     // One card: the time (with quick picks), then the first morning, each on its own row, then the first reminder
     const quick = REM_QUICK.map((t) => `<button class="chip pick" type="button" data-rem-quick="${t}" aria-pressed="${t === at}"><span>${esc(quickLabel(t))}</span></button>`).join("");
     return `<div class="remcard">
@@ -2386,22 +2362,6 @@
         </div>
         <div class="rempane" data-pane="ios"${os === "ios" ? "" : " hidden"}>
           <a class="button secondary" id="remIcs" href="${calFile(at)}">${icon("cal")}<span>Add to Apple Calendar</span></a>
-          <!-- The strongest morning prompt on iPhone: Mornward opens the moment the alarm is stopped -->
-        <details class="remalt" id="remShortcut"><summary>${icon("clock")}<span>Open Mornward when my alarm stops</span></summary>
-          <p>Apple's Shortcuts app can do this every morning. It takes a minute, once.</p>
-          <ol class="vsteps four">
-            ${S("out", "Open <b>Shortcuts</b>, then <b>Automation</b>")}
-            ${S("add", "<b>+</b>, <b>Alarm</b>, <b>Is Stopped</b>")}
-            ${S("ok", "<b>Run Immediately</b>, <b>Next</b>")}
-            ${S("share", "<b>Open URLs</b>: paste the link, <b>Done</b>")}
-          </ol>
-          <div class="horow">
-            <button class="secondary" id="remCopy" type="button" aria-label="Copy Mornward link">Copy link</button>
-            <a class="link" id="remShortcuts" href="shortcuts://">Open Shortcuts</a>
-          </div>
-          <input type="text" readonly aria-label="Mornward link for Shortcuts" id="remField" hidden>
-          <p class="support">Steps can differ a little between iOS versions. To stop it, delete it under Automation in Shortcuts.</p>
-        </details>
         </div>
         <p role="status" id="remMsg"></p>
         <details class="cantfind" id="remMore"><summary>More options</summary>
@@ -2421,8 +2381,8 @@
   }
   // A reminder already handed to the calendar from this phone (Mornward can't see the calendar: this is what was tapped)
   const savedReminder = () => store.get("remPlan", null, (v) => typeof v === "object" && isAlarmTime(v.at) && isDay(v.first));
-  // A way back set up from here: a calendar reminder, or the alarm Shortcut's link copied (kept on the phone only)
-  const wayBack = () => !!savedReminder() || isDay(store.get("shortcutCopied", null));
+  // A way back set up from here: a calendar reminder
+  const wayBack = () => !!savedReminder();
   const clock = (t) => { const [h, m] = t.split(":").map(Number); return new Date(2026, 0, 1, h, m).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); };
   // Once added, the reminder isn't asked for again: its time, and "Change" for a new time or to add it again
   // home: Mornward is already on the home screen too, so there's nothing left to do: one "All set" card
@@ -2503,26 +2463,6 @@
       emitDay("reminder_setup", { action: "calendar_file" }, "calendar_file");
     };
     ics.forEach((a) => (a.onclick = file));
-    // Opening the Shortcut steps: scroll just enough that Copy and Open Shortcuts clear the sticky buttons below,
-    // without pushing the box's own heading off the top
-    const sc = $("#remShortcut");
-    if (sc) sc.addEventListener("toggle", () => {
-      if (!sc.open) return;
-      requestAnimationFrame(() => {
-        const bar = document.querySelector(".actions.sticky");
-        const limit = bar ? bar.getBoundingClientRect().top : innerHeight;
-        const row = sc.querySelector(".horow").getBoundingClientRect(), top = sc.getBoundingClientRect().top;
-        const need = row.bottom + 12 - limit;
-        if (need > 0) window.scrollBy({ top: Math.min(need, top - 8), behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
-      });
-    });
-    $("#remCopy").onclick = async () => {
-      const url = alarmLink();
-      store.set("shortcutCopied", dayKey());
-      try { await navigator.clipboard.writeText(url); msg("Copied. Paste it in the Open URLs step."); }
-      catch { const f = $("#remField"); f.value = url; f.hidden = false; f.focus(); f.select(); msg("Copy this link, then paste it in the Open URLs step."); }
-      emitDay("reminder_setup", { action: "shortcut_link" }, "shortcut_link");
-    };
   }
 
   // ---------- privacy and your data ----------
@@ -2674,10 +2614,35 @@
     if (o && o.status === "done") return "prepared";
     return "new";
   }
+  // iPhone, Safari: links (an old calendar event or alarm Shortcut) and habit can bring someone here, but Safari shares
+  // nothing with the home-screen app. So before a screen that would look like lost progress, point them to the icon:
+  //   firm, when this Safari knows Mornward was added (set up here, then "I've added it");
+  //   soft, when a reminder link (an old calendar event or Shortcut) opened Safari and it doesn't know about the icon.
+  // "Continue here instead" goes on, for this visit. Never during setup or a routine, on a computer or in the app itself.
+  const safariHere = () => { try { return sessionStorage.getItem("fl.safariHere") === "1"; } catch { return false; } };
+  function homeHandoff(st) {
+    if (!isIOS || onHomeScreen || computerView() || inAppBrowser || safariHere()) return null;
+    if (st === "setup" || st === "routine") return null;
+    if (homeKnown() && st !== "new") return "firm";
+    return viaCalendar ? "soft" : null;
+  }
+  function renderHomeHandoff(kind) {
+    show(`
+      <p class="wordmark">Mornward</p>
+      <img class="hoicon" src="icons/icon-192.png" alt="" width="72" height="72">
+      <h1>${kind === "firm" ? 'Mornward lives on your <em class="hl">home screen</em>.' : 'Added Mornward to your <em class="hl">home screen</em>?'}</h1>
+      <p class="lede">Open it from there to keep your progress.</p>
+      <div class="push">
+        <button class="link" id="safariHere" type="button">Continue here instead</button>
+      </div>`, kind === "firm" ? "Mornward lives on your home screen." : "Added Mornward to your home screen?");
+    $("#safariHere").onclick = () => { try { sessionStorage.setItem("fl.safariHere", "1"); } catch {} home(); };
+  }
   function home() {
     routine = upgradeRoutine(store.get("routine", null, isRoutine));
     const st = entryState();
-    if (st === "routine") { if (routine.phase === "breathe") renderBreathe(true); else renderChoose(); }
+    const handoff = homeHandoff(st);
+    if (handoff) renderHomeHandoff(handoff);
+    else if (st === "routine") { if (routine.phase === "breathe") renderBreathe(true); else renderChoose(); }
     else if (st === "today") renderToday();
     else if (st === "setup") { const o = getOb(); renderSetup(o.step); }
     else if (st === "prepared") renderPrepared();
