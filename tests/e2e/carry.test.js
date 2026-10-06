@@ -24,8 +24,6 @@ const carried = (u) => JSON.parse(decodeURIComponent(new URL(u).hash.replace(/^#
   await click(x, "#stepNext");
   const tasks = (await x.ls("prepared")).tasks;
   const id = await x.ls("deviceId");
-  await x.p.click("#remMore summary"); await x.p.click("#remShortcut summary"); await x.p.click("#remCopy"); await x.t(200);
-  const alarm = await clip(x);
   await click(x, "#stepNext");
   ok("Ready (from Reddit, on iPhone): 'Opened from Reddit?' with Copy link for Safari", (await h1(x)) === "Ready for your first morning." &&
     /Opened from Reddit\?/.test(await x.p.textContent("#moveCard")) && (await x.p.textContent("#moveCopy")) === "Copy link for Safari");
@@ -35,8 +33,8 @@ const carried = (u) => JSON.parse(decodeURIComponent(new URL(u).hash.replace(/^#
   const r = carried(move);
   ok("the link: ?carry=1, the same ID, setup done, two bank positions; no typed words, no app answers", move.startsWith("https://mornward.app/?carry=1#r=") &&
     r.i === id && r.o === 1 && r.b === 1 && r.p.length === 2 && !/Call Mum|reddit|instagram/i.test(decodeURIComponent(move)), r);
-  ok("the alarm Shortcut link carries the same", alarm.startsWith("https://mornward.app/?via=alarm#r=") && carried(alarm).i === id &&
-    JSON.stringify(carried(alarm).p) === JSON.stringify(r.p) && !/Call Mum/.test(decodeURIComponent(alarm)));
+  // The alarm Shortcut is gone, but links its earlier version made (?via=alarm#r=…) still carry the setup in
+  const alarm = move.replace("?carry=1", "?via=alarm");
   await x.c.close();
 
   // Pasted into Safari (a new, empty browser) the same evening
@@ -54,6 +52,8 @@ const carried = (u) => JSON.parse(decodeURIComponent(new URL(u).hash.replace(/^#
 
   // The alarm Shortcut opens Safari (never used) the next morning
   { const y = await open({ when: MON }); await y.goto(local(alarm));
+    ok("Safari from an old alarm link: first, 'Added Mornward to your home screen?'", /Added Mornward to your home screen\?/.test(await h1(y)));
+    await click(y, "#safariHere");
     ok("Safari from the alarm, next morning: the morning screen with Begin, the plan there", (await h1(y)) === "A minute before the scroll." &&
       (await y.p.textContent("#begin")) === "Begin my morning" && (await y.p.$$("#prepList li")).length === 2 && (await y.ls("deviceId")) === id);
     await y.p.click("#begin"); await y.t(700); await y.p.click("#bskip"); await y.t(700);

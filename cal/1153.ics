@@ -5,18 +5,16 @@ CALSCALE:GREGORIAN
 METHOD:PUBLISH
 BEGIN:VEVENT
 UID:mornward-1153@mornward.app
-SEQUENCE:0
-DTSTAMP:20261005T000000Z
+SEQUENCE:1
+DTSTAMP:20261006T000000Z
 DTSTART:20261001T115300
 DURATION:PT5M
 RRULE:FREQ=DAILY
-SUMMARY:Mornward: three breaths\, one mini task
-DESCRIPTION:Before the scroll: https://mornward.app/?via=calendar\nThree br
- eaths\, one mini task. About a minute.
-URL:https://mornward.app/?via=calendar
+SUMMARY:Open Mornward from your home screen
+DESCRIPTION:Three breaths\, one mini task. About a minute.
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:Before the scroll: one mini task
+DESCRIPTION:Open Mornward from your home screen
 TRIGGER:PT0M
 END:VALARM
 END:VEVENT

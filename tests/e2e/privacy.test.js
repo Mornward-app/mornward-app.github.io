@@ -65,12 +65,7 @@ const SECRET = "Call mum about Sunday";
     ok("3 Google Calendar link: no ID (Google receives this text)", !g.includes(id) && !g.includes("#r=") && g.includes("https://mornward.app/?via=calendar"));
     await x.p.click("#remMore summary"); await x.p.click('[data-rem-os="ios"]');
     const href = await x.p.getAttribute("#remIcs", "href"); const ics = await (await x.p.request.get(new URL(href, x.p.url()).href)).text();
-    ok("3 calendar file: the same file for everyone at that time (cal/0630.ics), no ID", href === "cal/0630.ics" && !ics.includes(id) && !ics.includes("#r=") && /URL:https:\/\/mornward\.app\/\?via=calendar\r\n/.test(ics));
-    await x.p.click("#remShortcut summary"); await x.p.click("#remCopy"); await x.t(100);
-    const sc = await x.p.evaluate(() => navigator.clipboard.readText());
-    const scr = JSON.parse(decodeURIComponent(sc.split("#r=")[1] || "null"));
-    ok("3 alarm Shortcut link: the setup only after '#' (never sent), no typed words or answers", sc.startsWith("https://mornward.app/?via=alarm#r=") &&
-      scr && scr.i === id && !/redditads|from|Call Mum/i.test(decodeURIComponent(sc)), sc);
+    ok("3 calendar file: the same file for everyone at that time (cal/0630.ics), no ID", href === "cal/0630.ics" && !ics.includes(id) && !ics.includes("#r=") && !/https?:|URL:/.test(ics));
     await x.p.click("#iedit").catch(() => {}); await x.p.click("#iskip").catch(() => {}); await x.t(700);
     await x.p.evaluate(() => localStorage.removeItem("fl.installNo")); await x.p.reload(); await x.t(700);
     await x.p.click("[data-install-add]"); await x.t(300); await x.p.click("#installGuide .cantfind summary"); await x.p.click("[data-copy-link]"); await x.t(100);

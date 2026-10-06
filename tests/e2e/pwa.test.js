@@ -113,7 +113,9 @@ const swReady = (p) => p.evaluate(() => navigator.serviceWorker.ready.then(() =>
     ok("added once (iPhone): 'I've added it' removes every offer at once (box and quiet row)", !(await x.p.$("#installBox")) && !(await x.p.$("#addSec")) && !(await x.p.$("#installGuide")));
     ok("added once (iPhone): it's only noted on the phone, not counted as an install", (await x.ls("homeAdded")).how === "self" && x.rows().every((r) => !/install/.test(r.kind)));
     await x.p.reload(); await x.t(700);
-    ok("added once (iPhone): still gone after a reload", !(await x.p.$("#installBox")) && !(await x.p.$("#addSec")));
+    ok("added once (iPhone), opened again in Safari: 'Mornward lives on your home screen.'", /lives on your home screen/.test(await x.p.innerText("h1")));
+    await x.p.click("#safariHere"); await x.t(700);
+    ok("added once (iPhone): Continue here: still no offer", !(await x.p.$("#installBox")) && !(await x.p.$("#addSec")));
     await x.p.clock.setSystemTime(new Date("2026-10-06T07:10:00")); await x.p.reload(); await x.t(700);
     ok("added once (iPhone): the next morning's Begin doesn't offer it either", !!(await x.p.$("#begin")) && !(await x.p.$("#installBox")));
     await x.c.close(); }
