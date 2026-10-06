@@ -1732,11 +1732,21 @@
   const cardTeaser = (when) => {
     const c = cardFor(when === "tomorrow" ? addDays(dayKey(), 1) : dayKey());
     return `<div class="mcteaser" id="cardTeaser"><p class="lbl">${icon("sun")}<span>${when === "tomorrow" ? "Tomorrow's card" : "Today's card"}</span></p>
-        <p class="q">${esc(c.q)}</p><p class="lock">Unlocks after your 3 breaths</p></div>`;
+        <p class="q">${esc(c.q)}</p><p class="lock">Unlocks when you finish your morning tasks</p></div>`;
   };
-  // Today's card, unlocked, with a clear end and tomorrow's question
-  const morningCard = (day) => {
+  // After the routine, today's card stays locked until every mini task is ticked off in real life; then the answer,
+  // a clear end and tomorrow's question. Unticking locks it again. In a #cardSlot, so ticking can redraw it in place.
+  const cardLock = (day) => {
+    const tasks = tasksOf(intentionFor(day)), left = tasks.length - doneFor(day, tasks).length;
+    if (!tasks.length) return "Add and tick a mini task to unlock today's card";
+    if (left === tasks.length) return "Unlocks when you tick off your mini tasks";
+    return left === 1 ? "Tick off your remaining task to unlock" : `Tick off your ${left} remaining tasks to unlock`;
+  };
+  const morningCard = (day) => `<div id="cardSlot">${cardBody(day)}</div>`;
+  const cardBody = (day) => {
     const c = cardFor(day), next = cardFor(addDays(day, 1));
+    if (!allTicked(day)) return `<div class="mcteaser" id="cardTeaser"><p class="lbl">${icon("sun")}<span>Today's card</span></p>
+        <p class="q">${esc(c.q)}</p><p class="lock">${esc(cardLock(day))}</p></div>`;
     return `<section class="mcard" id="mcard" aria-labelledby="mcardQ"><p class="lbl">${icon("sun")}<span>Today's card</span></p>
         <h2 id="mcardQ">${esc(c.q)}</h2><p>${esc(c.a)}</p><p class="end">That's all for today.</p>
         <p class="src">Source: ${esc(c.src)}</p></section>
@@ -1785,6 +1795,9 @@
       // Today's circle shows the tasks ticked off
       const prog = card.querySelector(".progress");
       if (prog) prog.outerHTML = progressSection();
+      // Today's card unlocks the moment the last task is ticked (and locks again if one is unticked)
+      const slot = $("#cardSlot");
+      if (slot) slot.innerHTML = cardBody(day);
       if (next.length > now.length) { buzz(); countTicks(day, next.length, tasks.length); }
       // On Finish, everything ticked is the end of the morning: no extra Done to reach a near-identical screen
       const fin = $("#finish");

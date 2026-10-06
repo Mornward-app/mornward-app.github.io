@@ -5,6 +5,8 @@ const { chromium } = require("playwright");
 const { serve, ctx, steps: S, reporter } = require("./helpers");
 const { ok, done } = reporter("morning card: teaser, unlock, one per morning");
 const click = async (x, sel) => { await x.p.click(sel); await x.t(700); };
+// Tick every task that isn't ticked yet
+const tickAll = async (x) => { for (const b of await x.p.$$('[data-task][aria-pressed="false"]')) { await b.click(); await x.t(150); } };
 const txt = (x, sel) => x.p.textContent(sel).then((t) => t.replace(/\s+/g, " ").trim());
 const Q1 = "How long does a new habit really take?", Q2 = "What happens to a habit if you miss a day?", Q3 = "Why does linking a habit to a moment (“After my alarm, I'll…”) work better than willpower?";
 
@@ -13,32 +15,50 @@ const Q1 = "How long does a new habit really take?", Q2 = "What happens to a hab
   const b = await chromium.launch();
   const x = await ctx(b, site.url, { when: "2026-10-04T20:30:00", device: "iPhone 14" }); await x.goto();
   await click(x, "#setupGo"); await click(x, "#stepNext"); await click(x, "#stepNext");
-  ok("night before (Ready): 'Tomorrow's card', the first question only, 'Unlocks after your 3 breaths'",
+  ok("night before (Ready): 'Tomorrow's card', the first question only, 'Unlocks when you finish your morning tasks'",
     (await txt(x, "#cardTeaser .lbl")) === "Tomorrow's card" && (await txt(x, "#cardTeaser .q")) === Q1 &&
-    (await txt(x, "#cardTeaser .lock")) === "Unlocks after your 3 breaths" && !/median of 66 days/.test(await txt(x, "#card")));
+    (await txt(x, "#cardTeaser .lock")) === "Unlocks when you finish your morning tasks" && !/median of 66 days/.test(await txt(x, "#card")));
   await x.p.clock.setSystemTime(new Date("2026-10-05T07:05:00")); await x.p.reload(); await x.t(700);
   ok("the morning (before Begin): 'Today's card', the same question, no answer yet", (await txt(x, "#cardTeaser .lbl")) === "Today's card" &&
     (await txt(x, "#cardTeaser .q")) === Q1 && !/median of 66 days/.test(await txt(x, "#card")));
   await x.t(3000); await S.begin(x);
   ok("during the routine: no card", !(await x.p.$("#cardTeaser")) && !(await x.p.$("#mcard")));
   await S.skipBreathing(x); await S.keep(x);
-  ok("Finish: the card unlocked: question, two sentences, 'That's all for today.', the source", (await txt(x, "#mcard h2")) === Q1 &&
+  ok("Finish, nothing ticked yet: the card stays locked (question only), 'Unlocks when you tick off your mini tasks'",
+    !(await x.p.$("#mcard")) && !(await x.p.$("#cardNext")) && (await txt(x, "#cardSlot #cardTeaser .q")) === Q1 &&
+    (await txt(x, "#cardTeaser .lock")) === "Unlocks when you tick off your mini tasks" && !/median of 66 days/.test(await txt(x, "#card")));
+  await x.p.click('[data-task="0"]'); await x.t(200);
+  ok("...one of two ticked: still locked, 'Tick off your remaining task to unlock'", !(await x.p.$("#mcard")) &&
+    (await txt(x, "#cardTeaser .lock")) === "Tick off your remaining task to unlock");
+  await x.p.click('[data-task="1"]'); await x.t(200);
+  ok("...the last one ticked: the card unlocks in place: question, two sentences, 'That's all for today.', the source", (await txt(x, "#mcard h2")) === Q1 &&
     /^In a study of 96 people, a daily habit took a median of 66 days/.test(await txt(x, "#mcard p:not(.lbl):not(.end):not(.src)")) &&
     (await txt(x, "#mcard .end")) === "That's all for today." && /^Source: Lally et al\./.test(await txt(x, "#mcard .src")));
   ok("...and tomorrow's question under it", (await txt(x, "#cardNext")) === "Tomorrow's card: " + Q2);
-  await S.finish(x);
+  await x.p.click('[data-task="1"]'); await x.t(200);
+  ok("untick one: locked again", !(await x.p.$("#mcard")) && (await txt(x, "#cardTeaser .lock")) === "Tick off your remaining task to unlock");
+  await x.p.click('[data-task="1"]'); await x.t(200);
+  ok("all ticked on Finish: no Done needed (it ends there)", !(await x.p.isVisible("#finish")));
+  await x.p.reload(); await x.t(700);
   ok("Today: the same card (doing the routine again wouldn't change it)", (await txt(x, "#mcard h2")) === Q1);
-  await x.p.click("#again"); await x.t(700); await S.skipBreathing(x); await S.keep(x);
+  await x.p.click("#again"); await x.t(700); await S.skipBreathing(x); await S.keep(x); await tickAll(x);
   ok("a second routine the same day: still the same card", (await txt(x, "#mcard h2")) === Q1);
-  await S.finish(x);
+  await x.p.reload(); await x.t(700);
   await x.p.clock.setSystemTime(new Date("2026-10-06T07:05:00")); await x.p.reload(); await x.t(700);
   ok("day 2 (Begin): today's card is the second question", (await txt(x, "#cardTeaser .lbl")) === "Today's card" && (await txt(x, "#cardTeaser .q")) === Q2);
   // A missed day doesn't skip a card: the next one is the next in order
   await x.p.clock.setSystemTime(new Date("2026-10-08T07:05:00")); await x.p.reload(); await x.t(700);
   ok("after a missed day: still the second question (one per completed morning, none skipped)", (await txt(x, "#cardTeaser .q")) === Q2);
-  await S.begin(x); await S.skipBreathing(x); await S.keep(x);
+  await S.begin(x); await S.skipBreathing(x); await S.keep(x); await tickAll(x);
   ok("...unlocks the second card; tomorrow's is the third", (await txt(x, "#mcard h2")) === Q2 && (await txt(x, "#cardNext")) === "Tomorrow's card: " + Q3);
   await x.c.close();
+
+  // Tasks skipped: the card says how to unlock it
+  { const y = await ctx(b, site.url, { when: "2026-10-05T07:05:00", device: "Pixel 7" }); await y.goto();
+    await S.begin(y); await S.skipBreathing(y); await y.p.click("#iskip"); await y.t(700);
+    ok("no tasks saved: 'Add and tick a mini task to unlock today's card'", !(await y.p.$("#mcard")) &&
+      (await txt(y, "#cardTeaser .lock")) === "Add and tick a mini task to unlock today's card");
+    await y.c.close(); }
 
   // After 14 completed mornings it starts again from the first
   { const days = Array.from({ length: 14 }, (_, i) => `2026-09-${String(10 + i).padStart(2, "0")}`);
