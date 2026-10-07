@@ -281,6 +281,7 @@
   .about h2 { margin: 0 0 6px; font-size: 1rem; line-height: 1.375rem; }
   .about p { margin: 0; font-size: 0.9375rem; line-height: 1.375rem; color: var(--text); }
   .about + .handoff { margin-top: 0; }
+  .whycard { margin: 0; }
   /* Beside the app on wide screens: a slim column, "What is Mornward?" on top, then the code centred in its card */
   @media (min-width: 1000px) {
     #handoffSlot .about { margin-top: 0; }
@@ -288,6 +289,38 @@
     .handoff { margin: 0; padding: 16px; flex-direction: column; align-items: stretch; gap: 12px; }
     .handoff .qr { width: 128px; align-self: center; }
     .handoff .hotext h2 { font-size: 1rem; line-height: 1.375rem; }
+  }
+  /* A computer: the whole page goes dark behind the phone code. Mornward is used on a phone. */
+  #deskWall:empty { display: none; }
+  .deskwall { --dw-bg: #0B1220; --dw-text: #F3F6FA; --dw-soft: #AFBACB; --dw-card: #16203A; --dw-line: #2A3757;
+    position: fixed; inset: 0; z-index: 20; overflow: auto; background: var(--dw-bg); color: var(--dw-text);
+    display: flex; align-items: center; justify-content: center; padding: 32px 24px; }
+  .dwin { width: 100%; max-width: 920px; display: grid; grid-template-columns: 1fr 300px; gap: 28px 48px; align-items: center; }
+  .dwin .wordmark { color: var(--dw-text); margin: 0 0 18px; }
+  .dwin h1 { margin: 0 0 12px; font-size: 2.25rem; line-height: 2.625rem; color: var(--dw-text); }
+  .dwin .dwnow { margin: 0; font-size: 1.1875rem; line-height: 1.75rem; font-weight: 700; color: var(--dw-text); }
+  .dwin .about { background: var(--dw-card); border-color: var(--dw-line); margin: 22px 0 0; }
+  .dwin .about h2, .dwin .about p { color: var(--dw-text); }
+  .dwqr { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .dwqr .qr { width: 260px; border-radius: 18px; overflow: hidden; box-shadow: 0 0 0 6px #FFFFFF, 0 12px 40px rgba(0,0,0,.5); }
+  .dwqr .qr svg { display: block; width: 100%; height: auto; }
+  .dwqr .horow { display: flex; gap: 16px; align-items: center; }
+  .dwqr .secondary, .dwqr .link { color: var(--dw-text); border-color: var(--dw-line); }
+  .dwqr .support, .dwqr input { color: var(--dw-soft); }
+  .dwhow { grid-column: 1 / -1; margin: 0; padding: 18px 20px; border-radius: 20px; background: var(--dw-card); border: 1.5px solid var(--dw-line); }
+  .dwhow figcaption { margin: 0 0 12px; font-weight: 700; }
+  .dwhow img { display: block; width: 100%; height: auto; border-radius: 12px; }
+  .dwhow .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .dwhow h3 { margin: 0 0 8px; font-size: 0.9375rem; color: var(--dw-soft); }
+  .dwhow .vsteps li { color: var(--dw-text); background: var(--dw-bg); border-color: var(--dw-line); }
+  .dwhow .vsteps .g { background: var(--dw-card); color: var(--dw-text); }
+  .deskwall .hl { color: #F5B65A; }
+  .dwprev { grid-column: 1 / -1; justify-self: center; color: var(--dw-soft); }
+  @media (max-width: 760px) {
+    .deskwall { align-items: flex-start; }
+    .dwin { grid-template-columns: 1fr; }
+    .dwin h1 { font-size: 1.75rem; line-height: 2.125rem; }
+    .dwhow .cols { grid-template-columns: 1fr; }
   }
   .seg + .support { margin-top: -6px; }
   .rempane { display: flex; flex-direction: column; gap: 12px; }
@@ -526,6 +559,7 @@
   <div id="handoffSlot"></div>
   <p class="sr-only" id="announce" aria-live="polite"></p>
 </div>
+<div id="deskWall"></div>
 <noscript><p style="padding:24px">Mornward needs JavaScript to run.</p></noscript>
 
 <script>
@@ -1014,7 +1048,6 @@
   // The promise, in one line: what the minute gives back (Welcome and the prepared screen)
   const PROMISE = 'Start your day <em class="hl">on purpose</em>, not on a feed.';
   // What Mornward is, in ten words: above the phone card on a computer
-  const WHAT_IT_IS = 'A <em class="hl">one-minute</em> morning routine: three breaths, then your chosen tasks.';
   // Three breaths → mini tasks → ready, as icons: the routine at a glance (Welcome, Prepared, Begin)
   const flowRow = () => `<ol class="flow" id="flowRow" aria-label="Three breaths, a few mini tasks, then you're ready">
         <li>${icon("breath")}<span>3 breaths</span></li>
@@ -1108,6 +1141,10 @@
     let retry = false;
     show(`${stepTop(1)}
       <h1>Pick your morning tasks.</h1>
+      ${editing ? "" : `<aside class="about whycard" id="whyCard" aria-labelledby="whyTitle">
+        <h2 id="whyTitle">Start with a small win, not a feed.</h2>
+        <p>Pick up to three mini tasks for your morning. When you wake up, take 3 breaths, do your tasks in real life, and tick them off to unlock today’s card—then put your phone down.</p>
+      </aside>`}
       <p class="body" id="pickHint">Up to ${PICK_MAX}.</p>
       <div class="chips picks" id="ideas" role="group" aria-label="Mini tasks for your next morning, up to ${PICK_MAX}">
         ${options.map((x, i) => `<button class="chip pick" type="button" data-idea="${i}" aria-pressed="${sel.includes(x)}">
@@ -2235,7 +2272,7 @@
   const QR_SVG = `<svg viewBox="-4 -4 37 37" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><rect x="-4" y="-4" width="37" height="37" fill="#FFFFFF"/><path fill="#18222F" d="M0 0h1v1h-1zM1 0h1v1h-1zM2 0h1v1h-1zM3 0h1v1h-1zM4 0h1v1h-1zM5 0h1v1h-1zM6 0h1v1h-1zM9 0h1v1h-1zM13 0h1v1h-1zM14 0h1v1h-1zM15 0h1v1h-1zM17 0h1v1h-1zM18 0h1v1h-1zM22 0h1v1h-1zM23 0h1v1h-1zM24 0h1v1h-1zM25 0h1v1h-1zM26 0h1v1h-1zM27 0h1v1h-1zM28 0h1v1h-1zM0 1h1v1h-1zM6 1h1v1h-1zM8 1h1v1h-1zM11 1h1v1h-1zM12 1h1v1h-1zM15 1h1v1h-1zM17 1h1v1h-1zM20 1h1v1h-1zM22 1h1v1h-1zM28 1h1v1h-1zM0 2h1v1h-1zM2 2h1v1h-1zM3 2h1v1h-1zM4 2h1v1h-1zM6 2h1v1h-1zM8 2h1v1h-1zM9 2h1v1h-1zM14 2h1v1h-1zM16 2h1v1h-1zM18 2h1v1h-1zM19 2h1v1h-1zM20 2h1v1h-1zM22 2h1v1h-1zM24 2h1v1h-1zM25 2h1v1h-1zM26 2h1v1h-1zM28 2h1v1h-1zM0 3h1v1h-1zM2 3h1v1h-1zM3 3h1v1h-1zM4 3h1v1h-1zM6 3h1v1h-1zM8 3h1v1h-1zM9 3h1v1h-1zM11 3h1v1h-1zM12 3h1v1h-1zM14 3h1v1h-1zM15 3h1v1h-1zM17 3h1v1h-1zM19 3h1v1h-1zM22 3h1v1h-1zM24 3h1v1h-1zM25 3h1v1h-1zM26 3h1v1h-1zM28 3h1v1h-1zM0 4h1v1h-1zM2 4h1v1h-1zM3 4h1v1h-1zM4 4h1v1h-1zM6 4h1v1h-1zM9 4h1v1h-1zM12 4h1v1h-1zM13 4h1v1h-1zM14 4h1v1h-1zM15 4h1v1h-1zM19 4h1v1h-1zM22 4h1v1h-1zM24 4h1v1h-1zM25 4h1v1h-1zM26 4h1v1h-1zM28 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM11 5h1v1h-1zM12 5h1v1h-1zM13 5h1v1h-1zM14 5h1v1h-1zM16 5h1v1h-1zM17 5h1v1h-1zM18 5h1v1h-1zM20 5h1v1h-1zM22 5h1v1h-1zM28 5h1v1h-1zM0 6h1v1h-1zM1 6h1v1h-1zM2 6h1v1h-1zM3 6h1v1h-1zM4 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM23 6h1v1h-1zM24 6h1v1h-1zM25 6h1v1h-1zM26 6h1v1h-1zM27 6h1v1h-1zM28 6h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM18 7h1v1h-1zM19 7h1v1h-1zM20 7h1v1h-1zM0 8h1v1h-1zM6 8h1v1h-1zM8 8h1v1h-1zM11 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM15 8h1v1h-1zM17 8h1v1h-1zM19 8h1v1h-1zM21 8h1v1h-1zM22 8h1v1h-1zM25 8h1v1h-1zM26 8h1v1h-1zM27 8h1v1h-1zM0 9h1v1h-1zM2 9h1v1h-1zM4 9h1v1h-1zM5 9h1v1h-1zM8 9h1v1h-1zM9 9h1v1h-1zM11 9h1v1h-1zM12 9h1v1h-1zM14 9h1v1h-1zM17 9h1v1h-1zM18 9h1v1h-1zM19 9h1v1h-1zM20 9h1v1h-1zM21 9h1v1h-1zM23 9h1v1h-1zM24 9h1v1h-1zM26 9h1v1h-1zM27 9h1v1h-1zM0 10h1v1h-1zM3 10h1v1h-1zM4 10h1v1h-1zM6 10h1v1h-1zM8 10h1v1h-1zM10 10h1v1h-1zM17 10h1v1h-1zM0 11h1v1h-1zM2 11h1v1h-1zM4 11h1v1h-1zM8 11h1v1h-1zM9 11h1v1h-1zM14 11h1v1h-1zM15 11h1v1h-1zM16 11h1v1h-1zM21 11h1v1h-1zM22 11h1v1h-1zM23 11h1v1h-1zM25 11h1v1h-1zM1 12h1v1h-1zM5 12h1v1h-1zM6 12h1v1h-1zM10 12h1v1h-1zM11 12h1v1h-1zM13 12h1v1h-1zM14 12h1v1h-1zM19 12h1v1h-1zM22 12h1v1h-1zM23 12h1v1h-1zM28 12h1v1h-1zM7 13h1v1h-1zM9 13h1v1h-1zM13 13h1v1h-1zM14 13h1v1h-1zM17 13h1v1h-1zM18 13h1v1h-1zM19 13h1v1h-1zM20 13h1v1h-1zM22 13h1v1h-1zM23 13h1v1h-1zM24 13h1v1h-1zM27 13h1v1h-1zM28 13h1v1h-1zM0 14h1v1h-1zM2 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM6 14h1v1h-1zM8 14h1v1h-1zM11 14h1v1h-1zM13 14h1v1h-1zM14 14h1v1h-1zM15 14h1v1h-1zM16 14h1v1h-1zM21 14h1v1h-1zM25 14h1v1h-1zM26 14h1v1h-1zM1 15h1v1h-1zM2 15h1v1h-1zM4 15h1v1h-1zM7 15h1v1h-1zM9 15h1v1h-1zM11 15h1v1h-1zM12 15h1v1h-1zM13 15h1v1h-1zM14 15h1v1h-1zM16 15h1v1h-1zM20 15h1v1h-1zM21 15h1v1h-1zM22 15h1v1h-1zM24 15h1v1h-1zM26 15h1v1h-1zM28 15h1v1h-1zM2 16h1v1h-1zM3 16h1v1h-1zM4 16h1v1h-1zM5 16h1v1h-1zM6 16h1v1h-1zM8 16h1v1h-1zM10 16h1v1h-1zM11 16h1v1h-1zM14 16h1v1h-1zM15 16h1v1h-1zM17 16h1v1h-1zM18 16h1v1h-1zM20 16h1v1h-1zM23 16h1v1h-1zM25 16h1v1h-1zM26 16h1v1h-1zM0 17h1v1h-1zM1 17h1v1h-1zM4 17h1v1h-1zM9 17h1v1h-1zM10 17h1v1h-1zM12 17h1v1h-1zM16 17h1v1h-1zM17 17h1v1h-1zM19 17h1v1h-1zM20 17h1v1h-1zM21 17h1v1h-1zM22 17h1v1h-1zM23 17h1v1h-1zM24 17h1v1h-1zM26 17h1v1h-1zM27 17h1v1h-1zM28 17h1v1h-1zM0 18h1v1h-1zM1 18h1v1h-1zM2 18h1v1h-1zM5 18h1v1h-1zM6 18h1v1h-1zM7 18h1v1h-1zM9 18h1v1h-1zM13 18h1v1h-1zM14 18h1v1h-1zM16 18h1v1h-1zM17 18h1v1h-1zM19 18h1v1h-1zM21 18h1v1h-1zM22 18h1v1h-1zM25 18h1v1h-1zM28 18h1v1h-1zM0 19h1v1h-1zM2 19h1v1h-1zM3 19h1v1h-1zM4 19h1v1h-1zM9 19h1v1h-1zM10 19h1v1h-1zM14 19h1v1h-1zM15 19h1v1h-1zM16 19h1v1h-1zM22 19h1v1h-1zM23 19h1v1h-1zM0 20h1v1h-1zM4 20h1v1h-1zM5 20h1v1h-1zM6 20h1v1h-1zM8 20h1v1h-1zM9 20h1v1h-1zM11 20h1v1h-1zM12 20h1v1h-1zM16 20h1v1h-1zM17 20h1v1h-1zM20 20h1v1h-1zM21 20h1v1h-1zM22 20h1v1h-1zM23 20h1v1h-1zM24 20h1v1h-1zM26 20h1v1h-1zM27 20h1v1h-1zM28 20h1v1h-1zM8 21h1v1h-1zM9 21h1v1h-1zM10 21h1v1h-1zM12 21h1v1h-1zM13 21h1v1h-1zM16 21h1v1h-1zM20 21h1v1h-1zM24 21h1v1h-1zM25 21h1v1h-1zM0 22h1v1h-1zM1 22h1v1h-1zM2 22h1v1h-1zM3 22h1v1h-1zM4 22h1v1h-1zM5 22h1v1h-1zM6 22h1v1h-1zM9 22h1v1h-1zM10 22h1v1h-1zM12 22h1v1h-1zM13 22h1v1h-1zM14 22h1v1h-1zM15 22h1v1h-1zM16 22h1v1h-1zM18 22h1v1h-1zM19 22h1v1h-1zM20 22h1v1h-1zM22 22h1v1h-1zM24 22h1v1h-1zM25 22h1v1h-1zM26 22h1v1h-1zM0 23h1v1h-1zM6 23h1v1h-1zM9 23h1v1h-1zM10 23h1v1h-1zM11 23h1v1h-1zM13 23h1v1h-1zM19 23h1v1h-1zM20 23h1v1h-1zM24 23h1v1h-1zM27 23h1v1h-1zM0 24h1v1h-1zM2 24h1v1h-1zM3 24h1v1h-1zM4 24h1v1h-1zM6 24h1v1h-1zM10 24h1v1h-1zM13 24h1v1h-1zM15 24h1v1h-1zM16 24h1v1h-1zM19 24h1v1h-1zM20 24h1v1h-1zM21 24h1v1h-1zM22 24h1v1h-1zM23 24h1v1h-1zM24 24h1v1h-1zM25 24h1v1h-1zM0 25h1v1h-1zM2 25h1v1h-1zM3 25h1v1h-1zM4 25h1v1h-1zM6 25h1v1h-1zM11 25h1v1h-1zM16 25h1v1h-1zM20 25h1v1h-1zM21 25h1v1h-1zM25 25h1v1h-1zM26 25h1v1h-1zM27 25h1v1h-1zM0 26h1v1h-1zM2 26h1v1h-1zM3 26h1v1h-1zM4 26h1v1h-1zM6 26h1v1h-1zM9 26h1v1h-1zM11 26h1v1h-1zM12 26h1v1h-1zM13 26h1v1h-1zM14 26h1v1h-1zM17 26h1v1h-1zM18 26h1v1h-1zM19 26h1v1h-1zM20 26h1v1h-1zM21 26h1v1h-1zM22 26h1v1h-1zM23 26h1v1h-1zM24 26h1v1h-1zM25 26h1v1h-1zM26 26h1v1h-1zM27 26h1v1h-1zM0 27h1v1h-1zM6 27h1v1h-1zM12 27h1v1h-1zM14 27h1v1h-1zM15 27h1v1h-1zM18 27h1v1h-1zM21 27h1v1h-1zM22 27h1v1h-1zM23 27h1v1h-1zM24 27h1v1h-1zM25 27h1v1h-1zM26 27h1v1h-1zM28 27h1v1h-1zM0 28h1v1h-1zM1 28h1v1h-1zM2 28h1v1h-1zM3 28h1v1h-1zM4 28h1v1h-1zM5 28h1v1h-1zM6 28h1v1h-1zM8 28h1v1h-1zM9 28h1v1h-1zM11 28h1v1h-1zM13 28h1v1h-1zM18 28h1v1h-1zM21 28h1v1h-1zM23 28h1v1h-1zM26 28h1v1h-1z"/></svg>`;
   const PHONE_URL = "https://mornward.app/?from=qr";
   function handoffHtml() {
-    if (!computerView()) return "";
+    if (!computerView() || deskBlocked()) return "";
     return `${aboutHtml()}<aside class="handoff" id="handoff" aria-labelledby="hoTitle">
         <div class="qr" role="img" aria-label="QR code that opens mornward.app">${QR_SVG}</div>
         <div class="hotext">
@@ -2251,11 +2288,59 @@
         </div>
       </aside>`;
   }
+  // What Mornward is: the one place its words live (shown on a computer). New copy goes in ABOUT_COPY only.
+  const ABOUT_COPY = { title: "Not an app blocker. A bridge into your day.",
+    body: "Mornward doesn’t lock your phone or watch your apps. It gives you a 60-second routine between your alarm and the scroll, so you can start your morning on purpose." };
   const aboutHtml = () => `
       <aside class="about" id="aboutBox" aria-labelledby="aboutTitle">
-        <h2 id="aboutTitle">What is Mornward?</h2>
-        <p>${WHAT_IT_IS}</p>
+        <h2 id="aboutTitle">${ABOUT_COPY.title}</h2>
+        <p>${ABOUT_COPY.body}</p>
       </aside>`;
+  // ---------- a computer: blocked, the phone code only ----------
+  // Mornward is used on a phone, from its home screen. On a computer the page goes dark and shows only the code (and
+  // how to add it to the home screen); nothing behind it can be used, and nothing is agreed or sent. Never on a phone or
+  // in the installed app. In the preview (looked at on a computer), only with ?wall=1, with a way back to the phone view.
+  // HOWTO_IMG: the "Add to Home Screen" picture (iPhone and Android). Empty: the steps are drawn instead.
+  const HOWTO_IMG = "";
+  const deskBlocked = () => (PREVIEW ? new URLSearchParams(location.search).has("wall") : onComputer());
+  function renderDeskWall() {
+    const wall = $("#deskWall"), app = document.querySelector(".app");
+    if (!deskBlocked()) { if (wall.firstElementChild) { wall.innerHTML = ""; app.inert = false; app.removeAttribute("aria-hidden"); } return; }
+    if (wall.firstElementChild) return;
+    const S = (g, t) => `<li><span class="g">${GLYPH[g]}</span><span>${t}</span></li>`;
+    wall.innerHTML = `<div class="deskwall" role="dialog" aria-modal="true" aria-labelledby="dwTitle">
+      <div class="dwin">
+        <div class="dwtext">
+          <p class="wordmark">Mornward</p>
+          <h1 id="dwTitle" tabindex="-1">Mornward only works where your bad habits live.</h1>
+          <p class="dwnow">Scan this now to add it to your mobile Home Screen before tomorrow morning.</p>
+          ${aboutHtml()}
+        </div>
+        <div class="dwqr">
+          <div class="qr" role="img" aria-label="QR code that opens mornward.app on your phone">${QR_SVG}</div>
+          <div class="horow">
+            ${navigator.share ? `<button class="secondary" id="hoSend" type="button">Send to my phone</button>` : ""}
+            <button class="link" id="hoCopy" type="button">Copy link</button>
+          </div>
+          <input type="text" readonly aria-label="Link to Mornward" id="hoField" hidden>
+          <p class="support" role="status" id="hoMsg"></p>
+        </div>
+        <figure class="dwhow" id="howTo">
+          <figcaption>Then add it to your Home Screen</figcaption>
+          ${HOWTO_IMG ? `<img src="${HOWTO_IMG}" alt="On iPhone: Share, then Add to Home Screen. On Android: the menu, then Add to home screen.">`
+          : `<div class="cols">
+            <div><h3>iPhone, in Safari</h3><ol class="vsteps">${S("share", "Tap <b>Share</b> (or <b>⋯</b>, then Share)")}${S("add", "<b>Add to Home Screen</b>")}${S("ok", "Tap <b>Add</b>")}</ol></div>
+            <div><h3>Android, in Chrome</h3><ol class="vsteps">${S("menu", "Tap <b>⋮</b> at the top")}${S("add", "<b>Add to home screen</b>")}${S("ok", "Tap <b>Install</b> or <b>Add</b>")}</ol></div>
+          </div>`}
+        </figure>
+        ${PREVIEW ? `<button class="link dwprev" id="dwPreview" type="button">Preview only: back to the phone view</button>` : ""}
+      </div></div>`;
+    app.inert = true;
+    app.setAttribute("aria-hidden", "true");
+    wireHandoff();
+    if ($("#dwPreview")) $("#dwPreview").onclick = () => { location.search = ""; };
+    $("#dwTitle").focus();
+  }
   function renderHandoff() {
     const slot = $("#handoffSlot");
     slot.innerHTML = handoffHtml();
@@ -2685,6 +2770,7 @@
     $("#safariHere").onclick = () => { try { sessionStorage.setItem("fl.safariHere", "1"); } catch {} home(); };
   }
   function home() {
+    renderDeskWall();
     routine = upgradeRoutine(store.get("routine", null, isRoutine));
     const st = entryState();
     const handoff = homeHandoff(st);

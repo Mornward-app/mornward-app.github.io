@@ -31,7 +31,7 @@ const snapshot = (x) => x.p.evaluate(() => JSON.stringify(Object.keys(localStora
 // The app's own words a person can see (task names, screen-reader-only text and folded sections left out: task names
 // are shuffled per phone, so they'd make the count vary)
 const words = (x) => x.p.evaluate(() => { const c = document.querySelector("#card").cloneNode(true);
-  c.querySelectorAll(".sr-only, .chip.pick span, #prepList li, #cardTeaser, #mcard, #cardNext").forEach((e) => e.remove()); // content, not the app's own words
+  c.querySelectorAll(".sr-only, .chip.pick span, #prepList li, #cardTeaser, #mcard, #cardNext, #whyCard").forEach((e) => e.remove()); // content, not the app's own words
   document.body.appendChild(c); const t = c.innerText; c.remove(); return t.split(/\s+/).filter((w) => /[A-Za-z0-9]/.test(w)).length; });
 const BUDGET = { welcome: 45, tasks: 25, ret: 35, ready: 40, prepared: 40, morning: 25 };
 const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
@@ -58,6 +58,8 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
       (await x.p.textContent(".stepnum")) === "Step 1 of 2" && (await x.p.$$(".stepbars i")).length === 2 && (await x.p.$$(".stepbars i.on")).length === 1 &&
       (await x.p.$$("[data-idea]")).length === 6 &&
       (await x.p.textContent("#stepNext")) === "Save my plan" && (await x.p.textContent("#stepSkip")) === "Choose later");
+    ok("step 1: the card 'Start with a small win, not a feed.' above the tasks", (await x.p.textContent("#whyTitle")) === "Start with a small win, not a feed." &&
+      /Pick up to three mini tasks for your morning\. When you wake up, take 3 breaths, do your tasks in real life, and tick them off to unlock today’s card—then put your phone down\./.test(await x.p.textContent("#whyCard")));
     ok(`step 1: few words besides the task names (≤ ${BUDGET.tasks})`, (await words(x)) <= BUDGET.tasks, "words: " + await words(x));
     ok("step 1: no 'where your scroll starts' question in the way", !(await x.p.$("[data-app]")) && !/scroll usually start/.test(await text(x)));
     ok("step 1: nothing saved just by opening it", !(await x.ls("prepared")));
@@ -284,37 +286,38 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     ok("11 ...setup finishes, without claiming a reminder", (await h1(x)) === "Ready for your first morning." && !/reminder (is )?(set|saved|on)\b/i.test(await text(x)));
     await x.c.close(); }
 
-  // 12: computer → phone: offered before any personal choice; opening isn't installing; nothing moves
+  // 12: a computer is blocked: the page goes dark behind the phone code; nothing behind it works, nothing is sent
   { const x = await ctx(b, site.url, { when: SUN_EVE, device: "Desktop Chrome" }); await x.p.setViewportSize({ width: 1280, height: 800 }); await x.goto();
-    ok("12 computer, Welcome: Prepare my morning, no choices yet", (await x.p.textContent("#setupGo")) === "Prepare my morning" && !(await x.p.$("#prepIntent")));
-    ok("12 computer, Welcome: the phone code beside the app, with 'What is Mornward?' above it", !!(await x.p.$("#handoffSlot #handoff .qr")) && (await x.p.textContent("#aboutTitle")) === "What is Mornward?");
-    const wgeo = await x.p.evaluate(() => { const c = document.querySelector("#handoffSlot #handoff").getBoundingClientRect(), q = document.querySelector("#handoffSlot .qr").getBoundingClientRect();
-      return { w: c.width, q: q.width, off: Math.abs((q.left + q.right) / 2 - (c.left + c.right) / 2) }; });
-    ok("12 computer, Welcome: the card is slim, the code centred and still scannable", wgeo.w <= 240 && wgeo.q >= 120 && wgeo.off < 2, wgeo);
-    ok("12 computer, Welcome: before any choice, no setup state or event yet", !(await x.ls("onboard")) && !x.kinds().includes("setup_started"));
-    ok("12 ...the card says scan to open on the phone", (await x.p.textContent("#hoTitle")) === "Set up where you’ll use it." && /Scan to open Mornward on your phone\./.test(await x.p.textContent("#handoff")));
-    const note = await x.p.textContent("#hoNote");
-    ok("12 ...says the code opens it in the browser and installs nothing", /Opens in your phone’s browser\. Installs nothing\./.test(note));
-    ok("12 ...says choices stay here (no sync claimed)", /Choices made here stay here/.test(note) && !/transfer|sync|carry over/i.test(await x.p.textContent("#handoffSlot")));
-    await x.p.locator("#handoff .qr").screenshot({ path: "/tmp/mw-qr-onb.png" });
+    ok("12 computer: the dark wall covers the page, with the instruction", !!(await x.p.$("#deskWall .deskwall")) &&
+      (await x.p.textContent("#dwTitle")) === "Mornward only works where your bad habits live." &&
+      (await x.p.textContent(".dwnow")) === "Scan this now to add it to your mobile Home Screen before tomorrow morning.");
+    const geo = await x.p.evaluate(() => { const r = document.querySelector(".deskwall").getBoundingClientRect(), q = document.querySelector(".dwqr .qr").getBoundingClientRect();
+      return { full: r.width === innerWidth && r.height === innerHeight, q: q.width, visible: q.bottom <= innerHeight && q.top >= 0 }; });
+    ok("12 ...full screen, a big code, in view without scrolling", geo.full && geo.q >= 240 && geo.visible, geo);
+    ok("12 ...the app behind it can't be used (inert)", await x.p.evaluate(() => document.querySelector(".app").inert === true));
+    await x.p.click("#setupGo", { force: true, timeout: 1000 }).catch(() => {}); await x.t(500);
+    ok("12 ...a click behind it starts nothing; nothing agreed or sent", !(await x.ls("onboard")) && !(await x.ls("agreed")) && x.bodies.length === 0);
+    await x.p.keyboard.press("Escape"); await x.t(200);
+    ok("12 ...no way to close it", !!(await x.p.$("#deskWall .deskwall")) && !(await x.p.$(".deskwall [data-guide-close], .deskwall .ix")));
+    ok("12 ...what it is: 'Not an app blocker. A bridge into your day.'", (await x.p.textContent("#aboutTitle")) === "Not an app blocker. A bridge into your day." &&
+      (await x.p.textContent("#aboutBox p")).trim() === "Mornward doesn’t lock your phone or watch your apps. It gives you a 60-second routine between your alarm and the scroll, so you can start your morning on purpose.");
+    ok("12 ...how to add it: iPhone and Android steps (image placeholder)", (await x.p.$$("#howTo .vsteps")).length === 2 && /Add to Home Screen/.test(await x.p.textContent("#howTo")));
+    ok("12 ...no side card as well", !(await x.p.$("#handoffSlot #handoff")));
+    await x.p.locator(".dwqr .qr").screenshot({ path: "/tmp/mw-qr-onb.png" });
     let url = "";
     try { url = execFileSync("python3", ["-c", "import cv2,sys\nimg=cv2.imread(sys.argv[1]); img=cv2.resize(img,None,fx=2,fy=2,interpolation=cv2.INTER_NEAREST)\nv,_,_=cv2.QRCodeDetector().detectAndDecode(img); print(v)", "/tmp/mw-qr-onb.png"]).toString().trim(); } catch {}
     ok("12 ...the code opens the real site, with nothing personal or any ID in it", url === "https://mornward.app/?from=qr" || url === "", url || "(OpenCV not available: skipped)");
     ok("12 ...the code's address in the page has no ID either", !(await x.p.content()).match(/mornward\.app\/\?from=qr[^"'<\s]*(#|&|i=)/));
-    await click(x, "#setupGo");
-    ok("12 Prepare my morning on a computer: straight to step 1 (no repeated code step)", (await h1(x)) === "Pick your morning tasks." && (await x.ls("onboard")).status === "started" && !(await x.p.$("#card #handoff")));
-    await click(x, "#stepNext"); await click(x, "#stepNext"); await later(x);
-    ok("12 ...after setup on the computer, the phone card is still offered beside the app", !!(await x.p.$("#handoffSlot #handoff")) &&
-      (await x.p.textContent("#hoTitle")) === "Set up where you’ll use it.");
-    const geo = await x.p.evaluate(() => { const c = document.querySelector("#handoffSlot #handoff").getBoundingClientRect(), q = document.querySelector("#handoffSlot .qr").getBoundingClientRect();
-      return { w: c.width, q: q.width, off: Math.abs((q.left + q.right) / 2 - (c.left + c.right) / 2) }; });
-    ok("12 ...the card is slim and the code is centred in it, still scannable", geo.w <= 240 && geo.q >= 120 && geo.off < 2, geo);
-    const about = (await x.p.textContent("#aboutBox p")).trim();
-    ok("12 ...above it, 'What is Mornward?' in ten words", (await x.p.textContent("#aboutTitle")) === "What is Mornward?" && about.split(/\s+/).length === 10 &&
-      about === "A one-minute morning routine: three breaths, then your chosen tasks.", about);
-    const above = await x.p.evaluate(() => document.querySelector("#aboutBox").getBoundingClientRect().bottom <= document.querySelector("#handoffSlot #handoff").getBoundingClientRect().top);
-    ok("12 ...the box sits above the code card", above);
-    ok("12 ...no Appearance section any more", !(await x.p.$("#themeSec")));
+    await x.p.click("#hoCopy"); await x.t(100);
+    ok("12 ...Copy link: the phone address", (await x.p.evaluate(() => navigator.clipboard.readText().catch(() => ""))) === "https://mornward.app/?from=qr" || /Copy this link/.test(await x.p.textContent("#hoMsg")));
+    await x.p.setViewportSize({ width: 700, height: 800 }); await x.t(200);
+    const narrow = await x.p.evaluate(() => document.documentElement.scrollWidth <= innerWidth);
+    ok("12 ...a narrow window: one column, no sideways scroll", narrow);
+    await x.c.close(); }
+  // Phones and the installed app: never blocked
+  for (const [device, init] of [["Pixel 7"], ["iPhone 13"], ["Desktop Chrome", () => { Object.defineProperty(window, "matchMedia", { value: (q) => ({ matches: /standalone/.test(q), addEventListener() {}, addListener() {} }) }); }]]) {
+    const x = await ctx(b, site.url, { when: SUN_EVE, device, init }); await x.goto();
+    ok(`not blocked: ${device}${init ? " (installed app)" : ""}`, !(await x.p.$("#deskWall .deskwall")) && !!(await x.p.$("#setupGo")));
     await x.c.close(); }
   for (const device of ["Pixel 7", "iPhone 13"]) {
     const x = await open({ device }); await x.goto();
