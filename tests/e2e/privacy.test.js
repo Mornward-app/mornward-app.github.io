@@ -57,7 +57,7 @@ const SECRET = "Call mum about Sunday";
     await x.c.close(); }
 
   // Links that leave the phone carry no anonymous ID
-  { const x = await ctx(b, site.url, { when: WHEN }); await x.goto("?from=redditads");
+  { const x = await ctx(b, site.url, { when: WHEN }); await x.goto("?from=redditads"); await x.p.click("#installGuide .link[data-guide-close]").catch(() => {}); await x.t(300);
     await S.begin(x); await S.skipBreathing(x); await S.keep(x); await S.finish(x);
     const id = await x.ls("deviceId");
     await x.p.click("#remindSec summary"); await x.p.fill("#remAt", "06:30");
