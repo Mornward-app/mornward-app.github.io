@@ -113,14 +113,25 @@ words: task names (shuffled per phone), folded sections and screen-reader-only t
   ID or anything personal. Phones never show it. After setup, Prepared, Begin and Today keep the same card beside
   the app.
 
-## Arriving from the computer's QR code
+## Arriving from the computer's QR code (home screen first)
 
-On a phone, a visit from the computer's QR code (`?from=qr`) opens the home-screen steps by themselves over
-Welcome, about a second after it appears: "One tap from your home screen when you wake." The steps are for this
-phone (iPhone or Android, from the browser; switchable). On Android, when Chrome offers its own dialog, a one-tap
-**Add to home screen** button sits on top. **Later** closes it. It opens once per phone (`fl.qrGuide`), never in the
-installed app, never on a computer, and never over an existing user's Begin. It agrees to nothing and sends nothing.
-Checked by `tests/e2e/qr-guide.test.js`.
+On a phone with nothing set up yet, a visit from the computer's QR code (`?from=qr`) or a social link
+(`?from=reddit`, an ad, a post) opens the home-screen steps over Welcome and **keeps them there until Mornward is
+added**: no ✕, no Later, Escape and tapping outside do nothing, Welcome's buttons behind it start nothing, and it comes
+back on every visit. The steps are for this phone (iPhone or Android, from the browser; switchable).
+
+- **iPhone:** Safari keeps its own storage and can't see the icon, so a setup made in Safari would be lost.
+  "Add it first, then set up from the icon. Safari won't keep your mornings." After **I've added it** the sheet stays and
+  says "Now open it from your home screen. Set up there. You can close Safari." (with **Show the steps again**). The icon
+  opens `./?from=qr` and is never gated, so setup happens there. No "✓ On your home screen" tick in Safari.
+- **Android:** Chrome and the installed app share storage. "Add it first. One tap when you wake." **I've added it**,
+  Chrome's own install, or the one-tap **Add to home screen** (when Chrome offers it) lets them carry on to Welcome. Said
+  no to Chrome's dialog: the steps come back.
+- **Way out:** under **Can't find it?**, **Continue in this browser** (`fl.browserOk`) for a phone that can't add it
+  (an app's built-in browser that can't open Safari, an older phone). Remembered in that browser.
+
+Never in the installed app, never on a computer, never over an existing user's screens. It agrees to nothing and sends
+nothing. Checked by `tests/e2e/qr-guide.test.js`.
 
 ## Once it's on the home screen
 

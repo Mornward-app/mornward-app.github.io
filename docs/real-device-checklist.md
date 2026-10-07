@@ -79,8 +79,10 @@ passes, treat it as **unverified**.
       opens mornward.app in the phone's browser on Welcome (nothing carried over, nothing installed). Prepare my
       morning on the computer goes straight to the tasks.
 - [ ] **QR arrival (both phones):** on a computer, scan the code on mornward.app. The phone opens Safari / Chrome, and
-      the home-screen steps open over Welcome for that phone. Android: "Add to home screen" opens Chrome's dialog.
-      Reload: the steps don't open again.
+      the home-screen steps open over Welcome for that phone, with no ✕ or Later; tapping outside does nothing; reload:
+      they're back. iPhone: Share → Add to Home Screen, then "I've added it": the sheet says to open it from the home
+      screen; tap the icon: Welcome, setup works there. Android: "Add to home screen" opens Chrome's dialog; once added,
+      Welcome. "Can't find it?" → "Continue in this browser" closes it for good in that browser.
 - [ ] **Reminder repeats (both phones):** add the reminder once; check the event repeats every morning with no end
       date, and the alert fires at the time on the second morning too. Then Edit setup: it shows "Your calendar
       reminder", not the controls.

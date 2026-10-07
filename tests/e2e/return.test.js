@@ -64,7 +64,7 @@ async function drain(x) { for (let i = 0; i < 40 && ((await x.ls("outbox")) || [
     ok("...See you tomorrow: 'All set. Tomorrow, open Mornward from your home screen.'",
       (await x.p.textContent("#seeYouMsg")).trim() === "All set. Tomorrow, open Mornward from your home screen.");
     await x.c.close(); }
-  { const x = await open(); await x.goto("?from=reddit"); await x.p.click("#installGuide .link[data-guide-close]").catch(() => {}); await x.t(300); await click(x, "#setupGo"); await click(x, "#stepNext"); await click(x, "#stepNext");
+  { const x = await open(); await x.goto("?from=reddit"); await S.inBrowser(x); await click(x, "#setupGo"); await click(x, "#stepNext"); await click(x, "#stepNext");
     ok("Reddit's browser: the Safari card shows", !!(await x.p.$("#moveCard")));
     await x.p.click("#seeYou"); await x.t(200);
     ok("...See you tomorrow points to the card: 'Copy your link above so Safari has it tomorrow.'", (await x.p.textContent("#seeYouMsg")).trim() === "All set. Copy your link above so Safari has it tomorrow.");
