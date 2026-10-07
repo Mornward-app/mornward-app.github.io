@@ -2106,8 +2106,9 @@
     if (here) here.onclick = () => { store.set("browserOk", true); closeGuide(true, true); };
     // Taken at their word (Safari can't check): every add offer on this phone goes away
     wrap.querySelector("[data-guide-added]").onclick = () => {
-      markHome("self");
+      // iPhone, required: for this visit only (Safari can't check, and a mistaken tap mustn't stick)
       if (locked && isIOS) { openFromIcon(wrap); return; }
+      markHome("self");
       closeGuide(false, true);
       const row = $("#addSec");
       if (row) row.remove();
@@ -2133,8 +2134,6 @@
         msg.textContent = "Copy this link, then paste it into Safari or Chrome.";
       }
     };
-    // iPhone, required, already said it's added: straight to "open it from your home screen"
-    if (locked && isIOS && homeKnown()) { openFromIcon(wrap); return; }
     $("#guideTitle").focus();
   }
   // iPhone, after "I've added it" while required: the sheet stays, pointing to the icon (setup happens there)
@@ -2143,8 +2142,8 @@
     sheet.innerHTML = `<div class="row"><h2 id="guideTitle" tabindex="-1">Now open it from your home screen</h2></div>
         <img class="hoicon" id="guideIcon" src="icons/icon-192.png" alt="" width="72" height="72">
         <p class="body" id="guideOpen">Set up there. You can close Safari.</p>
-        <button class="link" id="guideAgain" type="button">Show the steps again</button>`;
-    sheet.querySelector("#guideAgain").onclick = () => { store.del("homeAdded"); openGuide(true, true); };
+        <button class="secondary" id="guideAgain" type="button">Not on my home screen yet</button>`;
+    sheet.querySelector("#guideAgain").onclick = () => openGuide(true, true);
     $("#guideTitle").focus();
   }
   // Android, when Chrome offers its own dialog: one tap instead of the steps (Chrome only allows it from a tap).
@@ -2677,11 +2676,13 @@
     show(`
       <p class="wordmark">Mornward</p>
       <img class="hoicon" src="icons/icon-192.png" alt="" width="72" height="72">
-      <h1>${kind === "firm" ? 'Mornward lives on your <em class="hl">home screen</em>.' : 'Added Mornward to your <em class="hl">home screen</em>?'}</h1>
+      <h1>${kind === "firm" ? 'Open Mornward from your <em class="hl">home screen</em>.' : 'Added Mornward to your <em class="hl">home screen</em>?'}</h1>
       <p class="lede">Open it from there to keep your progress.</p>
       <div class="push">
+        <button class="secondary" id="handoffAdd" type="button">Not there? Add it</button>
         <button class="link" id="safariHere" type="button">Continue here instead</button>
-      </div>`, kind === "firm" ? "Mornward lives on your home screen." : "Added Mornward to your home screen?");
+      </div>`, kind === "firm" ? "Open Mornward from your home screen." : "Added Mornward to your home screen?");
+    $("#handoffAdd").onclick = () => openGuide();
     $("#safariHere").onclick = () => { try { sessionStorage.setItem("fl.safariHere", "1"); } catch {} home(); };
   }
   function home() {

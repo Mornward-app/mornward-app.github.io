@@ -113,7 +113,7 @@ const swReady = (p) => p.evaluate(() => navigator.serviceWorker.ready.then(() =>
     ok("added once (iPhone): 'I've added it' removes every offer at once (box and quiet row)", !(await x.p.$("#installBox")) && !(await x.p.$("#addSec")) && !(await x.p.$("#installGuide")));
     ok("added once (iPhone): it's only noted on the phone, not counted as an install", (await x.ls("homeAdded")).how === "self" && x.rows().every((r) => !/install/.test(r.kind)));
     await x.p.reload(); await x.t(700);
-    ok("added once (iPhone), opened again in Safari: 'Mornward lives on your home screen.'", /lives on your home screen/.test(await x.p.innerText("h1")));
+    ok("added once (iPhone), opened again in Safari: 'Open Mornward from your home screen.'", /Open Mornward from your home screen/.test(await x.p.innerText("h1")));
     await x.p.click("#safariHere"); await x.t(700);
     ok("added once (iPhone): Continue here: still no offer", !(await x.p.$("#installBox")) && !(await x.p.$("#addSec")));
     await x.p.clock.setSystemTime(new Date("2026-10-06T07:10:00")); await x.p.reload(); await x.t(700);
@@ -139,7 +139,7 @@ const swReady = (p) => p.evaluate(() => navigator.serviceWorker.ready.then(() =>
   // Setup's optional row and the QR steps also stay away once it's known
   { const x = await ctx(b, site.url, { when: "2026-10-05T20:00:00", device: "iPhone 13", init: () => { localStorage.setItem("fl.homeAdded", JSON.stringify({ how: "self", on: "2026-10-05" })); } });
     await x.goto("?from=qr"); await x.t(1000);
-    ok("added once (iPhone Safari, from the QR code): no steps, just 'Now open it from your home screen'", (await x.p.textContent("#guideTitle")) === "Now open it from your home screen" && !(await x.p.$("#guideSteps")));
+    ok("an earlier 'I've added it' in iPhone Safari, from the QR code: the steps again (Safari can't know), never 'already added'", !!(await x.p.$("#guideSteps")) && !!(await x.p.$("[data-guide-added]")));
     await x.goto(); await x.p.evaluate(() => localStorage.setItem("fl.browserOk", "true")); await x.goto(); await x.t(700);
     await x.p.click("#setupGo"); await x.t(700); await x.p.click("#stepNext"); await x.t(700);
     ok("added once: setup's 'Add to home screen · optional' row is gone", !(await x.p.$("#addSec")) && !!(await x.p.$("#remAt")));

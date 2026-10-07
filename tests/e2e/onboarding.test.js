@@ -431,7 +431,7 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     await x.p.click("#addSec summary"); await x.p.click("#addHave"); await x.t(200);
     ok("home row: 'Already on my home screen' turns the row into a tick, remembered on the phone", !(await x.p.$("#addSec")) && !!(await x.p.$("#homeTick")) && (await x.ls("homeAdded")).how === "self");
     await click(x, "#stepNext"); await x.p.clock.setSystemTime(new Date(MON)); await x.p.reload(); await x.t(700);
-    ok("home row: ...next morning in Safari: points to the home screen first", /lives on your home screen/.test(await h1(x)));
+    ok("home row: ...next morning in Safari: points to the home screen first", /Open Mornward from your home screen/.test(await h1(x)));
     await click(x, "#safariHere"); await click(x, "#begin"); await S.skipBreathing(x); await S.keep(x); await S.finish(x);
     ok("home row: ...no add-to-home-screen offer on Today afterwards", !(await x.p.$("[data-install-add]")) && !(await x.p.$("#addSec")));
     await x.c.close(); }

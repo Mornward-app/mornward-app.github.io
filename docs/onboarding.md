@@ -63,8 +63,8 @@ words: task names (shuffled per phone), folded sections and screen-reader-only t
 - **Home screen, not Safari (iPhone):** Safari shares nothing with the home-screen app, and every link opens Safari. So
   there's no alarm Shortcut (it could only open Safari), the Apple Calendar alert holds no link and says "Open Mornward
   from your home screen", and See you tomorrow says "All set. Tomorrow, open Mornward from your home screen."
-- **Safari safety net (iPhone):** opened in Safari after setup when this Safari knows the icon was added: "Mornward
-  lives on your home screen. Open it from there to keep your progress." Opened from an old reminder link in a Safari
+- **Safari safety net (iPhone):** opened in Safari after setup when this Safari was told the icon was added: "Open
+  Mornward from your home screen." "Open it from there to keep your progress." with "Not there? Add it" (the steps). Opened from an old reminder link in a Safari
   that doesn't know: "Added Mornward to your home screen?" Both offer "Continue here instead" (for that visit).
   Never during setup or a routine, on Android, on a computer or in the home-screen app.
 - **See you tomorrow:** said once, when it's tapped. (No line before the tap: Ready stays within 40 words.) Inside another app's browser it points to the Copy link for Safari card instead; on a computer or the
@@ -122,7 +122,7 @@ back on every visit. The steps are for this phone (iPhone or Android, from the b
 
 - **iPhone:** Safari keeps its own storage and can't see the icon, so a setup made in Safari would be lost.
   "Add it first, then set up from the icon. Safari won't keep your mornings." After **I've added it** the sheet stays and
-  says "Now open it from your home screen. Set up there. You can close Safari." (with **Show the steps again**). The icon
+  says "Now open it from your home screen. Set up there. You can close Safari." (with **Not on my home screen yet**, back to the steps). That tap is for the visit only: Safari can't check, so the next visit shows the steps again, never "already added". The icon
   opens `./?from=qr` and is never gated, so setup happens there. No "✓ On your home screen" tick in Safari.
 - **Android:** Chrome and the installed app share storage. "Add it first. One tap when you wake." **I've added it**,
   Chrome's own install, or the one-tap **Add to home screen** (when Chrome offers it) lets them carry on to Welcome. Said

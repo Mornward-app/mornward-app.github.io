@@ -38,7 +38,7 @@ passes, treat it as **unverified**.
 - [ ] **iPhone:** tap Add to Apple Calendar again for the same time and add it. Note whether Calendar updates the event or adds a second one.
 - [ ] **iPhone, the alert:** it reads "Open Mornward from your home screen"; the event has no link.
 - [ ] **iPhone, Safari safety net:** after adding the icon (and tapping I've added it in Safari), open mornward.app in
-      Safari: "Mornward lives on your home screen." The icon opens your own Mornward as usual.
+      Safari: "Open Mornward from your home screen." with "Not there? Add it". The icon opens your own Mornward as usual.
 - [ ] **iPhone, Copy link for Safari:** in the same Reddit setup, tap Copy link for Safari on Ready and paste it into
       Safari. Safari should show Ready with the same suggested tasks (typed ones stay behind).
 - [ ] Both: delete the event. Nothing fires the next morning.

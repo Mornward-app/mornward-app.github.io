@@ -29,10 +29,12 @@ const pressed = (x) => x.p.$$eval('#installGuide [data-os][aria-pressed="true"]'
       ok("iPhone: after 'I've added it', the sheet stays: open it from your home screen, set up there",
         (await x.p.textContent("#guideTitle")) === "Now open it from your home screen" && (await x.p.textContent("#guideOpen")) === "Set up there. You can close Safari." &&
         !!(await x.p.$("#guideIcon")) && !(await x.p.$("[data-guide-added]")));
-      await x.p.reload(); await x.t(1000);
-      ok("iPhone: Safari again: straight to 'Now open it from your home screen'", (await x.p.textContent("#guideTitle")) === "Now open it from your home screen");
+      ok("iPhone: the tap isn't kept (Safari can't check)", !(await x.ls("homeAdded")));
       await x.p.click("#guideAgain"); await x.t(300);
-      ok("iPhone: 'Show the steps again' brings the steps back", !!(await x.p.$("#guideSteps")) && !!(await x.p.$("[data-guide-added]")));
+      ok("iPhone: 'Not on my home screen yet' brings the steps back", !!(await x.p.$("#guideSteps")) && !!(await x.p.$("[data-guide-added]")));
+      await x.p.click("#installGuide [data-guide-added]"); await x.t(300);
+      await x.p.reload(); await x.t(1000);
+      ok("iPhone: Safari again: the steps, never 'already added'", !!(await x.p.$("#guideSteps")) && (await x.p.textContent("#guideTitle")) === "Add Mornward to your home screen");
       const start = await x.p.evaluate(() => JSON.parse(decodeURIComponent(document.querySelector('link[rel="manifest"]').href.replace(/^data:application\/manifest\+json,/, ""))).start_url);
       ok("iPhone: the icon opens Mornward from the QR link (set up there)", /\/\?from=qr$/.test(start), start);
     } else {

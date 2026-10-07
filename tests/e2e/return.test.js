@@ -31,8 +31,8 @@ async function drain(x) { for (let i = 0; i < 40 && ((await x.ls("outbox")) || [
     await click(x, "#stepNext"); await click(x, "#stepNext");
     ok("...finishing setup: Ready as usual (the screen comes on the next open)", (await x.p.innerText("h1")).includes("Ready for your"));
     await x.p.reload(); await x.t(700);
-    ok("Safari, set up and icon added, opened again: 'Mornward lives on your home screen.' 'Open it from there to keep your progress.'",
-      (await x.p.innerText("h1")).replace(/\s+/g, " ").trim() === "Mornward lives on your home screen." &&
+    ok("Safari, set up and icon added, opened again: 'Open Mornward from your home screen.' 'Open it from there to keep your progress.'",
+      (await x.p.innerText("h1")).replace(/\s+/g, " ").trim() === "Open Mornward from your home screen." &&
       (await x.p.textContent(".lede")).trim() === "Open it from there to keep your progress." && !!(await x.p.$(".hoicon")));
     await click(x, "#safariHere");
     ok("...'Continue here instead': the usual screen", (await x.p.innerText("h1")).includes("Ready for your"));
