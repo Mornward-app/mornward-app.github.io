@@ -18,7 +18,7 @@ const carried = (u) => JSON.parse(decodeURIComponent(new URL(u).hash.replace(/^#
   const open = (o = {}) => ctx(b, site.url, { when: EVE, device: "iPhone 14", ...o });
 
   // Setup inside "Reddit's browser" (iPhone, from the ad: ?from=reddit), two suggestions and one typed task
-  const x = await open(); await x.goto("?from=reddit");
+  const x = await open(); await x.goto("?from=reddit"); await x.p.click("#installGuide .link[data-guide-close]").catch(() => {}); await x.t(300);
   await click(x, "#setupGo");
   await x.p.fill("#prepIntent", "Call Mum");
   await click(x, "#stepNext");
@@ -67,7 +67,7 @@ const carried = (u) => JSON.parse(decodeURIComponent(new URL(u).hash.replace(/^#
     await y.c.close(); }
 
   // Same browser that did the setup (normal Safari): the alarm link changes nothing
-  { const y = await open(); await y.goto("?from=reddit"); await click(y, "#setupGo"); await click(y, "#stepNext"); await click(y, "#stepNext");
+  { const y = await open(); await y.goto("?from=reddit"); await y.p.click("#installGuide .link[data-guide-close]").catch(() => {}); await y.t(300); await click(y, "#setupGo"); await click(y, "#stepNext"); await click(y, "#stepNext");
     const before = await y.ls("prepared"), myId = await y.ls("deviceId");
     await y.goto(local(alarm));
     ok("a browser that already has a setup ignores a carried link", (await y.ls("deviceId")) === myId && JSON.stringify(await y.ls("prepared")) === JSON.stringify(before));
@@ -87,7 +87,7 @@ const carried = (u) => JSON.parse(decodeURIComponent(new URL(u).hash.replace(/^#
     await y.c.close(); }
 
   // Counts off: no ID in the link; carried once
-  { const y = await open(); await y.goto("?from=reddit"); await y.p.click("#preToggle"); await click(y, "#setupGo"); await click(y, "#stepNext");
+  { const y = await open(); await y.goto("?from=reddit"); await y.p.click("#installGuide .link[data-guide-close]").catch(() => {}); await y.t(300); await y.p.click("#preToggle"); await click(y, "#setupGo"); await click(y, "#stepNext");
     await click(y, "#stepNext"); await y.p.click("#moveCopy"); await y.t(200);
     const off = await clip(y);
     ok("counts off: the link holds no ID", !("i" in carried(off)) && carried(off).s === 1);
@@ -97,7 +97,7 @@ const carried = (u) => JSON.parse(decodeURIComponent(new URL(u).hash.replace(/^#
     await z.c.close(); }
 
   // Where the card shows
-  { const y = await open({ device: "Pixel 7" }); await y.goto("?from=reddit"); await click(y, "#setupGo"); await click(y, "#stepNext"); await click(y, "#stepNext");
+  { const y = await open({ device: "Pixel 7" }); await y.goto("?from=reddit"); await y.p.click("#installGuide .link[data-guide-close]").catch(() => {}); await y.t(300); await click(y, "#setupGo"); await click(y, "#stepNext"); await click(y, "#stepNext");
     ok("Android from Reddit (Reddit uses Chrome's own storage there): no card", !(await y.p.$("#moveCard")));
     await y.c.close(); }
   { const y = await open(); await y.goto(); await click(y, "#setupGo"); await click(y, "#stepNext"); await click(y, "#stepNext");

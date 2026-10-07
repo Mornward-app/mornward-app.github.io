@@ -1039,11 +1039,12 @@
     renderHandoff(); // a computer: the phone code (slim, centred) and "What is Mornward?" beside the app
     qrGuide();
   }
-  // Arrived on a phone from the computer's QR code (?from=qr): the home-screen steps open by themselves over
-  // Welcome, once per phone, for this phone (iPhone or Android, from the browser; switchable). Never in the
-  // installed app. It's only the steps: nothing is agreed or sent until a Welcome button is tapped.
+  // Arrived on a phone from the computer's QR code (?from=qr) or a social app's link (?from=reddit, an ad, a post):
+  // the home-screen steps open by themselves over Welcome, once per phone, for this phone (iPhone or Android, from the
+  // browser; switchable; "Can't find it?" covers an app's built-in browser). Never in the installed app. It's only
+  // the steps: nothing is agreed or sent until a Welcome button is tapped.
   function qrGuide() {
-    if (linkFrom !== "qr" || !(isIOS || isAndroid) || onHomeScreen || ["home", "installed"].includes(installState())) return;
+    if (!(linkFrom === "qr" || fromSocial(linkFrom)) || !(isIOS || isAndroid) || onHomeScreen || ["home", "installed"].includes(installState())) return;
     if (store.get("qrGuide", false) === true) return;
     store.set("qrGuide", true);
     setTimeout(() => { if (card.querySelector("#setupGo") && !$("#installGuide")) openGuide(true); }, 700);
@@ -1235,11 +1236,13 @@
   // Android's Reddit app uses Chrome's own storage, so only a recognised in-app browser counts there.
   const SOCIAL = [["reddit", "Reddit"], ["instagram", "Instagram"], ["ig", "Instagram"], ["tiktok", "TikTok"], ["facebook", "Facebook"],
     ["fb", "Facebook"], ["threads", "Threads"], ["twitter", "X"], ["x", "X"], ["snapchat", "Snapchat"], ["linkedin", "LinkedIn"]];
+  // A link source that names a social app: "reddit", "redditads", "ig-story", "tiktok"… (its display name, or null)
+  const fromSocial = (f) => { f = String(f || ""); const h = SOCIAL.find(([a]) => f === a || f.startsWith(a + "-") || (a.length > 2 && f.startsWith(a))); return h || null; };
   function socialSource() {
     const m = ua.match(/Instagram|FBAN|FBAV|FB_IAB|TikTok|musical_ly|Snapchat|Twitter|LinkedInApp|reddit/i);
     if (m) { const k = m[0].toLowerCase(); return k.startsWith("fb") ? "Facebook" : k === "musical_ly" ? "TikTok" : k === "linkedinapp" ? "LinkedIn" : k === "twitter" ? "X" : SOCIAL.find(([a]) => a === k)[1]; }
     const from = String(store.get("from", "") || "");
-    const hit = SOCIAL.find(([a]) => from === a || from.startsWith(a + "-") || (a.length > 2 && from.startsWith(a)));
+    const hit = fromSocial(from);
     return isIOS && hit ? hit[1] : null;
   }
   const likelyInApp = () => !onHomeScreen && !computerView() && store.get("carriedIn", null) === null && !!socialSource();

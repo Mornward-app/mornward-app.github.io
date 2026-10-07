@@ -61,6 +61,16 @@ const pressed = (x) => x.p.$$eval('#installGuide [data-os][aria-pressed="true"]'
     ok("an existing user arriving from the QR code: Begin, no steps on top", !!(await x.p.$("#begin")) && !(await x.p.$("#installGuide")));
     await x.c.close(); }
 
+  // A social app's link (Reddit post or ad, Instagram, TikTok…): the same steps, by themselves, on both phones
+  for (const [device, q] of [["iPhone 14", "?from=reddit"], ["Pixel 7", "?from=reddit"], ["iPhone 14", "?from=redditads"], ["Pixel 7", "?from=instagram"]]) {
+    const x = await ctx(b, site.url, { when: WHEN, device }); await x.goto(q); await x.t(1000);
+    ok(`${device} ${q}: the home-screen steps open over Welcome`, !!(await x.p.$("#installGuide")) && !!(await x.p.$("#setupGo")));
+    await x.c.close(); }
+  for (const q of ["", "?from=newsletter"]) {
+    const x = await ctx(b, site.url, { when: WHEN, device: "iPhone 14" }); await x.goto(q); await x.t(1000);
+    ok(`iPhone ${q || "(no link source)"}: no steps on top (only the QR code and social links open them)`, !(await x.p.$("#installGuide")) && !!(await x.p.$("#setupGo")));
+    await x.c.close(); }
+
   await b.close(); await site.close();
   done();
 })();
