@@ -70,9 +70,7 @@ async function drain(x) { for (let i = 0; i < 40 && ((await x.ls("outbox")) || [
     ok("...See you tomorrow points to the card: 'Copy your link above so Safari has it tomorrow.'", (await x.p.textContent("#seeYouMsg")).trim() === "All set. Copy your link above so Safari has it tomorrow.");
     await x.c.close(); }
   { const x = await open({ device: "Desktop Chrome" }); await x.p.setViewportSize({ width: 1280, height: 800 }); await x.goto();
-    await click(x, "#setupGo"); await click(x, "#stepNext"); await click(x, "#stepNext");
-    await x.p.click("#seeYou"); await x.t(200);
-    ok("computer: no 'lock your phone' (it says you can close it)", (await x.p.textContent("#seeYouMsg")).trim() === "All set. You can close Mornward now.");
+    ok("computer: no setup at all (the phone code covers the page)", !!(await x.p.$("#deskWall .deskwall")) && await x.p.evaluate(() => document.querySelector(".app").inert));
     await x.c.close(); }
   { const x = await open({ when: MON }); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext"); await click(x, "#stepNext");
     await x.p.clock.setSystemTime(new Date("2026-10-06T07:05:00")); await x.p.reload(); await x.t(700);

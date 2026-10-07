@@ -75,9 +75,9 @@ passes, treat it as **unverified**.
 - [ ] **Largest system text size (Dynamic Type / Android font size):** every setup screen is usable, and the
       bottom buttons don't cover the inputs.
 - [ ] **Reduce Motion on (iOS) / Remove animations (Android):** Welcome, setup and the routine work.
-- [ ] **A computer:** Welcome shows the code ("Set up where you’ll use it.") beside the app. Scanning the code
-      opens mornward.app in the phone's browser on Welcome (nothing carried over, nothing installed). Prepare my
-      morning on the computer goes straight to the tasks.
+- [ ] **A computer:** the page goes dark: the code, "Mornward only works where your bad habits live.", and the
+      iPhone / Android steps. Nothing behind it can be clicked; Esc does nothing. Scanning the code opens mornward.app
+      in the phone's browser, where the home-screen steps open.
 - [ ] **QR arrival (both phones):** on a computer, scan the code on mornward.app. The phone opens Safari / Chrome, and
       the home-screen steps open over Welcome for that phone, with no ✕ or Later; tapping outside does nothing; reload:
       they're back. iPhone: Share → Add to Home Screen, then "I've added it": the sheet says to open it from the home

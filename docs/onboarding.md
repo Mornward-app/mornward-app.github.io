@@ -4,8 +4,8 @@ Mornward is for the start of the day. A first visit prepares the morning; the ro
 
 ```text
 First visit:  Welcome → 1 Pick tasks → 2 Make it easy to return (optional) → Ready (the same screen as Prepared)
-On a computer: the same; the phone code sits beside Welcome, the ready / next-morning screen, Begin and Today
-               (not beside the two setup steps, which stay focused)
+On a computer: blocked. The page goes dark behind the phone code (see "Computer" below); nothing behind it can
+               be used, and nothing is agreed or sent
 Each morning: Begin my morning → three breaths → confirm tasks → complete → Today
 ```
 
@@ -26,9 +26,13 @@ words: task names (shuffled per phone), folded sections and screen-reader-only t
 | Morning tasks | 25 | ~20 | Six chips; one short hint |
 
 - **The promise** (Welcome and Prepared, under the heading): "Start your day on purpose, not on a feed."
-- **What it is, in ten words** (computer only, a box above the phone code, from Welcome on): "What is Mornward?" / "A one-minute
+- **What it is, in ten words** (computer only, on the dark page; its words live in `ABOUT_COPY` only): "What is Mornward?" / "A one-minute
   morning routine: three breaths, then your chosen tasks."
-- **The phone code beside the app** (computers, from Welcome on) is a slim column, 236 px, with the code centred in its card, so someone on a computer can open Mornward on their phone and add it to the home screen there.
+- **The computer page:** full screen, dark, no way to close it. "Mornward only works where your bad habits live." /
+  "Scan this now to add it to your mobile Home Screen before tomorrow morning.", What is Mornward?, a 260 px code
+  ("Point your phone’s camera here", Copy link, Send to my phone where offered) and "Then add it to your Home Screen":
+  iPhone (Safari) and Android (Chrome) steps. `HOWTO_IMG` set to an image path replaces the steps with that picture.
+  The app behind it is `inert`. The preview shows it only with `?wall=1`.
 
 ## Screens and copy
 
@@ -109,9 +113,8 @@ words: task names (shuffled per phone), folded sections and screen-reader-only t
   Stays on this phone. Mornward doesn't block or watch apps." Exactly one named app gives the invitation "Before
   Instagram, take a minute for yourself."; anything else, none.
 - **The ready screen never shows** a sun, circles, a count, a timeline, a percentage, a streak or a "complete" claim. A stray tap from the last setup step can't hit Begin or Edit setup (they wait for a settled tap).
-- **Computer:** the phone code is beside Welcome, before any choice, and beside the ready screen, Begin and Today (not the two setup steps). There is no separate phone step. The QR code opens `https://mornward.app/?from=qr`, with no
-  ID or anything personal. Phones never show it. After setup, Prepared, Begin and Today keep the same card beside
-  the app.
+- **Computer:** every screen is covered by the dark page with the phone code (above). The QR code opens
+  `https://mornward.app/?from=qr`, with no ID or anything personal. Phones and the installed app never show it.
 
 ## Arriving from the computer's QR code (home screen first)
 
@@ -247,7 +250,7 @@ Every result below is from Chromium with phone emulation, not a physical phone.
 | 9 | Counts off: the whole journey works; nothing sent or queued; no ID made | Pass |
 | 10 | Failed saves (prepared tasks; finishing setup): message, Retry, input kept, no "Ready" | Pass |
 | 11 | Calendar opened but not saved: "Calendar opened—finish saving your reminder there."; tasks and the reminder survive a reload after the hand-off; a blocked calendar doesn't trap setup; no reminder-success claim | Pass |
-| 12 | Computer: the code beside Welcome before any choice (no setup state or event yet); "Installs nothing"; "Choices made here stay here"; the QR decodes to `https://mornward.app/?from=qr`; Prepare my morning goes straight to step 1. Beside the app: a slim card (≤ 240 px), the code centred, and "What is Mornward?" in ten words above it. Phones never show the code | Pass |
+| 12 | Computer: the dark page covers everything (full screen, code ≥ 240 px in view, app inert, no close, a click behind it sends nothing); the instruction, What is Mornward?, both phones' steps; the QR decodes to `https://mornward.app/?from=qr`; one column in a narrow window. Phones and the installed app never show it | Pass |
 | 13 | 320 px, dark mode, reduced motion and 200% text: every setup and morning screen fits the phone's width (checked against the screen, not the stretched viewport); keyboard; focus to the heading; labelled toggle groups; 44 px targets | Pass (emulated) |
 | — | First reminder: 6 AM (7:00) → that morning; 8 AM → tomorrow; 1:30 AM → that morning; December 31 → January 1, 2027 with the year | Pass |
 
