@@ -397,10 +397,16 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     ok("B Change: the controls come back, with a note to delete the old event", await x.p.isVisible("#remAt") && await x.p.isVisible("#remOld"));
     await x.c.close(); }
 
-  // Option 2: already done → "All set to return" (both), or a tick for the home screen (only that)
+  // Option 2: already done → "All set to return" (both), or a tick for the home screen (only that). On iPhone, only in
+  // the home-screen app: Safari can't see the icon, so a Safari "I've added it" gives no tick there.
+  { const x = await open({ device: "iPhone 14", init: () => { localStorage.setItem("fl.homeAdded", JSON.stringify({ how: "self", on: "2026-10-04" })); } });
+    await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext");
+    ok("iPhone Safari after 'I've added it': no '✓ On your home screen' tick on step 2", !(await x.p.$("#homeTick")) && !(await x.p.$("#allSet")));
+    await x.c.close(); }
+
   for (const [label, init, expect] of [
-    ["both done", () => { localStorage.setItem("fl.homeAdded", JSON.stringify({ how: "self", on: "2026-10-04" })); localStorage.setItem("fl.remPlan", JSON.stringify({ at: "06:30", first: "2026-10-05" })); }, "all"],
-    ["only on the home screen", () => { localStorage.setItem("fl.homeAdded", JSON.stringify({ how: "self", on: "2026-10-04" })); }, "home"],
+    ["both done", () => { Object.defineProperty(navigator, "standalone", { get: () => true }); localStorage.setItem("fl.homeAdded", JSON.stringify({ how: "self", on: "2026-10-04" })); localStorage.setItem("fl.remPlan", JSON.stringify({ at: "06:30", first: "2026-10-05" })); }, "all"],
+    ["only on the home screen", () => { Object.defineProperty(navigator, "standalone", { get: () => true }); localStorage.setItem("fl.homeAdded", JSON.stringify({ how: "self", on: "2026-10-04" })); }, "home"],
     ["only the reminder", () => { localStorage.setItem("fl.remPlan", JSON.stringify({ at: "06:30", first: "2026-10-05" })); }, "rem"]]) {
     const x = await open({ device: "iPhone 14", init }); await x.goto(); await click(x, "#setupGo"); await click(x, "#stepNext");
     if (expect === "all") {
