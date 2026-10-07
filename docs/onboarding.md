@@ -34,7 +34,7 @@ words: task names (shuffled per phone), folded sections and screen-reader-only t
   and tick them off to unlock today’s card—then put your phone down."
 - **The computer page:** full screen, dark, no way to close it. "Mornward only works where your bad habits live." /
   "Scan this now to add it to your mobile Home Screen before tomorrow morning.", what it is (above), a 260 px code
-  ("Point your phone’s camera here", Copy link, Send to my phone where offered) and "Then add it to your Home Screen":
+  (Copy link, and Send to my phone where offered) and "Then add it to your Home Screen":
   iPhone (Safari) and Android (Chrome) steps. `HOWTO_IMG` set to an image path replaces the steps with that picture.
   The app behind it is `inert`. The preview shows it only with `?wall=1`.
 
