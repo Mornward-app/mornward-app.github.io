@@ -26,10 +26,14 @@ words: task names (shuffled per phone), folded sections and screen-reader-only t
 | Morning tasks | 25 | ~20 | Six chips; one short hint |
 
 - **The promise** (Welcome and Prepared, under the heading): "Start your day on purpose, not on a feed."
-- **What it is, in ten words** (computer only, on the dark page; its words live in `ABOUT_COPY` only): "What is Mornward?" / "A one-minute
-  morning routine: three breaths, then your chosen tasks."
+- **What it is** (computer only, on the dark page; its words live in `ABOUT_COPY` only): "Not an app blocker. A bridge
+  into your day." / "Mornward doesn’t lock your phone or watch your apps. It gives you a 60-second routine between your
+  alarm and the scroll, so you can start your morning on purpose."
+- **Step 1's card** (first setup only, not Edit setup; not counted in the step's words): "Start with a small win, not a
+  feed." / "Pick up to three mini tasks for your morning. When you wake up, take 3 breaths, do your tasks in real life,
+  and tick them off to unlock today’s card—then put your phone down."
 - **The computer page:** full screen, dark, no way to close it. "Mornward only works where your bad habits live." /
-  "Scan this now to add it to your mobile Home Screen before tomorrow morning.", What is Mornward?, a 260 px code
+  "Scan this now to add it to your mobile Home Screen before tomorrow morning.", what it is (above), a 260 px code
   ("Point your phone’s camera here", Copy link, Send to my phone where offered) and "Then add it to your Home Screen":
   iPhone (Safari) and Android (Chrome) steps. `HOWTO_IMG` set to an image path replaces the steps with that picture.
   The app behind it is `inert`. The preview shows it only with `?wall=1`.
@@ -250,7 +254,7 @@ Every result below is from Chromium with phone emulation, not a physical phone.
 | 9 | Counts off: the whole journey works; nothing sent or queued; no ID made | Pass |
 | 10 | Failed saves (prepared tasks; finishing setup): message, Retry, input kept, no "Ready" | Pass |
 | 11 | Calendar opened but not saved: "Calendar opened—finish saving your reminder there."; tasks and the reminder survive a reload after the hand-off; a blocked calendar doesn't trap setup; no reminder-success claim | Pass |
-| 12 | Computer: the dark page covers everything (full screen, code ≥ 240 px in view, app inert, no close, a click behind it sends nothing); the instruction, What is Mornward?, both phones' steps; the QR decodes to `https://mornward.app/?from=qr`; one column in a narrow window. Phones and the installed app never show it | Pass |
+| 12 | Computer: the dark page covers everything (full screen, code ≥ 240 px in view, app inert, no close, a click behind it sends nothing); the instruction, what it is, both phones' steps; the QR decodes to `https://mornward.app/?from=qr`; one column in a narrow window. Phones and the installed app never show it | Pass |
 | 13 | 320 px, dark mode, reduced motion and 200% text: every setup and morning screen fits the phone's width (checked against the screen, not the stretched viewport); keyboard; focus to the heading; labelled toggle groups; 44 px targets | Pass (emulated) |
 | — | First reminder: 6 AM (7:00) → that morning; 8 AM → tomorrow; 1:30 AM → that morning; December 31 → January 1, 2027 with the year | Pass |
 

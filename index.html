@@ -281,6 +281,7 @@
   .about h2 { margin: 0 0 6px; font-size: 1rem; line-height: 1.375rem; }
   .about p { margin: 0; font-size: 0.9375rem; line-height: 1.375rem; color: var(--text); }
   .about + .handoff { margin-top: 0; }
+  .whycard { margin: 0; }
   /* Beside the app on wide screens: a slim column, "What is Mornward?" on top, then the code centred in its card */
   @media (min-width: 1000px) {
     #handoffSlot .about { margin-top: 0; }
@@ -1048,7 +1049,6 @@
   // The promise, in one line: what the minute gives back (Welcome and the prepared screen)
   const PROMISE = 'Start your day <em class="hl">on purpose</em>, not on a feed.';
   // What Mornward is, in ten words: above the phone card on a computer
-  const WHAT_IT_IS = 'A <em class="hl">one-minute</em> morning routine: three breaths, then your chosen tasks.';
   // Three breaths → mini tasks → ready, as icons: the routine at a glance (Welcome, Prepared, Begin)
   const flowRow = () => `<ol class="flow" id="flowRow" aria-label="Three breaths, a few mini tasks, then you're ready">
         <li>${icon("breath")}<span>3 breaths</span></li>
@@ -1142,6 +1142,10 @@
     let retry = false;
     show(`${stepTop(1)}
       <h1>Pick your morning tasks.</h1>
+      ${editing ? "" : `<aside class="about whycard" id="whyCard" aria-labelledby="whyTitle">
+        <h2 id="whyTitle">Start with a small win, not a feed.</h2>
+        <p>Pick up to three mini tasks for your morning. When you wake up, take 3 breaths, do your tasks in real life, and tick them off to unlock today’s card—then put your phone down.</p>
+      </aside>`}
       <p class="body" id="pickHint">Up to ${PICK_MAX}.</p>
       <div class="chips picks" id="ideas" role="group" aria-label="Mini tasks for your next morning, up to ${PICK_MAX}">
         ${options.map((x, i) => `<button class="chip pick" type="button" data-idea="${i}" aria-pressed="${sel.includes(x)}">
@@ -2285,8 +2289,9 @@
         </div>
       </aside>`;
   }
-  // "What is Mornward?": the one place its words live (shown on a computer). New copy goes in ABOUT_COPY only.
-  const ABOUT_COPY = { title: "What is Mornward?", body: WHAT_IT_IS };
+  // What Mornward is: the one place its words live (shown on a computer). New copy goes in ABOUT_COPY only.
+  const ABOUT_COPY = { title: "Not an app blocker. A bridge into your day.",
+    body: "Mornward doesn’t lock your phone or watch your apps. It gives you a 60-second routine between your alarm and the scroll, so you can start your morning on purpose." };
   const aboutHtml = () => `
       <aside class="about" id="aboutBox" aria-labelledby="aboutTitle">
         <h2 id="aboutTitle">${ABOUT_COPY.title}</h2>

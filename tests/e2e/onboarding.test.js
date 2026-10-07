@@ -31,7 +31,7 @@ const snapshot = (x) => x.p.evaluate(() => JSON.stringify(Object.keys(localStora
 // The app's own words a person can see (task names, screen-reader-only text and folded sections left out: task names
 // are shuffled per phone, so they'd make the count vary)
 const words = (x) => x.p.evaluate(() => { const c = document.querySelector("#card").cloneNode(true);
-  c.querySelectorAll(".sr-only, .chip.pick span, #prepList li, #cardTeaser, #mcard, #cardNext").forEach((e) => e.remove()); // content, not the app's own words
+  c.querySelectorAll(".sr-only, .chip.pick span, #prepList li, #cardTeaser, #mcard, #cardNext, #whyCard").forEach((e) => e.remove()); // content, not the app's own words
   document.body.appendChild(c); const t = c.innerText; c.remove(); return t.split(/\s+/).filter((w) => /[A-Za-z0-9]/.test(w)).length; });
 const BUDGET = { welcome: 45, tasks: 25, ret: 35, ready: 40, prepared: 40, morning: 25 };
 const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
@@ -58,6 +58,8 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
       (await x.p.textContent(".stepnum")) === "Step 1 of 2" && (await x.p.$$(".stepbars i")).length === 2 && (await x.p.$$(".stepbars i.on")).length === 1 &&
       (await x.p.$$("[data-idea]")).length === 6 &&
       (await x.p.textContent("#stepNext")) === "Save my plan" && (await x.p.textContent("#stepSkip")) === "Choose later");
+    ok("step 1: the card 'Start with a small win, not a feed.' above the tasks", (await x.p.textContent("#whyTitle")) === "Start with a small win, not a feed." &&
+      /Pick up to three mini tasks for your morning\. When you wake up, take 3 breaths, do your tasks in real life, and tick them off to unlock today’s card—then put your phone down\./.test(await x.p.textContent("#whyCard")));
     ok(`step 1: few words besides the task names (≤ ${BUDGET.tasks})`, (await words(x)) <= BUDGET.tasks, "words: " + await words(x));
     ok("step 1: no 'where your scroll starts' question in the way", !(await x.p.$("[data-app]")) && !/scroll usually start/.test(await text(x)));
     ok("step 1: nothing saved just by opening it", !(await x.ls("prepared")));
@@ -297,8 +299,8 @@ const NOT_LATE = /missed|late\b|overdue|behind|streak|you didn't/i;
     ok("12 ...a click behind it starts nothing; nothing agreed or sent", !(await x.ls("onboard")) && !(await x.ls("agreed")) && x.bodies.length === 0);
     await x.p.keyboard.press("Escape"); await x.t(200);
     ok("12 ...no way to close it", !!(await x.p.$("#deskWall .deskwall")) && !(await x.p.$(".deskwall [data-guide-close], .deskwall .ix")));
-    ok("12 ...'What is Mornward?' on it (one place for its copy)", (await x.p.textContent("#aboutTitle")) === "What is Mornward?" &&
-      (await x.p.textContent("#aboutBox p")).trim() === "A one-minute morning routine: three breaths, then your chosen tasks.");
+    ok("12 ...what it is: 'Not an app blocker. A bridge into your day.'", (await x.p.textContent("#aboutTitle")) === "Not an app blocker. A bridge into your day." &&
+      (await x.p.textContent("#aboutBox p")).trim() === "Mornward doesn’t lock your phone or watch your apps. It gives you a 60-second routine between your alarm and the scroll, so you can start your morning on purpose.");
     ok("12 ...how to add it: iPhone and Android steps (image placeholder)", (await x.p.$$("#howTo .vsteps")).length === 2 && /Add to Home Screen/.test(await x.p.textContent("#howTo")));
     ok("12 ...no side card as well", !(await x.p.$("#handoffSlot #handoff")));
     await x.p.locator(".dwqr .qr").screenshot({ path: "/tmp/mw-qr-onb.png" });
