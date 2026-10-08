@@ -1,0 +1,113 @@
+import { useEffect, useRef, useState } from 'react'
+import { actions, useStore } from '../lib/store'
+import { disableMorningPush, enableMorningPush, haptic, type PushResult } from '../lib/native'
+import { fmtMins } from '../lib/dates'
+import { notifBody, timeLabel } from '../lib/copy'
+import { Eyebrow, Frame, StepBars } from '../components/ui'
+
+type Note = 'on' | 'off' | PushResult
+
+export default function OnbHook() {
+  const s = useStore()
+  const [note, setNote] = useState<Note>(s.pushOn ? 'on' : 'off')
+  const f = fmtMins(s.wakeMins)
+  const body = notifBody(s.picked)
+  const t = (s.wakeMins - 240) / 420
+  const ang = Math.PI * (1 - t)
+  const sunX = Math.round(155 + 145 * Math.cos(ang))
+  const sunY = Math.round(78 - 70 * Math.sin(ang))
+
+  const schedule = (mins: number) => enableMorningPush(Math.floor(mins / 60), mins % 60, body)
+
+  const toggle = async () => {
+    haptic('light')
+    if (s.pushOn) {
+      actions.setPush(false); setNote('off'); await disableMorningPush(); return
+    }
+    const r = await schedule(s.wakeMins)
+    actions.setPush(r === 'scheduled')
+    setNote(r === 'scheduled' ? 'on' : r)
+  }
+
+  // moving the wake time re-schedules the one daily notification
+  const first = useRef(true)
+  useEffect(() => {
+    if (first.current) { first.current = false; return }
+    if (!s.pushOn) return
+    const id = window.setTimeout(() => { void schedule(s.wakeMins) }, 400)
+    return () => window.clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [s.wakeMins])
+
+  const step = (d: number) => { haptic('light'); actions.setWake(s.wakeMins + d) }
+
+  const msg: Record<Note, string> = {
+    off: 'Off. You can still open Mornward yourself.',
+    on: `On. One notification at ${timeLabel(s.wakeMins)}, every day. It never leaves this phone.`,
+    scheduled: '',
+    denied: 'Notifications are off for Mornward. Turn them on in Settings, or open it yourself.',
+    unsupported: 'This device can’t schedule it. Open Mornward yourself.',
+  }
+
+  return (
+    <Frame testId="screen-hook" bg="#2B2A6B" fg="#FFF6E5" className="flex flex-col px-6 pb-[30px]">
+      <StepBars step={3} />
+      <Eyebrow className="mt-6 text-muted-2" style={{ animation: 'fadeUp .6s ease both' }}>TONIGHT · 3 OF 4</Eyebrow>
+      <h1 className="h-screen-title m-0 mt-2 text-[48px] leading-[0.92]" style={{ animation: 'fadeUp .6s ease .08s both' }}>Let us push you. Once.</h1>
+      <p className="m-0 mt-3 text-[17px] leading-[24px] text-muted" style={{ animation: 'fadeUp .6s ease .16s both' }}>
+        At {f.t} {f.ap}, this lands before any other app gets the chance. Nothing else, ever.
+      </p>
+
+      <div className="mt-5 bg-hill-night rounded-3xl px-4 pt-4 pb-3.5 flex flex-col gap-1.5">
+        <div className="flex justify-between items-center">
+          <div>
+            <span className="label text-muted-2">I WAKE AT</span>
+            <p className="m-0 text-[44px] leading-none font-extrabold tracking-[-0.03em]" data-testid="wake-time">{f.t}<span className="label ml-2 align-middle text-soft">{f.ap}</span></p>
+          </div>
+          <div className="flex gap-2">
+            <button type="button" aria-label="15 minutes earlier" onClick={() => step(-15)}
+              className="w-12 h-12 rounded-full border-0 bg-cream text-ink text-2xl font-extrabold cursor-pointer transition-transform active:scale-90">−</button>
+            <button type="button" aria-label="15 minutes later" onClick={() => step(15)}
+              className="w-12 h-12 rounded-full border-0 bg-cream text-ink text-2xl font-extrabold cursor-pointer transition-transform active:scale-90">+</button>
+          </div>
+        </div>
+        <div aria-hidden className="relative h-[62px] mt-1 overflow-hidden">
+          <span className="absolute left-2.5 right-2.5 top-2 h-[140px] rounded-[50%] border-2 border-dashed border-arc" />
+          <span className="absolute w-[22px] h-[22px] -mt-[11px] -ml-[11px] rounded-full bg-sun"
+            style={{ left: sunX, top: sunY, boxShadow: '0 0 0 6px rgba(255,227,138,.2)', transition: 'left .6s cubic-bezier(.34,1.3,.5,1), top .6s cubic-bezier(.34,1.3,.5,1)' }} />
+          <span className="absolute left-0 right-0 bottom-0 h-2 bg-hill-night" />
+        </div>
+      </div>
+
+      <div className="mt-4 [@media(max-height:760px)]:hidden" style={{ transformOrigin: '50% -60px', animation: 'swing 1.3s cubic-bezier(.3,.8,.4,1) .35s both' }}>
+        <div className="bg-cream text-ink rounded-3xl px-4 py-3 flex gap-3 items-start" style={{ boxShadow: '0 6px 0 #C9B9A0' }}>
+          <span aria-hidden className="flex-none w-10 h-10 rounded-[11px] bg-night flex items-center justify-center" style={{ animation: 'bell 2.8s ease-in-out 1.6s infinite' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFE38A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" /><path d="M10 20a2 2 0 0 0 4 0" /></svg>
+          </span>
+          <div className="flex-1 flex flex-col gap-0.5 min-w-0">
+            <div className="flex justify-between"><span className="mono text-[11px] tracking-[0.1em] text-label-2">MORNWARD</span><span className="text-[13px] text-label-2">{f.t}</span></div>
+            <span className="text-[17px] font-extrabold">Before the feed.</span>
+            <span className="text-[15px] leading-5 text-label">{body}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-center gap-3">
+        <div className="flex-1">
+          <p id="push-label" className="m-0 text-[17px] font-extrabold">Morning push at {timeLabel(s.wakeMins)}</p>
+          <p className="m-0 mt-0.5 text-[13px] leading-[18px] text-soft" role="status" data-testid="push-note">{msg[note]}</p>
+        </div>
+        <button type="button" role="switch" aria-checked={s.pushOn} aria-labelledby="push-label" onClick={toggle}
+          className="relative flex-none w-[64px] h-[44px] rounded-full border-0 cursor-pointer transition-colors duration-200"
+          style={{ background: s.pushOn ? '#FFE38A' : '#9896D8' }}>
+          <span aria-hidden className="absolute top-1 w-9 h-9 rounded-full transition-[left,background-color] duration-200"
+            style={{ left: s.pushOn ? 24 : 4, background: s.pushOn ? '#2B1B3A' : '#FFF6E5' }} />
+        </button>
+      </div>
+
+      <div className="mt-auto pt-4">
+        <button type="button" className="chunky chunky-butter" onClick={() => { haptic('success'); actions.go('sleep') }}>Set my morning</button>
+      </div>
+    </Frame>
+  )
+}

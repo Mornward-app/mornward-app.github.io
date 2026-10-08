@@ -1,47 +1,39 @@
 # Mornward
 
-**Before the scroll, a few mini tasks.**
+A one-minute morning ritual before the feed. Native iOS and Android app (Capacitor) with a React, TypeScript and Tailwind UI in the **Daybreak** design: the sky is the progress bar.
 
-Mornward is a free one-minute routine for the moment your alarm goes off, before the feed gets there first.
-Three breaths, then up to three small things for this morning. Then get on with your morning.
+Tonight: pick up to 3 tiny tasks, seal a one-line pact, set a wake time, allow one local push. Morning: read the pact, hold the sun for 3 breaths, do the tasks for real and tick them, unseal one of 21 science cards, put the phone down.
 
-**Try it: [mornward.app](https://mornward.app)**. Free, no account. Currently in beta.
+No account. No blocker. No alarm. **Nothing is sent anywhere**: state lives in `localStorage` (`mornward.daybreak.v1`), notifications are local, and the Android build declares no INTERNET permission.
 
-## How it works
+## Screens (flow order)
 
-**First visit: prepare now, practise in the morning.** Welcome ("A calmer start, before the scroll." and three icons)
-→ pick your morning tasks → "Make it easy to return." (a calendar reminder and the home screen, both optional) →
-"Ready for your first morning." Each screen keeps to a small word budget. On a computer, the phone is offered first.
-Setup starts no routine. Up already? "Begin now" goes straight to the routine. Details: [`docs/onboarding.md`](docs/onboarding.md).
+`OnbPlan` → `OnbPact` → `OnbHook` → `OnbSleep` → `Wake` → `Breathe` → `Act` → `Down` (`src/screens/`).
 
-**Each morning:**
+## Develop
 
-| Screen | What happens |
-| --- | --- |
-| Begin | One button: 3 breaths → mini tasks → ready. About one minute. (Before the first routine: "A minute before the scroll.") |
-| Breathe | Three slow breaths (4 seconds in, 6 out), with Pause and Skip |
-| Choose | "What matters this morning?" Six mini tasks (a fresh six each routine day), two ticked: change them or add your own (up to three), then Save my tasks |
-| Done | "Morning reset complete." The sun rises; your mini tasks (with Edit) and your progress |
+```bash
+npm install
+npm run dev            # http://localhost:5173
+npm test               # typecheck, contrast check, build, Playwright
+npm run test:contrast  # WCAG AA check of every text pair (src/tokens.json)
+```
 
-Open it again the same day and you see today's mini task. The next day it offers the routine again;
-earlier tasks stay on your phone, listed by date. A calendar reminder is optional, in setup and under Today. It never asks for notification permission.
-Light and dark: it follows your phone's setting.
-Begin and Today show an "Add to home screen" box (Chrome's one-tap install on Android, Apple's
-Share steps on iPhone) and "Your progress": your dates since you started (the last 7 once there are more), a yellow circle
-for each full morning reset (3 breaths and mini tasks), and a running count of resets completed.
+## Native
 
-Design reasoning: [`docs/mornward-ui-ux-rationale.md`](docs/mornward-ui-ux-rationale.md).
+```bash
+npm run ios       # build, cap sync, open Xcode (needs a Mac)
+npm run android   # build, cap sync, open Android Studio
+```
 
-## Privacy
+Plugins: `@capacitor/local-notifications` (one daily notification, id 700, at the wake time; default 7:00 AM; permission asked only from the OnbHook toggle), `@capacitor/haptics`, `@capacitor/app`. Tapping the notification opens `Wake`.
 
-- No account, no sign-up.
-- Everything you write stays on your phone.
-- During the beta it sends a few counts (like whether you finished the routine, never what you wrote), linked only by a random ID, so we can tell whether it's working. You can turn this off before you begin, or under "Privacy and your data" after any routine.
+Icons and splash come from `resources/` via `npx capacitor-assets generate` (re-render with `node resources/render.mjs`).
 
-Details: [terms and privacy](https://mornward.app/terms.html). Questions: mornward@proton.me
+## Notes
 
-## For developers
-
-One self-contained `index.html`, with no framework and no build step, hosted on GitHub Pages.
-Your mini tasks are stored in `localStorage`. The optional stats go to Supabase; see `supabase/ANALYTICS.md` and
-`supabase/METRICS.md` (definitions). Tests: `tests/README.md`.
+- `supabase/` and `tests/db/` are the old beta analytics backend, kept for reference. The app does not use them.
+- Deploy: `.github/workflows/deploy.yml` builds with `npm ci && npm run build` and publishes `dist/` to GitHub Pages on every push to `main` (repo Settings → Pages → Source: GitHub Actions). `public/CNAME` keeps the custom domain.
+- iPhone: `index.html` has `viewport-fit=cover` and the Apple web-app tags, `public/manifest.webmanifest` is standalone, and every screen pads by `env(safe-area-inset-top|bottom)`.
+- `public/sw.js` is a retired kill-switch: browsers that still hold the old PWA service worker fetch it, clear every cache and unregister. `src/lib/retire-sw.ts` does the same on every launch.
+- Design source of truth: `src/tokens.json` and the Daybreak handoff. Night is `#2B2A6B`.
