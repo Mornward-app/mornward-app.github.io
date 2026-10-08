@@ -2,13 +2,17 @@ import { useSyncExternalStore } from 'react'
 import { CARDS } from './cards'
 import { dateKey } from './dates'
 
-export type ScreenId = 'plan' | 'pact' | 'hook' | 'sleep' | 'wake' | 'breathe' | 'act' | 'down'
+export type ScreenId = 'welcome' | 'plan' | 'pact' | 'hook' | 'sleep' | 'wake' | 'breathe' | 'act' | 'down'
 
 export const STORAGE_KEY = 'mornward.daybreak.v1'
 export const MAX_TASKS = 3
 export const MAX_CUSTOM = 3
 export const STARTER_TASKS = ['Water first', 'Short walk', 'Stretch', 'Morning light', 'One quiet minute', 'Check on a friend']
 export const DEFAULT_WAKE = 7 * 60 // 7:00 AM
+export const WAKE_MIN = 5 * 60 // the sun slider spans 5:00 AM to 10:00 AM in 15 minute steps
+export const WAKE_MAX = 10 * 60
+export const WAKE_STEP = 15
+export const clampWake = (m: number) => Math.min(WAKE_MAX, Math.max(WAKE_MIN, Math.round(m / WAKE_STEP) * WAKE_STEP))
 
 export interface DayState {
   date: string
@@ -49,7 +53,7 @@ function freshDay(s: Pick<State, 'picked' | 'unlocks'>, date = dateKey()): DaySt
 function initial(): State {
   const base = { picked: ['Water first', 'Short walk'], opened: [] as number[], unlocks: 0 }
   return {
-    v: 1, screen: 'plan', onboarded: false, custom: [], hidden: [], picked: base.picked, pact: '', pactSealed: false,
+    v: 1, screen: 'welcome', onboarded: false, custom: [], hidden: [], picked: base.picked, pact: '', pactSealed: false,
     wakeMins: DEFAULT_WAKE, pushOn: false, day: freshDay(base), history: [], opened: base.opened, unlocks: 0,
   }
 }
@@ -64,14 +68,14 @@ function load(): State {
     if (!raw) return base
     const p = JSON.parse(raw) as Partial<State>
     const s: State = { ...base }
-    if (typeof p.screen === 'string' && ['plan', 'pact', 'hook', 'sleep', 'wake', 'breathe', 'act', 'down'].includes(p.screen)) s.screen = p.screen as ScreenId
+    if (typeof p.screen === 'string' && ['welcome', 'plan', 'pact', 'hook', 'sleep', 'wake', 'breathe', 'act', 'down'].includes(p.screen)) s.screen = p.screen as ScreenId
     if (typeof p.onboarded === 'boolean') s.onboarded = p.onboarded
     if (isStrArr(p.custom)) s.custom = p.custom.slice(0, MAX_CUSTOM)
     if (isStrArr(p.hidden)) s.hidden = p.hidden.filter((h) => STARTER_TASKS.includes(h))
     if (isStrArr(p.picked)) s.picked = p.picked.slice(0, MAX_TASKS)
     if (typeof p.pact === 'string') s.pact = p.pact
     if (typeof p.pactSealed === 'boolean') s.pactSealed = p.pactSealed
-    if (typeof p.wakeMins === 'number' && p.wakeMins >= 240 && p.wakeMins <= 660) s.wakeMins = p.wakeMins
+    if (typeof p.wakeMins === 'number' && Number.isFinite(p.wakeMins)) s.wakeMins = clampWake(p.wakeMins)
     if (typeof p.pushOn === 'boolean') s.pushOn = p.pushOn
     if (isStrArr(p.history)) s.history = p.history
     if (isNumArr(p.opened)) s.opened = p.opened.filter((i) => i >= 0 && i < CARDS.length)
@@ -151,7 +155,7 @@ export const actions = {
   setPact(pact: string) { if (!state.pactSealed) set({ pact: pact.slice(0, 140) }) },
   sealPact() { if (state.pact.trim()) set({ pactSealed: true, pact: state.pact.trim() }) },
   unsealPact() { set({ pactSealed: false }) },
-  setWake(wakeMins: number) { set({ wakeMins: Math.min(660, Math.max(240, wakeMins)) }) },
+  setWake(wakeMins: number) { const w = clampWake(wakeMins); if (w !== state.wakeMins) set({ wakeMins: w }) },
   setPush(pushOn: boolean) { set({ pushOn }) },
   finishOnboarding() { set({ onboarded: true }) },
   /** Called only for a real hold of at least MIN_HOLD_MS. */

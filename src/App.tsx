@@ -1,6 +1,7 @@
 import type React from 'react'
 import { useEffect } from 'react'
 import { checkDay, useStore, type ScreenId } from './lib/store'
+import Welcome from './screens/Welcome'
 import OnbPlan from './screens/OnbPlan'
 import OnbPact from './screens/OnbPact'
 import OnbHook from './screens/OnbHook'
@@ -11,7 +12,7 @@ import Act from './screens/Act'
 import Down from './screens/Down'
 
 const SCREENS: Record<ScreenId, () => React.JSX.Element> = {
-  plan: OnbPlan, pact: OnbPact, hook: OnbHook, sleep: OnbSleep, wake: Wake, breathe: Breathe, act: Act, down: Down,
+  welcome: Welcome, plan: OnbPlan, pact: OnbPact, hook: OnbHook, sleep: OnbSleep, wake: Wake, breathe: Breathe, act: Act, down: Down,
 }
 
 export default function App() {

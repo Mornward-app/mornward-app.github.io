@@ -9,6 +9,10 @@ export default {
       fontFamily: {
         display: ['"Bricolage Grotesque Variable"', 'system-ui', 'sans-serif'],
         mono: ['"Geist Mono Variable"', 'ui-monospace', 'monospace'],
+        // Welcome screen only
+        serif: ['"Instrument Serif"', 'Georgia', 'serif'],
+        jakarta: ['"Plus Jakarta Sans Variable"', 'system-ui', 'sans-serif'],
+        jbmono: ['"JetBrains Mono Variable"', 'ui-monospace', 'monospace'],
       },
       borderRadius: { chunk: '22px' },
       transitionTimingFunction: {

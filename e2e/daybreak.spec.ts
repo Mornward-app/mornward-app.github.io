@@ -22,16 +22,56 @@ async function hold(page: Page, ms: number) {
   await page.mouse.up()
 }
 
+const BEGIN = /begin tonight's setup \(45s\)/i
+const begin = (page: Page) => page.getByRole('button', { name: BEGIN }).click()
+
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
   await page.evaluate(() => localStorage.clear())
   await page.reload()
 })
 
+test('Welcome: first screen for a new user, explains the ritual, begins at step 1', async ({ page }) => {
+  const w = page.getByTestId('screen-welcome')
+  await expect(w).toBeVisible()
+  await expect(page.getByTestId('screen-plan')).toHaveCount(0)
+  await expect(w).toContainText('MORNWARD · DAYBREAK')
+  await expect(w.getByRole('heading', { level: 1 })).toHaveText('Your morning belongs to you — not the feed.')
+  await expect(w.locator('h1 em')).toHaveText('not the feed.')
+  await expect(w.locator('h1 em')).toHaveCSS('color', rgb('#FFE9A8'))
+  await expect(w.locator('h1 em')).toHaveCSS('font-style', 'italic')
+  await expect(w).toContainText('A 4-minute sunrise ritual that stands between your alarm and your first scroll.')
+  const steps = w.getByRole('list', { name: 'How it works' }).getByRole('listitem')
+  await expect(steps).toHaveCount(3)
+  await expect(steps.nth(0)).toContainText('01 · TONIGHT (45s)')
+  await expect(steps.nth(0)).toContainText('Pick 3 tiny off-screen moves & leave a 1-line note for 7am you.')
+  await expect(steps.nth(1)).toContainText('02 · AT WAKE-UP')
+  await expect(steps.nth(1)).toContainText('Hold the sun for 3 slow breaths, then check off your 3 moves to lift the sun.')
+  await expect(steps.nth(2)).toContainText('03 · SCREEN OFF')
+  await expect(steps.nth(2)).toContainText('Unseal 1 daily science card, then put your phone down.')
+  const cta = page.getByRole('button', { name: BEGIN })
+  await expect(cta).toHaveCSS('background-color', rgb('#FFB547'))
+  // fits the iPhone screen with no scrolling, CTA inside the viewport
+  const box = (await cta.boundingBox())!
+  expect(box.y + box.height).toBeLessThanOrEqual(852)
+  expect(await w.evaluate((el) => el.scrollHeight <= el.clientHeight + 1)).toBe(true)
+  await cta.click()
+  await expect(page.getByTestId('screen-plan')).toBeVisible()
+  await expect(page.getByText('TONIGHT · 1 OF 4')).toBeVisible()
+  await page.reload() // new users who reload mid-setup resume where they were, not at the welcome
+  await expect(page.getByTestId('screen-plan')).toBeVisible()
+})
+
+test('Welcome: a user who already onboarded is not sent back to it', async ({ page }) => {
+  await patchState(page, { screen: 'plan', onboarded: true })
+  await expect(page.getByTestId('screen-plan')).toBeVisible()
+})
+
 test('app never talks to Supabase or any other host', async ({ page }) => {
   const hosts = new Set<string>()
   page.on('request', (r) => { const u = new URL(r.url()); if (u.protocol.startsWith('http')) hosts.add(u.host) })
   await page.reload()
+  await begin(page)
   await page.getByRole('button', { name: /next: your pact/i }).click()
   await page.getByRole('button', { name: /A clear head before work/ }).click()
   await page.getByRole('button', { name: /seal my pact/i }).click()
@@ -39,6 +79,7 @@ test('app never talks to Supabase or any other host', async ({ page }) => {
 })
 
 test('OnbPlan: custom task input is live, limit shakes, state persists', async ({ page }) => {
+  await begin(page)
   await expect(page.getByTestId('screen-plan')).toBeVisible()
   const input = page.getByPlaceholder('+ Write your own tiny task...')
   await expect(input).toBeVisible()
@@ -59,6 +100,7 @@ test('OnbPlan: custom task input is live, limit shakes, state persists', async (
 })
 
 test('OnbPact: starter chips fill the pact, seal persists across reload', async ({ page }) => {
+  await begin(page)
   await page.getByRole('button', { name: /next: your pact/i }).click()
   const seal = page.getByRole('button', { name: /seal my pact/i })
   await expect(seal).toHaveAttribute('aria-disabled', 'true')
@@ -91,6 +133,87 @@ test('OnbHook: 7:00 AM default, native push toggle schedules, no Add to Home Scr
   await page.getByRole('button', { name: 'Set my morning' }).click()
   await expect(page.getByTestId('screen-sleep')).toBeVisible()
   await expect(page.getByText('See you at 7:00 AM.')).toBeVisible()
+})
+
+test('OnbHook: the sun is draggable and stays in sync with the buttons', async ({ page }) => {
+  await patchState(page, { screen: 'hook', pact: 'x', pactSealed: true })
+  const track = page.getByTestId('sun-track')
+  const thumb = page.getByTestId('sun-thumb')
+  const time = page.getByTestId('wake-time')
+  await expect(thumb).toHaveCSS('touch-action', 'auto') // the thumb itself; the track captures the touch
+  await expect(track).toHaveCSS('touch-action', 'none')
+  await expect(thumb).toHaveAttribute('aria-valuemin', '300')
+  await expect(thumb).toHaveAttribute('aria-valuemax', '600')
+  const centre = async () => { const b = (await thumb.boundingBox())!; return { x: b.x + b.width / 2, y: b.y + b.height / 2 } }
+  const tb = (await track.boundingBox())!
+  const dragTo = async (frac: number) => {
+    const from = await centre()
+    await page.mouse.move(from.x, from.y); await page.mouse.down()
+    const toX = tb.x + tb.width * frac
+    for (let i = 1; i <= 6; i++) await page.mouse.move(from.x + ((toX - from.x) * i) / 6, from.y)
+    await page.mouse.up()
+    await page.waitForTimeout(700) // spring settles
+  }
+
+  await expect(time).toContainText('7:00')
+  await dragTo(0.995) // far right: 10:00 AM
+  await expect(time).toContainText('10:00')
+  await expect(thumb).toHaveAttribute('aria-valuenow', '600')
+  const lowRight = await centre()
+  await dragTo(0.005) // far left: 5:00 AM
+  await expect(time).toContainText('5:00')
+  await expect(thumb).toHaveAttribute('aria-valuenow', '300')
+  const lowLeft = await centre()
+  await dragTo(0.5) // top of the arc: 7:30 AM
+  await expect(time).toContainText('7:30')
+  const top = await centre()
+  expect(top.y).toBeLessThan(lowLeft.y - 40) // the sun climbs the arc towards midday
+  expect(top.y).toBeLessThan(lowRight.y - 40)
+  expect(Math.abs(top.x - (tb.x + tb.width / 2))).toBeLessThan(3)
+
+  // buttons stay in step with the sun
+  await page.getByRole('button', { name: '15 minutes later' }).click()
+  await expect(time).toContainText('7:45')
+  await expect(thumb).toHaveAttribute('aria-valuenow', '465')
+  await expect(thumb).toHaveAttribute('aria-valuetext', '7:45 AM')
+  await page.waitForTimeout(700)
+  expect((await centre()).x).toBeGreaterThan(top.x) // the sun moved right with the button
+  await page.getByRole('button', { name: '15 minutes earlier' }).click()
+  await page.getByRole('button', { name: '15 minutes earlier' }).click()
+  await expect(time).toContainText('7:15')
+  // clamps at the ends
+  await thumb.focus(); await page.keyboard.press('Home')
+  await expect(time).toContainText('5:00')
+  await page.getByRole('button', { name: '15 minutes earlier' }).click()
+  await expect(time).toContainText('5:00')
+  await thumb.focus(); await page.keyboard.press('End')
+  await expect(time).toContainText('10:00')
+  await page.getByRole('button', { name: '15 minutes later' }).click()
+  await expect(time).toContainText('10:00')
+  await thumb.focus(); await page.keyboard.press('ArrowLeft')
+  await expect(time).toContainText('9:45')
+  expect((await STATE(page)).wakeMins).toBe(585)
+  await page.reload()
+  await expect(page.getByTestId('wake-time')).toContainText('9:45')
+})
+
+test('OnbHook: touch drag on the sun works like on an iPhone', async ({ page }) => {
+  await patchState(page, { screen: 'hook' })
+  const cdp = await page.context().newCDPSession(page)
+  const thumb = page.getByTestId('sun-thumb')
+  const tb = (await page.getByTestId('sun-track').boundingBox())!
+  const b = (await thumb.boundingBox())!
+  const y = b.y + b.height / 2
+  const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', x: number) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y, id: 1 }] })
+  const startX = b.x + b.width / 2
+  await touch('touchStart', startX)
+  for (let i = 1; i <= 8; i++) await touch('touchMove', startX + ((tb.x + tb.width * 0.9 - startX) * i) / 8)
+  await touch('touchEnd', 0)
+  await expect(page.getByTestId('wake-time')).not.toContainText('7:00')
+  const mins = Number(await thumb.getAttribute('aria-valuenow'))
+  expect(mins).toBeGreaterThan(540) // dragged right of 9:00 AM
+  expect(mins % 15).toBe(0)
+  await expect(page.getByTestId('screen-hook')).toBeVisible()
 })
 
 test('OnbHook: denied permission leaves the toggle off and says why', async ({ page }) => {

@@ -1,5 +1,9 @@
 @import '@fontsource-variable/bricolage-grotesque/opsz.css';
 @import '@fontsource-variable/geist-mono/index.css';
+@import '@fontsource/instrument-serif/latin-400.css';
+@import '@fontsource/instrument-serif/latin-400-italic.css';
+@import '@fontsource-variable/plus-jakarta-sans/index.css';
+@import '@fontsource-variable/jetbrains-mono/index.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -31,6 +35,8 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visib
   .chunky:active:not([aria-disabled='true']) { transform: translateY(4px); }
   .chunky-butter { @apply bg-sun text-ink; box-shadow: 0 6px 0 #D9B94E; }
   .chunky-butter:active:not([aria-disabled='true']) { box-shadow: 0 2px 0 #D9B94E; }
+  .chunky-amber { @apply text-ink; background: #FFB547; border-radius: 999px; box-shadow: 0 6px 0 #C98A24; }
+  .chunky-amber:active { box-shadow: 0 2px 0 #C98A24; }
   .chunky-ink { @apply bg-ink text-cream; box-shadow: 0 6px 0 #120A18; }
   .chunky-ink:active { box-shadow: 0 2px 0 #120A18; }
   .chunky-cream { @apply bg-cream text-ink; box-shadow: 0 6px 0 #C9B9A0; }

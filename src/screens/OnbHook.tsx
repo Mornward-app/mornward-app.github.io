@@ -4,6 +4,7 @@ import { disableMorningPush, enableMorningPush, haptic, type PushResult } from '
 import { fmtMins } from '../lib/dates'
 import { notifBody, timeLabel } from '../lib/copy'
 import { Eyebrow, Frame, StepBars } from '../components/ui'
+import SunSlider from '../components/SunSlider'
 
 type Note = 'on' | 'off' | PushResult
 
@@ -12,10 +13,6 @@ export default function OnbHook() {
   const [note, setNote] = useState<Note>(s.pushOn ? 'on' : 'off')
   const f = fmtMins(s.wakeMins)
   const body = notifBody(s.picked)
-  const t = (s.wakeMins - 240) / 420
-  const ang = Math.PI * (1 - t)
-  const sunX = Math.round(155 + 145 * Math.cos(ang))
-  const sunY = Math.round(78 - 70 * Math.sin(ang))
 
   const schedule = (mins: number) => enableMorningPush(Math.floor(mins / 60), mins % 60, body)
 
@@ -71,15 +68,10 @@ export default function OnbHook() {
               className="w-12 h-12 rounded-full border-0 bg-cream text-ink text-2xl font-extrabold cursor-pointer transition-transform active:scale-90">+</button>
           </div>
         </div>
-        <div aria-hidden className="relative h-[62px] mt-1 overflow-hidden">
-          <span className="absolute left-2.5 right-2.5 top-2 h-[140px] rounded-[50%] border-2 border-dashed border-arc" />
-          <span className="absolute w-[22px] h-[22px] -mt-[11px] -ml-[11px] rounded-full bg-sun"
-            style={{ left: sunX, top: sunY, boxShadow: '0 0 0 6px rgba(255,227,138,.2)', transition: 'left .6s cubic-bezier(.34,1.3,.5,1), top .6s cubic-bezier(.34,1.3,.5,1)' }} />
-          <span className="absolute left-0 right-0 bottom-0 h-2 bg-hill-night" />
-        </div>
+        <SunSlider mins={s.wakeMins} onChange={(m) => { if (m !== s.wakeMins) { haptic('light'); actions.setWake(m) } }} />
       </div>
 
-      <div className="mt-4 [@media(max-height:760px)]:hidden" style={{ transformOrigin: '50% -60px', animation: 'swing 1.3s cubic-bezier(.3,.8,.4,1) .35s both' }}>
+      <div aria-hidden className="mt-4 [@media(max-height:760px)]:hidden pointer-events-none" style={{ transformOrigin: '50% -60px', animation: 'swing 1.3s cubic-bezier(.3,.8,.4,1) .35s both' }}>
         <div className="bg-cream text-ink rounded-3xl px-4 py-3 flex gap-3 items-start" style={{ boxShadow: '0 6px 0 #C9B9A0' }}>
           <span aria-hidden className="flex-none w-10 h-10 rounded-[11px] bg-night flex items-center justify-center" style={{ animation: 'bell 2.8s ease-in-out 1.6s infinite' }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFE38A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" /><path d="M10 20a2 2 0 0 0 4 0" /></svg>

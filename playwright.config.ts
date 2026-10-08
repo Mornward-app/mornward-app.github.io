@@ -12,8 +12,8 @@ export default defineConfig({
   reporter: [['list']],
   use: {
     baseURL: 'http://localhost:4173',
-    viewport: { width: 390, height: 844 },
-    deviceScaleFactor: 2,
+    viewport: { width: 393, height: 852 }, // iPhone 15/16
+    deviceScaleFactor: 3,
     hasTouch: true,
     launchOptions: { executablePath, args: ['--no-sandbox'] },
   },

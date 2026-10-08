@@ -13,3 +13,5 @@ React + TypeScript + Tailwind + Capacitor. See README.md for commands.
 7. No streak shaming, no invented numbers, no emoji, no exclamation marks. Every card in `src/lib/cards.ts` needs a real source.
 8. Respect `prefers-reduced-motion`: movement stops, colours still change.
 9. One screen, one thumb, one main action. No scrolling during the morning ritual (the deck is an opt-in sheet).
+10. **Welcome** is the first screen for a new user (before Step 1 of 4) and uses its own type (Instrument Serif, Plus Jakarta Sans, JetBrains Mono) and a pre-dawn gradient. Keep stars out of the text area and re-run the contrast check if you change its colours.
+11. **Wake time** lives in `store.ts` (`WAKE_MIN` 5:00 to `WAKE_MAX` 10:00, 15 minute steps). The sun slider, the +/- buttons and the arrow keys all call `actions.setWake`, so they never disagree.

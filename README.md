@@ -8,7 +8,7 @@ No account. No blocker. No alarm. **Nothing is sent anywhere**: state lives in `
 
 ## Screens (flow order)
 
-`OnbPlan` → `OnbPact` → `OnbHook` → `OnbSleep` → `Wake` → `Breathe` → `Act` → `Down` (`src/screens/`).
+`Welcome` (new users only) → `OnbPlan` → `OnbPact` → `OnbHook` → `OnbSleep` → `Wake` → `Breathe` → `Act` → `Down` (`src/screens/`). On `OnbHook` the wake time is set by dragging the sun along the arc (5:00 to 10:00 AM, 15 minute steps) or with the − and + buttons.
 
 ## Develop
 

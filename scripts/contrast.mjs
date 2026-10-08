@@ -42,6 +42,18 @@ const TEXT = [
   ['muted-2 labels on hill-night', c['muted-2'], c['hill-night']],
   ['muted-2 labels on deep night', c['muted-2'], c.deep],
   ['soft on wake notification card', c.soft, c.night],
+  // Welcome screen: #25245C -> #2E2D6E -> #523E7C gradient, amber CTA
+  ['welcome kicker / subtitle on gradient top', c.soft, '#25245C'],
+  ['welcome kicker / subtitle on gradient middle', c.soft, '#2E2D6E'],
+  ['welcome subtitle on gradient bottom', c.soft, '#523E7C'],
+  ['welcome step text on gradient middle', c.muted, '#2E2D6E'],
+  ['welcome step text on gradient bottom', c.muted, '#523E7C'],
+  ['welcome headline on gradient', c.cream, '#2E2D6E'],
+  ['welcome italic gold on gradient top', '#FFE9A8', '#25245C'],
+  ['welcome italic gold on gradient middle', '#FFE9A8', '#2E2D6E'],
+  ['welcome italic gold on gradient bottom', '#FFE9A8', '#523E7C'],
+  ['welcome CTA label on amber', c.ink, '#FFB547'],
+  ['sun hint labels on hook card', c.soft, c['hill-night']],
   // buttons and cards
   ['ink on butter button', c.ink, c.sun],
   ['cream on ink button', c.cream, c.ink],
@@ -63,6 +75,7 @@ const TEXT = [
 const SHAPES = [
   ['dashed unkept day ring on morning', c.dash, c.morning],
   ['switch track (off) on hill-night', c.line, c['hill-night']],
+  ['welcome step rail on gradient', '#FFB547', '#2E2D6E'],
   ['chip outline on night', c.line, c.night],
 ]
 
