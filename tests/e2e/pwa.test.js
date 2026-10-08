@@ -138,8 +138,8 @@ const swReady = (p) => p.evaluate(() => navigator.serviceWorker.ready.then(() =>
     await x.c.close(); }
   // Setup's optional row and the QR steps also stay away once it's known
   { const x = await ctx(b, site.url, { when: "2026-10-05T20:00:00", device: "iPhone 13", init: () => { localStorage.setItem("fl.homeAdded", JSON.stringify({ how: "self", on: "2026-10-05" })); } });
-    await x.goto("?from=qr"); await x.t(1000);
-    ok("added once (iPhone Safari, from the QR code): no steps, just 'Now open it from your home screen'", (await x.p.textContent("#guideTitle")) === "Now open it from your home screen" && !(await x.p.$("#guideSteps")));
+    await x.goto("?from=qr"); await x.t(1000); await x.p.click("#setupGo"); await x.t(500);
+    ok("added once (iPhone Safari, from the QR code), Prepare my morning: no steps, just 'Now open it from your home screen'", (await x.p.textContent("#guideTitle")) === "Now open it from your home screen" && !(await x.p.$("#guideSteps")));
     await x.goto(); await x.p.evaluate(() => localStorage.setItem("fl.browserOk", "true")); await x.goto(); await x.t(700);
     await x.p.click("#setupGo"); await x.t(700); await x.p.click("#stepNext"); await x.t(700);
     ok("added once: setup's 'Add to home screen · optional' row is gone", !(await x.p.$("#addSec")) && !!(await x.p.$("#remAt")));

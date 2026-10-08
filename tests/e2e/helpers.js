@@ -120,12 +120,15 @@ const steps = {
   skipBreathing: async (x) => { await x.p.click("#bskip"); await x.t(700); },
   keep: async (x) => { await x.p.click("#isave"); await x.t(700); },
   skipTasks: async (x) => { await x.p.click("#iskip"); await x.t(700); },
-  // Finish → Today: Done when there is one (no mini tasks); with mini tasks there's no Done, so reopen, like a person would
-  // The required home-screen steps (QR or social link, new phone): "Can't find it?" → "Continue in this browser"
+  // The required home-screen steps (QR or social link, new phone): Prepare my morning opens them; "Can't find it?" →
+  // "Continue in this browser". Leaves Welcome on screen, setup not started.
   inBrowser: async (x) => {
-    if (!(await x.p.waitForSelector("#guideHere", { state: "attached", timeout: 2000 }).catch(() => null))) return;
+    if (!(await x.p.$("#setupGo"))) return;
+    await x.p.click("#setupGo"); await x.t(300);
+    if (!(await x.p.$("#guideHere"))) { if (!(await x.p.$("#setupGo"))) throw new Error("inBrowser: setup opened without the steps"); return; }
     await x.p.click("#installGuide .cantfind summary"); await x.p.click("#guideHere"); await x.t(300);
   },
+  // Finish → Today: Done when there is one (no mini tasks); with mini tasks there's no Done, so reopen, like a person would
   finish: async (x) => { if (await x.p.$("#finish")) await x.p.click("#finish"); else await x.p.reload(); await x.t(700); },
   untickAll: async (x) => { for (const b of await x.p.$$('.chip.pick[aria-pressed="true"]')) await b.click(); }
 };

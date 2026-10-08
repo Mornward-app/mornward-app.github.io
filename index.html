@@ -252,7 +252,8 @@
     @keyframes slideup { from { transform: translateY(100%); } }
     @keyframes fadein { from { opacity: 0; } }
   }
-  .gsheet .row .ix { margin-right: -10px; }
+  .gsheet .row { flex-wrap: nowrap; align-items: flex-start; }
+  .gsheet .row .ix { margin-right: -10px; flex: none; }
   /* "I've added it" stays in view while the steps scroll under it */
   .gsheet [data-guide-added] { position: sticky; bottom: 0; box-shadow: 0 -14px 0 var(--bg); }
   .vsteps { list-style: none; margin: 0; padding: 0; display: flex; gap: 8px; counter-reset: st; }
@@ -878,7 +879,7 @@
     fitSticky();
     $("#installSlot").innerHTML = ""; // only Begin and Today show the home-screen box
     $("#handoffSlot").innerHTML = "";
-    closeGuide(false, true);
+    closeGuide();
     window.scrollTo(0, 0);
     if (screensShown++ === 0) return;
     $("#announce").textContent = label;
@@ -1072,15 +1073,14 @@
     $("#setupGo").onclick = startSetup;
     $("#beginNow").onclick = () => { if (!gated()) begin(); };
     renderHandoff(); // a computer: the phone code (slim, centred) and "What is Mornward?" beside the app
-    qrGuide();
   }
   // Home screen first. Arrived on a phone from the computer's QR code (?from=qr) or a social app's link (?from=reddit,
-  // an ad, a post), with nothing set up yet: the home-screen steps open over Welcome and stay until it's added (no
-  // close, no Later; again on every visit). iPhone: Safari can't see the icon and keeps its own storage, so a setup
-  // made in Safari would be lost to the icon; after "I've added it" the sheet says to open it from the icon and set up
-  // there (the icon itself is never gated). Android: Chrome and the installed app share storage, so "I've added it"
-  // or Chrome's own install lets them carry on here. "Continue in this browser" (under "Can't find it?") is the way
-  // out for a phone that can't add it. Nothing is agreed or sent by the steps.
+  // an ad, a post), with nothing set up yet: Welcome as usual, but setup (and Begin now) only after it's on the home
+  // screen. iPhone: Safari keeps its own storage and can't see the icon, so a setup made in Safari would be lost to the
+  // icon; after "I've added it" the sheet says to open it from the icon and set up there (the icon is never gated).
+  // Android: Chrome and the installed app share storage, so "I've added it" or Chrome's own install lets them carry on
+  // here. "Continue in this browser" (under "Can't find it?") is the way out for a phone that can't add it.
+  // Nothing is agreed or sent by the steps.
   const browserOk = () => store.get("browserOk", false) === true;
   function mustAddFirst() {
     const src = linkFrom || store.get("from", null);
@@ -1088,11 +1088,8 @@
     if (entryState() !== "new") return false;
     return isIOS ? true : !["home", "installed", "accepted"].includes(installState());
   }
-  function qrGuide() {
-    if (!mustAddFirst()) return;
-    setTimeout(() => { if (card.querySelector("#setupGo") && !$("#installGuide") && mustAddFirst()) openGuide(true, true); }, 400);
-  }
-  // Welcome's buttons, while the steps are required: back to the steps
+  // Welcome shows first, so people can see what Mornward is. Its buttons (Prepare my morning, Begin now) open the
+  // steps instead, while they're required. The steps can be closed; tapping a button opens them again.
   const gated = () => { if (!mustAddFirst()) return false; if (!$("#installGuide")) openGuide(true, true); return true; };
   // Opens setup. Starts no routine; counts setup_started once, if the counts are on.
   function startSetup() {
@@ -1992,7 +1989,7 @@
     installed = true; installPrompt = null; installAccepted = false; installNote = "";
     markHome("installed");
     emitDay("app_installed");
-    if ($("#installGuide") && !mustAddFirst()) closeGuide(false, true); // Android: added, so on to Welcome
+    if ($("#installGuide") && !mustAddFirst()) closeGuide(); // Android: added, so on to Welcome
     refreshHome();
   });
   // Chrome on Android can say whether this site is already installed (manifest related_applications, platform
@@ -2096,9 +2093,10 @@
   // The guide for adding by hand (iPhone always; Android when Chrome hasn't offered its dialog): a sheet at the
   // bottom with the steps, including the final confirmation. Esc, Done or tapping outside closes it.
   // auto: opened by itself (arriving from the QR code): a short reason, and "Later" instead of "Not yet"
-  // locked: required before setup (see mustAddFirst): no close, no Later; "Continue in this browser" under "Can't find it?"
+  // locked: required before setup (see mustAddFirst): "Not now" closes it (setup still waits for the home screen);
+  // "Continue in this browser" under "Can't find it?"
   function openGuide(auto = false, locked = false) {
-    closeGuide(false, true);
+    closeGuide();
     let k = stepKind();
     // Which phone the steps are for, chosen from the browser and switchable, so nobody follows the wrong ones
     let os = k.startsWith("ios") || (k === "inapp" && isIOS) ? "ios" : "android";
@@ -2113,10 +2111,10 @@
     if (locked) wrap.dataset.locked = "1";
     const why = locked ? (isIOS ? "Add it first, then set up from the icon. Safari won't keep your mornings." : "Add it first. One tap when you wake.")
       : "One tap from your home screen when you wake.";
-    wrap.innerHTML = `<div class="gback"${locked ? "" : " data-guide-close"}></div>
+    wrap.innerHTML = `<div class="gback" data-guide-close></div>
       <div class="gsheet" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
         <div class="row"><h2 id="guideTitle" tabindex="-1">Add Mornward to your home screen</h2>
-          ${locked ? "" : `<button class="ix" data-guide-close type="button" aria-label="Close"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>`}</div>
+          <button class="ix" data-guide-close type="button" aria-label="Close"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
         ${auto ? `<p class="body" id="guideWhy">${why}</p>` : ""}
         <div id="guideNow">${guideNowButton()}</div>
         <div class="seg" role="group" aria-label="Your phone">
@@ -2134,18 +2132,18 @@
           ${locked ? `<button class="link start" id="guideHere" type="button">Continue in this browser</button>` : ""}
         </details>
         <button class="primary" data-guide-added type="button">I've added it</button>
-        ${locked ? "" : `<button class="link" data-guide-close type="button">${auto ? "Later" : "Not yet"}</button>`}
+        <button class="link" data-guide-close type="button">${locked ? "Not now" : auto ? "Later" : "Not yet"}</button>
       </div>`;
     document.body.appendChild(wrap);
     wireGuideNow(locked);
     wrap.querySelectorAll("[data-guide-close]").forEach((x) => (x.onclick = () => closeGuide(true)));
     const here = wrap.querySelector("#guideHere");
-    if (here) here.onclick = () => { store.set("browserOk", true); closeGuide(true, true); };
+    if (here) here.onclick = () => { store.set("browserOk", true); closeGuide(true); };
     // Taken at their word (Safari can't check): every add offer on this phone goes away
     wrap.querySelector("[data-guide-added]").onclick = () => {
       markHome("self");
       if (locked && isIOS) { openFromIcon(wrap); return; }
-      closeGuide(false, true);
+      closeGuide();
       const row = $("#addSec");
       if (row) row.remove();
       renderInstall();
@@ -2189,11 +2187,11 @@
   const guideNowButton = () => (installPrompt && !isIOS ? `<button class="primary" id="guideInstall" type="button">Add to home screen</button>` : "");
   function wireGuideNow(locked = !!($("#installGuide") && $("#installGuide").dataset.locked)) {
     const b = $("#guideInstall");
-    if (b) b.onclick = async () => { closeGuide(false, true); await startAdd(b); if (locked && mustAddFirst()) openGuide(true, true); };
+    if (b) b.onclick = async () => { closeGuide(); await startAdd(b); if (locked && mustAddFirst()) openGuide(true, true); };
   }
-  function closeGuide(refocus = false, force = false) {
+  function closeGuide(refocus = false) {
     const g = $("#installGuide");
-    if (!g || (g.dataset.locked && !force)) return;
+    if (!g) return;
     g.remove();
     const add = $("[data-install-add]") || $("#addQuiet");
     if (refocus && add) add.focus();
