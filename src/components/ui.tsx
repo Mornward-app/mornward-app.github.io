@@ -1,15 +1,20 @@
 import type { CSSProperties, ReactNode } from 'react'
 
 /** Full-height screen frame. Safe-area aware; children position themselves. */
-export function Frame({ bg, fg, className = '', style, children, testId }: {
-  bg: string; fg: string; className?: string; style?: CSSProperties; children: ReactNode; testId: string
+export function Frame({ bg, fg, className = '', style, children, testId, sky, ms = 1100 }: {
+  bg: string; fg: string; className?: string; style?: CSSProperties; children: ReactNode; testId: string; ms?: number
+  /** a full-bleed backdrop (gradient, glow) drawn behind the screen instead of the flat `bg` colour */
+  sky?: ReactNode
 }) {
   return (
     <main
       data-testid={testId}
-      className={`relative h-full w-full overflow-hidden font-display select-none transition-[background-color,color] duration-[1100ms] ease-in-out ${className}`}
-      style={{ backgroundColor: bg, color: fg, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', ...style }}
+      className={`relative isolate h-full w-full overflow-hidden font-display select-none ${className}`}
+      style={{ color: fg, paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', ...style }}
     >
+      {/* Fixed to the real screen, not the page box: on iPhone Safari the page is shorter than the screen while the
+          toolbar is collapsed, which left a dark band under the screen. This layer always reaches the bottom edge. */}
+      <div aria-hidden data-testid="sky-backdrop" className="fixed inset-0 -z-10 pointer-events-none overflow-hidden transition-[background-color] ease-in-out" style={{ backgroundColor: bg, transitionDuration: `${ms}ms` }}>{sky}</div>
       {children}
     </main>
   )

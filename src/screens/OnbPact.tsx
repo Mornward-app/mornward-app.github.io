@@ -20,7 +20,7 @@ export default function OnbPact() {
 
   return (
     <Frame testId="screen-pact" bg="#2B2A6B" fg="#FFF6E5" className="flex flex-col px-6 pb-[30px]">
-      <Hill color="#3D3C86" className="-left-[120px] -right-[120px] -bottom-[560px] h-[700px]" />
+      <div aria-hidden className="fixed inset-0 z-0 pointer-events-none overflow-hidden"><Hill color="#3D3C86" className="-left-[120px] -right-[120px] -bottom-[560px] h-[700px]" /></div>
       <StepBars step={2} />
       <Eyebrow className="relative mt-7 text-muted-2" style={{ animation: 'fadeUp .6s ease both' }}>TONIGHT · 2 OF 4</Eyebrow>
       <h1 className="h-screen-title relative m-0 mt-2 text-[52px]" style={{ animation: 'fadeUp .6s ease .08s both' }}>Why do you want the morning back?</h1>

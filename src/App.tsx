@@ -24,7 +24,7 @@ export default function App() {
   }, [])
   const Screen = SCREENS[screen]
   return (
-    <div className="mx-auto h-full w-full max-w-[430px] bg-deep">
+    <div className="mx-auto h-full w-full max-w-[430px]">
       <Screen key={screen} />
     </div>
   )

@@ -81,7 +81,7 @@ export default function Breathe() {
   const ease = phase === 'short' ? 'cubic-bezier(.34,1.4,.5,1)' : 'cubic-bezier(.4,0,.2,1)'
 
   return (
-    <Frame testId="screen-breathe" bg={BG[Math.min(n, 3)]} fg="#FFF6E5" className="flex flex-col items-center text-center" style={{ transitionDuration: '1200ms', ['--ring' as string]: '#FFF6E5' }}>
+    <Frame testId="screen-breathe" bg={BG[Math.min(n, 3)]} fg="#FFF6E5" className="flex flex-col items-center text-center" ms={1200} style={{ ['--ring' as string]: '#FFF6E5' }}>
       <div className="relative z-10 flex flex-col items-center w-full">
         <div className="mt-9 flex gap-2" role="img" aria-label={`${n} of 3 breaths`} data-testid="breath-dots" data-count={n}>
           {[0, 1, 2].map((i) => (
@@ -98,7 +98,7 @@ export default function Breathe() {
       </div>
 
       {/* sun, glow and rings sit behind the foreground; hills never block the press */}
-      <div className="absolute inset-0 z-0" style={{ pointerEvents: 'none' }}>
+      <div className="fixed inset-0 z-0 overflow-hidden" style={{ pointerEvents: 'none' }}>
         <div className="absolute left-1/2 w-0 h-0" style={{ top: '76.3%' }}>
           {holding && [0, 1].map((i) => (
             <span key={i} aria-hidden className="absolute -ml-[150px] -mt-[150px] w-[300px] h-[300px] rounded-full border-[3px] border-sun" style={{ animation: `ring 2s ease-out ${i}s infinite` }} />

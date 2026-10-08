@@ -62,6 +62,15 @@ test('Welcome: first screen for a new user, explains the ritual, begins at step 
   await expect(page.getByTestId('screen-plan')).toBeVisible()
 })
 
+test('Full-bleed: the sky backdrop covers the whole screen even when the page box is shorter (iPhone Safari toolbar)', async ({ page }) => {
+  await page.addStyleTag({ content: '#root{height:calc(100% - 60px)!important}' })
+  const r = await page.getByTestId('sky-backdrop').boundingBox()
+  expect(r!.y).toBe(0)
+  expect(r!.height).toBe(852)
+  const main = await page.getByTestId('screen-welcome').boundingBox()
+  expect(main!.height).toBeLessThan(852) // the page really is shorter, the backdrop is not
+})
+
 test('Welcome: a user who already onboarded is not sent back to it', async ({ page }) => {
   await patchState(page, { screen: 'plan', onboarded: true })
   await expect(page.getByTestId('screen-plan')).toBeVisible()
@@ -276,7 +285,7 @@ test('Act: sun layer stays behind text (z-0, no pointer events) from 0/3 to 3/3'
   for (let n = 0; n <= 3; n++) {
     if (n > 0) await page.getByTestId(`task-${n - 1}`).click()
     await page.waitForTimeout(1500) // sky and sun settle
-    await expect(page.getByTestId('screen-act')).toHaveCSS('background-color', rgb(SKY[n]))
+    await expect(page.getByTestId('sky-backdrop')).toHaveCSS('background-color', rgb(SKY[n]))
     await expect(page.getByTestId('act-status')).toContainText(`${n} OF 3`)
     // every task pill is the top-most element at its centre: the sun never covers it
     for (let i = 0; i < 3; i++) {
@@ -306,7 +315,7 @@ test('Act: fewer tasks still reach morning at the last tick', async ({ page }) =
   await patchState(page, { screen: 'act', onboarded: true, picked: ['Water first'] })
   await page.getByTestId('task-0').click()
   await page.waitForTimeout(1300)
-  await expect(page.getByTestId('screen-act')).toHaveCSS('background-color', rgb('#FFE9A8'))
+  await expect(page.getByTestId('sky-backdrop')).toHaveCSS('background-color', rgb('#FFE9A8'))
 })
 
 test('Down: unseal today\'s card, 21-card deck, week tracker, put the phone down', async ({ page }) => {

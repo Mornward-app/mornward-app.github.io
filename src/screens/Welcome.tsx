@@ -13,20 +13,27 @@ const STARS = [
   { l: 78, t: 2, s: 3, d: 0.7 }, { l: 88, t: 4, s: 2, d: 1.5 }, { l: 94, t: 1.5, s: 2, d: 2.9 }, { l: 52, t: 2.8, s: 2, d: 0.4 },
 ]
 
+/** Full-bleed pre-dawn sky: gradient, stars and a blurred sun that rises past the bottom edge, so no seam shows. */
+const Sky = (
+  <>
+    <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, #25245C 0%, #2E2D6E 55%, #523E7C 100%)' }} />
+    {STARS.map((st, i) => (
+      <span key={i} className="absolute rounded-full bg-cream"
+        style={{ left: `${st.l}%`, top: `${st.t}%`, width: st.s, height: st.s, animation: `twinkle 3s ease-in-out ${st.d}s infinite both` }} />
+    ))}
+    {/* wide warm haze along the horizon */}
+    <div className="absolute inset-x-0 bottom-0 h-[46%]"
+      style={{ background: 'radial-gradient(ellipse 95% 100% at 50% 100%, rgba(255,150,90,.42) 0%, rgba(232,115,90,.2) 45%, rgba(232,115,90,0) 78%)' }} />
+    {/* the blurred sun: centred below the screen edge, so its top half glows up into the page */}
+    <div className="absolute left-1/2 -ml-[240px] w-[480px] h-[480px] rounded-full -bottom-[290px]"
+      style={{ background: 'radial-gradient(circle, rgba(255,233,168,.95) 0%, rgba(255,181,71,.8) 30%, rgba(255,140,90,.5) 52%, rgba(232,115,90,0) 72%)', filter: 'blur(14px)', animation: 'halo 7s ease-in-out infinite' }} />
+  </>
+)
+
 /** First screen for a new user: what Mornward is, before Step 1 of 4. */
 export default function Welcome() {
   return (
-    <Frame testId="screen-welcome" bg="#2E2D6E" fg="#FFF6E5" className="flex flex-col px-6 pb-[30px] font-jakarta"
-      style={{ background: 'linear-gradient(180deg, #25245C 0%, #2E2D6E 55%, #523E7C 100%)', transitionDuration: '0ms' }}>
-      {STARS.map((st, i) => (
-        <span key={i} aria-hidden className="absolute rounded-full bg-cream pointer-events-none"
-          style={{ left: `${st.l}%`, top: `${st.t}%`, width: st.s, height: st.s, animation: `twinkle 3s ease-in-out ${st.d}s infinite both` }} />
-      ))}
-      {/* warm horizon glow */}
-      <div aria-hidden className="absolute inset-x-0 bottom-0 h-[38%] pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse 80% 100% at 50% 100%, rgba(255,181,71,.34) 0%, rgba(232,115,90,.16) 45%, rgba(232,115,90,0) 72%)' }} />
-      <div aria-hidden className="absolute inset-x-6 bottom-[112px] h-px pointer-events-none" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,233,168,.35), transparent)' }} />
-
+    <Frame testId="screen-welcome" bg="#2E2D6E" fg="#FFF6E5" sky={Sky} className="flex flex-col px-6 pb-[30px] font-jakarta">
       <div className="relative z-10 flex flex-col flex-1">
         <p className="font-jbmono text-[11px] tracking-[0.18em] uppercase m-0 mt-6 text-soft" style={{ animation: 'fadeUp .6s ease both' }}>MORNWARD · DAYBREAK</p>
         <h1 className="font-serif font-normal m-0 mt-3 text-[clamp(38px,11.5vw,48px)] leading-[1.02] tracking-[-0.01em]" style={{ animation: 'fadeUp .7s ease .08s both' }}>

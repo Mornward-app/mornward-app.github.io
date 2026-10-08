@@ -9,13 +9,15 @@ export default function Wake() {
   const now = new Date()
   return (
     <Frame testId="screen-wake" bg="#1E1D52" fg="#FFF6E5" className="flex flex-col items-center">
-      <div aria-hidden className="absolute inset-x-0 bottom-0 h-[420px] z-0 pointer-events-none" style={{ animation: 'sunUp 2.6s cubic-bezier(.2,.8,.2,1) both' }}>
+      <div aria-hidden className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+      <div className="absolute inset-x-0 bottom-0 h-[420px]" style={{ animation: 'sunUp 2.6s cubic-bezier(.2,.8,.2,1) both' }}>
         <div className="absolute left-1/2 bottom-10 w-[440px] h-[440px] -ml-[220px] rounded-full bg-[#3A2F78]" style={{ animation: 'halo 6s ease-in-out 2.6s infinite' }} />
         <div className="absolute left-1/2 bottom-[90px] w-[300px] h-[300px] -ml-[150px] rounded-full bg-plum" />
         <div className="absolute left-1/2 bottom-[140px] w-[190px] h-[190px] -ml-[95px] rounded-full bg-sun" />
       </div>
       <Hill color="#E8735A" className="-left-[120px] -right-[120px] -bottom-[520px] h-[760px]" />
       <Hill color="#2B2A6B" className="-left-[140px] -right-[140px] -bottom-[600px] h-[760px]" />
+      </div>
 
       <div className="relative z-10 flex flex-col items-center w-full px-4">
         <p className="m-0 mt-[72px] text-[17px] font-semibold text-muted" style={{ animation: 'fadeUp .8s ease both' }}>{DAYNAME[now.getDay()]}, {MONTH[now.getMonth()]} {now.getDate()}</p>

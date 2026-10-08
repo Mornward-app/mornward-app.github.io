@@ -13,7 +13,7 @@ export default function OnbSleep() {
         <span key={i} aria-hidden className="absolute rounded-full bg-cream" style={{ left: st.l, top: st.t, width: st.s, height: st.s, animation: `twinkle 2.4s ease-in-out ${st.d}s infinite both` }} />
       ))}
       {/* the sun waits under the hill */}
-      <div className="absolute inset-0 z-0 pointer-events-none" aria-hidden>
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden>
         <div className="absolute left-1/2 -ml-[75px] w-[150px] h-[150px] rounded-full bg-sun" style={{ top: '61.6%', animation: 'sunset 2.4s cubic-bezier(.4,0,.2,1) both' }} />
         <Hill color="#2B1B3A" className="-left-[120px] -right-[120px] top-[71%] h-[500px] !rounded-[50%_50%_0_0]" />
       </div>

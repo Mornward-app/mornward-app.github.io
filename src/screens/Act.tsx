@@ -21,9 +21,9 @@ export default function Act() {
   const mountTime = useRef(clock()).current
 
   return (
-    <Frame testId="screen-act" bg={tokens.sky[step]} fg={tokens.skyText[step]} className="flex flex-col px-5" style={{ ['--ring' as string]: '#2B1B3A', transitionDuration: '1100ms' }}>
+    <Frame testId="screen-act" bg={tokens.sky[step]} fg={tokens.skyText[step]} className="flex flex-col px-5" style={{ ['--ring' as string]: '#2B1B3A' }}>
       {/* Rising Sun Layering: the sun lives in a background layer (z-0, no pointer events) strictly behind the z-10 content */}
-      <div data-testid="sun-layer" className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden>
+      <div data-testid="sun-layer" className="fixed inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden>
         <div className="absolute left-1/2 w-[240px] h-[240px] -ml-[120px]" data-testid="sun" style={{ top: `${SUN_TOP[step]}%`, transition: 'top 1.3s cubic-bezier(.34,1.4,.5,1)' }}>
           <span className="absolute -inset-[30px] rounded-full bg-sun" style={{ opacity: HALO[step], transition: 'opacity 1s ease' }} />
           {step === 1 && <span key="b1" className="absolute inset-0 rounded-full border-4 border-sun" style={{ animation: 'burst 1s ease-out both' }} />}
