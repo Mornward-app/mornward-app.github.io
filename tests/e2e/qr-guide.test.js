@@ -1,9 +1,10 @@
-// Arriving on a phone from the computer's QR code (or a social link): the home-screen steps open over Welcome and stay
-// until it's added (iPhone: then open it from the icon and set up there). Run: node tests/e2e/qr-guide.test.js
+// Arriving on a phone from the computer's QR code (or a social link): Welcome shows first; its buttons open the
+// home-screen steps until it's added (iPhone: then open it from the icon and set up there). Run: node tests/e2e/qr-guide.test.js
 const { chromium } = require("playwright");
 const { serve, ctx, reporter } = require("./helpers");
-const { ok, done } = reporter("QR arrival: home-screen steps open by themselves");
+const { ok, done } = reporter("QR arrival: Welcome first, home screen before setup");
 const WHEN = "2026-10-05T20:00:00";
+const tap = async (x) => { await x.p.click("#setupGo"); await x.t(500); };
 const pressed = (x) => x.p.$$eval('#installGuide [data-os][aria-pressed="true"]', (l) => l.map((e) => e.dataset.os));
 
 (async () => {
@@ -12,47 +13,50 @@ const pressed = (x) => x.p.$$eval('#installGuide [data-os][aria-pressed="true"]'
 
   for (const [device, os] of [["iPhone 13", "ios"], ["Pixel 7", "android"]]) {
     const x = await ctx(b, site.url, { when: WHEN, device }); await x.goto("?from=qr"); await x.t(1000);
-    ok(`${device}: from the QR code, the steps open over Welcome`, !!(await x.p.$("#installGuide")) && !!(await x.p.$("#setupGo")));
+    ok(`${device}: from the QR code, Welcome shows first (nothing on top)`, !(await x.p.$("#installGuide")) && !!(await x.p.$("#setupGo")) && !!(await x.p.$("#promise")));
+    await tap(x);
+    ok(`${device}: Prepare my morning opens the home-screen steps instead of setup`, !!(await x.p.$("#installGuide")) && !!(await x.p.$("#setupGo")) && !(await x.ls("onboard")));
     ok(`${device}: ${os === "ios" ? "iPhone" : "Android"} is picked for this phone`, JSON.stringify(await pressed(x)) === JSON.stringify([os]));
-    ok(`${device}: required: a reason, 'I've added it', and no close, no Later`, (await x.p.textContent("#guideWhy")) ===
+    ok(`${device}: a reason, 'I've added it', and 'Not now'`, (await x.p.textContent("#guideWhy")) ===
       (os === "ios" ? "Add it first, then set up from the icon. Safari won't keep your mornings." : "Add it first. One tap when you wake.") &&
-      (await x.p.textContent("#installGuide [data-guide-added]")) === "I've added it" && !(await x.p.$("#installGuide [data-guide-close]")));
-    ok(`${device}: nothing agreed or sent by it`, !(await x.ls("agreed")) && x.bodies.length === 0);
-    await x.p.keyboard.press("Escape"); await x.p.mouse.click(200, 40); await x.t(300);
-    ok(`${device}: Escape and tapping outside don't close it`, !!(await x.p.$("#installGuide")));
-    await x.p.evaluate(() => { document.querySelector("#setupGo").click(); document.querySelector("#beginNow").click(); }); await x.t(500);
-    ok(`${device}: Welcome's buttons behind it start nothing`, !!(await x.p.$("#setupGo")) && !(await x.ls("onboard")) && !(await x.ls("agreed")) && !!(await x.p.$("#installGuide")));
+      (await x.p.textContent("#installGuide [data-guide-added]")) === "I've added it" && (await x.p.textContent("#installGuide .link[data-guide-close]")) === "Not now");
+    ok(`${device}: nothing agreed or sent`, !(await x.ls("agreed")) && x.bodies.length === 0);
+    await x.p.click("#installGuide .link[data-guide-close]"); await x.t(300);
+    ok(`${device}: Not now: back to Welcome to read it`, !(await x.p.$("#installGuide")) && !!(await x.p.$("#setupGo")));
+    await x.p.click("#beginNow"); await x.t(500);
+    ok(`${device}: Begin now opens the steps too (no routine in this browser)`, !!(await x.p.$("#installGuide")) && !(await x.ls("routine")) && !(await x.ls("agreed")));
     await x.p.reload(); await x.t(1000);
-    ok(`${device}: back on every visit until it's added`, !!(await x.p.$("#installGuide")));
+    ok(`${device}: a reload: Welcome again, and the buttons still wait for the home screen`, !(await x.p.$("#installGuide")) && (await tap(x), !!(await x.p.$("#installGuide"))));
     if (os === "ios") {
       await x.p.click("#installGuide [data-guide-added]"); await x.t(300);
-      ok("iPhone: after 'I've added it', the sheet stays: open it from your home screen, set up there",
+      ok("iPhone: after 'I've added it': open it from your home screen, set up there",
         (await x.p.textContent("#guideTitle")) === "Now open it from your home screen" && (await x.p.textContent("#guideOpen")) === "Set up there. You can close Safari." &&
         !!(await x.p.$("#guideIcon")) && !(await x.p.$("[data-guide-added]")));
-      await x.p.reload(); await x.t(1000);
-      ok("iPhone: Safari again: straight to 'Now open it from your home screen'", (await x.p.textContent("#guideTitle")) === "Now open it from your home screen");
+      await x.p.reload(); await x.t(1000); await tap(x);
+      ok("iPhone: Safari again, Prepare: straight to 'Now open it from your home screen'", (await x.p.textContent("#guideTitle")) === "Now open it from your home screen");
       await x.p.click("#guideAgain"); await x.t(300);
       ok("iPhone: 'Show the steps again' brings the steps back", !!(await x.p.$("#guideSteps")) && !!(await x.p.$("[data-guide-added]")));
       const start = await x.p.evaluate(() => JSON.parse(decodeURIComponent(document.querySelector('link[rel="manifest"]').href.replace(/^data:application\/manifest\+json,/, ""))).start_url);
       ok("iPhone: the icon opens Mornward from the QR link (set up there)", /\/\?from=qr$/.test(start), start);
     } else {
       await x.p.click("#installGuide [data-guide-added]"); await x.t(300);
-      ok("Android: 'I've added it' (Chrome and the app share storage): on to Welcome", !(await x.p.$("#installGuide")) && !!(await x.p.$("#setupGo")));
-      await x.p.reload(); await x.t(1000);
-      ok("Android: not again after that", !(await x.p.$("#installGuide")));
+      ok("Android: 'I've added it' (Chrome and the app share storage): back to Welcome", !(await x.p.$("#installGuide")) && !!(await x.p.$("#setupGo")));
+      await tap(x);
+      ok("Android: ...and Prepare my morning now opens setup", !(await x.p.$("#installGuide")) && !!(await x.p.$("#stepNext")));
     }
     await x.c.close();
   }
 
   // Can't add it (an older phone, an app's browser): "Can't find it?" → "Continue in this browser", remembered
-  { const x = await ctx(b, site.url, { when: WHEN, device: "iPhone 13" }); await x.goto("?from=qr"); await x.t(1000);
+  { const x = await ctx(b, site.url, { when: WHEN, device: "iPhone 13" }); await x.goto("?from=qr"); await x.t(1000); await tap(x);
     await x.p.click("#installGuide .cantfind summary");
     ok("'Continue in this browser' is under 'Can't find it?'", (await x.p.textContent("#guideHere")) === "Continue in this browser");
     await x.p.click("#guideHere"); await x.t(300);
     ok("...it closes the steps; Welcome works", !(await x.p.$("#installGuide")) && !!(await x.p.$("#setupGo")));
     await x.p.reload(); await x.t(1000);
-    ok("...and they don't come back in this browser", !(await x.p.$("#installGuide")));
-    await x.p.click("#setupGo"); await x.t(700); await x.p.click("#stepNext"); await x.t(700);
+    await x.p.click("#setupGo"); await x.t(700);
+    ok("...and in this browser, Prepare my morning opens setup from then on", !(await x.p.$("#installGuide")) && !!(await x.p.$("#stepNext")));
+    await x.p.click("#stepNext"); await x.t(700);
     ok("...setup in Safari: no '✓ On your home screen' (Safari can't know)", !(await x.p.$("#homeTick")));
     await x.c.close(); }
   // The installed app opened from the icon: never gated, setup there
@@ -71,7 +75,7 @@ const pressed = (x) => x.p.$$eval('#installGuide [data-os][aria-pressed="true"]'
         window.dispatchEvent(e);
       }, 4000));
     } });
-    await x.goto("?from=qr"); await x.t(1000);
+    await x.goto("?from=qr"); await x.t(1000); await tap(x);
     ok("Android: the steps open before Chrome offers its dialog", !!(await x.p.$("#installGuide")) && !(await x.p.$("#guideInstall")));
     await x.t(3000); await x.p.waitForTimeout(300);
     ok("Android: when Chrome offers it, a one-tap 'Add to home screen' appears in the open steps", (await x.p.textContent("#guideInstall")) === "Add to home screen");
@@ -98,10 +102,12 @@ const pressed = (x) => x.p.$$eval('#installGuide [data-os][aria-pressed="true"]'
     ok("an existing user arriving from the QR code: Begin, no steps on top", !!(await x.p.$("#begin")) && !(await x.p.$("#installGuide")));
     await x.c.close(); }
 
-  // A social app's link (Reddit post or ad, Instagram, TikTok…): the same steps, by themselves, on both phones
+  // A social app's link (Reddit post or ad, Instagram, TikTok…): Welcome first, the steps from its buttons, on both phones
   for (const [device, q] of [["iPhone 14", "?from=reddit"], ["Pixel 7", "?from=reddit"], ["iPhone 14", "?from=redditads"], ["Pixel 7", "?from=instagram"]]) {
     const x = await ctx(b, site.url, { when: WHEN, device }); await x.goto(q); await x.t(1000);
-    ok(`${device} ${q}: the home-screen steps open over Welcome`, !!(await x.p.$("#installGuide")) && !!(await x.p.$("#setupGo")));
+    const first = !(await x.p.$("#installGuide")) && !!(await x.p.$("#setupGo"));
+    await tap(x);
+    ok(`${device} ${q}: Welcome first; Prepare my morning opens the home-screen steps`, first && !!(await x.p.$("#installGuide")));
     await x.c.close(); }
   for (const q of ["", "?from=newsletter"]) {
     const x = await ctx(b, site.url, { when: WHEN, device: "iPhone 14" }); await x.goto(q); await x.t(1000);

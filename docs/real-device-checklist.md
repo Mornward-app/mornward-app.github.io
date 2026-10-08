@@ -78,11 +78,13 @@ passes, treat it as **unverified**.
 - [ ] **A computer:** the page goes dark: the code, "Mornward only works where your bad habits live.", and the
       iPhone / Android steps. Nothing behind it can be clicked; Esc does nothing. Scanning the code opens mornward.app
       in the phone's browser, where the home-screen steps open.
-- [ ] **QR arrival (both phones):** on a computer, scan the code on mornward.app. The phone opens Safari / Chrome, and
-      the home-screen steps open over Welcome for that phone, with no ✕ or Later; tapping outside does nothing; reload:
-      they're back. iPhone: Share → Add to Home Screen, then "I've added it": the sheet says to open it from the home
+- [ ] **QR arrival (both phones):** on a computer, scan the code on mornward.app. The phone opens Safari / Chrome on
+      Welcome, with nothing on top. Tap Prepare my morning: the home-screen steps open instead of setup. Not now:
+      back to Welcome. iPhone: Share → Add to Home Screen, then "I've added it": the sheet says to open it from the home
       screen; tap the icon: Welcome, setup works there. Android: "Add to home screen" opens Chrome's dialog; once added,
-      Welcome. "Can't find it?" → "Continue in this browser" closes it for good in that browser.
+      Prepare my morning opens setup. "Can't find it?" → "Continue in this browser" lets setup run in that browser.
+- [ ] **Reddit app (iPhone):** tap your post's link inside the Reddit app. Welcome shows; Prepare my morning opens the
+      steps; "Can't find it?" says to open it in Safari, with Copy link.
 - [ ] **Reminder repeats (both phones):** add the reminder once; check the event repeats every morning with no end
       date, and the alert fires at the time on the second morning too. Then Edit setup: it shows "Your calendar
       reminder", not the controls.

@@ -123,9 +123,10 @@ words: task names (shuffled per phone), folded sections and screen-reader-only t
 ## Arriving from the computer's QR code (home screen first)
 
 On a phone with nothing set up yet, a visit from the computer's QR code (`?from=qr`) or a social link
-(`?from=reddit`, an ad, a post) opens the home-screen steps over Welcome and **keeps them there until Mornward is
-added**: no ✕, no Later, Escape and tapping outside do nothing, Welcome's buttons behind it start nothing, and it comes
-back on every visit. The steps are for this phone (iPhone or Android, from the browser; switchable).
+(`?from=reddit`, an ad, a post) shows **Welcome as usual**, so people can see what Mornward is. Its buttons
+(**Prepare my morning**, **Begin now**) open the home-screen steps instead of setup until Mornward is added: nothing
+starts in the browser. **Not now** (or ✕, Escape, tapping outside) closes them; the next tap opens them again. The steps
+are for this phone (iPhone or Android, from the browser; switchable).
 
 - **iPhone:** Safari keeps its own storage and can't see the icon, so a setup made in Safari would be lost.
   "Add it first, then set up from the icon. Safari won't keep your mornings." After **I've added it** the sheet stays and
