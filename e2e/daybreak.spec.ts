@@ -217,7 +217,7 @@ test('deck source: 21 cards, each with a source, no exclamation marks, no emoji'
 })
 
 test('next day: a new date rolls over, keeps history, routes to Wake in the morning', async ({ page }) => {
-  await patchState(page, { screen: 'down', onboarded: true, history: ['2026-10-07'], opened: [0],
+  await patchState(page, { screen: 'down', onboarded: true, history: ['2026-10-07'], opened: [0], unlocks: 1,
     day: { date: '2026-10-07', breaths: 3, ticked: [true, true], doneAt: 'x', cardIdx: 0, cardOpened: true } })
   await page.clock.install({ time: new Date(2026, 9, 8, 7, 5) })
   await page.reload()
@@ -226,6 +226,14 @@ test('next day: a new date rolls over, keeps history, routes to Wake in the morn
   expect(s.history).toEqual(['2026-10-07'])
   expect(s.day.cardIdx).toBe(1)
   expect(s.day.breaths).toBe(0)
+})
+
+test('deck loops: after all 21 are open the next card keeps advancing', async ({ page }) => {
+  await patchState(page, { screen: 'down', onboarded: true, history: [], opened: Array.from({ length: 21 }, (_, i) => i), unlocks: 23,
+    day: { date: '2026-10-07', breaths: 3, ticked: [true, true], doneAt: 'x', cardIdx: 1, cardOpened: true } })
+  await page.clock.install({ time: new Date(2026, 9, 8, 7, 5) })
+  await page.reload()
+  expect((await STATE(page)).day.cardIdx).toBe(2)
 })
 
 test('old service worker and caches are retired', async ({ page }) => {

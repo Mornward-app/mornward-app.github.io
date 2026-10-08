@@ -33,6 +33,8 @@ export interface State {
   day: DayState
   history: string[]
   opened: number[]
+  /** total cards ever unsealed; picks the next card, so the deck keeps looping after all 21 are open */
+  unlocks: number
 }
 
 export const lastUnpickedStarter = (s: Pick<State, 'picked' | 'hidden'>) =>
@@ -40,15 +42,15 @@ export const lastUnpickedStarter = (s: Pick<State, 'picked' | 'hidden'>) =>
 
 const MORNING_SCREENS: ScreenId[] = ['wake', 'breathe', 'act', 'down']
 
-function freshDay(s: Pick<State, 'picked' | 'opened'>, date = dateKey()): DayState {
-  return { date, breaths: 0, ticked: s.picked.map(() => false), doneAt: null, cardIdx: s.opened.length % CARDS.length, cardOpened: false }
+function freshDay(s: Pick<State, 'picked' | 'unlocks'>, date = dateKey()): DayState {
+  return { date, breaths: 0, ticked: s.picked.map(() => false), doneAt: null, cardIdx: s.unlocks % CARDS.length, cardOpened: false }
 }
 
 function initial(): State {
-  const base = { picked: ['Water first', 'Short walk'], opened: [] as number[] }
+  const base = { picked: ['Water first', 'Short walk'], opened: [] as number[], unlocks: 0 }
   return {
     v: 1, screen: 'plan', onboarded: false, custom: [], hidden: [], picked: base.picked, pact: '', pactSealed: false,
-    wakeMins: DEFAULT_WAKE, pushOn: false, day: freshDay(base), history: [], opened: base.opened,
+    wakeMins: DEFAULT_WAKE, pushOn: false, day: freshDay(base), history: [], opened: base.opened, unlocks: 0,
   }
 }
 
@@ -73,10 +75,11 @@ function load(): State {
     if (typeof p.pushOn === 'boolean') s.pushOn = p.pushOn
     if (isStrArr(p.history)) s.history = p.history
     if (isNumArr(p.opened)) s.opened = p.opened.filter((i) => i >= 0 && i < CARDS.length)
+    s.unlocks = typeof p.unlocks === 'number' && p.unlocks >= 0 ? Math.floor(p.unlocks) : s.opened.length
     const d = p.day
     s.day = d && typeof d.date === 'string' && Array.isArray(d.ticked) && d.ticked.length === s.picked.length
       ? { date: d.date, breaths: Math.min(3, Math.max(0, d.breaths | 0)), ticked: d.ticked.map(Boolean), doneAt: d.doneAt ?? null,
-          cardIdx: typeof d.cardIdx === 'number' ? d.cardIdx % CARDS.length : s.opened.length % CARDS.length, cardOpened: !!d.cardOpened }
+          cardIdx: typeof d.cardIdx === 'number' ? d.cardIdx % CARDS.length : s.unlocks % CARDS.length, cardOpened: !!d.cardOpened }
       : freshDay(s, typeof d?.date === 'string' ? d.date : dateKey())
     return s
   } catch {
@@ -165,7 +168,7 @@ export const actions = {
   openCard() {
     if (state.day.cardOpened) return
     const idx = state.day.cardIdx
-    set({ day: { ...state.day, cardOpened: true }, opened: state.opened.includes(idx) ? state.opened : [...state.opened, idx] })
+    set({ day: { ...state.day, cardOpened: true }, unlocks: state.unlocks + 1, opened: state.opened.includes(idx) ? state.opened : [...state.opened, idx] })
   },
   /** Start a fresh morning from the Wake screen preview (used by "Good night" in the first evening). */
   resetMorning() { set({ day: freshDay(state) }) },
