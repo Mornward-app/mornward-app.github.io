@@ -1,0 +1,15 @@
+# CLAUDE.md: Mornward (Daybreak)
+
+React + TypeScript + Tailwind + Capacitor. See README.md for commands.
+
+## Rules that must hold
+
+1. **The sky is the progress bar.** Night `#2B2A6B` → plum `#6B3F7A` → coral `#E8735A` → morning `#FFE9A8` (`src/tokens.json`). Act: `step = round(done / total * 3)`.
+2. **Breath Hold Guard** (`Breathe.tsx`, `MIN_HOLD_MS = 3200`): a breath counts only after a real 3.2 s hold. Early release: no count, "almost" + "Hold a little longer with your breath."
+3. **Rising Sun Layering** (`Act.tsx`): sun in a `z-0 pointer-events-none` layer, content at `z-10`. Never put text under the sun.
+4. **Nothing leaves the phone.** No Supabase, no analytics, no network calls, no INTERNET permission on Android. State: `localStorage` key `mornward.daybreak.v1`.
+5. **Native push only**: one local notification (`@capacitor/local-notifications`). No "Add to Home Screen" copy. Ask permission only from the OnbHook toggle.
+6. **WCAG AA**: `#C4BEE8` for night placeholders and subtitles, `#4A3A58` for weekday and source labels on `#FFE9A8`. Every new text pair goes in `scripts/contrast.mjs`.
+7. No streak shaming, no invented numbers, no emoji, no exclamation marks. Every card in `src/lib/cards.ts` needs a real source.
+8. Respect `prefers-reduced-motion`: movement stops, colours still change.
+9. One screen, one thumb, one main action. No scrolling during the morning ritual (the deck is an opt-in sheet).

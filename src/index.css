@@ -1,0 +1,81 @@
+@import '@fontsource-variable/bricolage-grotesque/opsz.css';
+@import '@fontsource-variable/geist-mono/index.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; margin: 0; }
+body {
+  background: #16153F;
+  color: #FFF6E5;
+  font-family: 'Bricolage Grotesque Variable', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+button, a { -webkit-touch-callout: none; }
+button:focus-visible, a:focus-visible, textarea:focus-visible, input:focus-visible, [role='switch']:focus-visible {
+  outline: 3px solid var(--ring, #FFE38A);
+  outline-offset: 3px;
+}
+
+@layer components {
+  .mono { font-family: 'Geist Mono Variable', ui-monospace, monospace; }
+  .label { @apply mono text-[11px] tracking-[0.16em] uppercase; }
+  .h-screen-title { @apply font-extrabold tracking-[-0.04em] leading-[0.94]; }
+  /* chunky buttons: a solid 6px edge, sinks 4px on press */
+  .chunky {
+    @apply rounded-chunk min-h-[62px] w-full font-extrabold text-[19px] flex items-center justify-center cursor-pointer border-0 select-none;
+    transition: transform .14s cubic-bezier(.3,.7,.4,1), box-shadow .14s cubic-bezier(.3,.7,.4,1), opacity .3s;
+  }
+  .chunky:active:not([aria-disabled='true']) { transform: translateY(4px); }
+  .chunky-butter { @apply bg-sun text-ink; box-shadow: 0 6px 0 #D9B94E; }
+  .chunky-butter:active:not([aria-disabled='true']) { box-shadow: 0 2px 0 #D9B94E; }
+  .chunky-ink { @apply bg-ink text-cream; box-shadow: 0 6px 0 #120A18; }
+  .chunky-ink:active { box-shadow: 0 2px 0 #120A18; }
+  .chunky-cream { @apply bg-cream text-ink; box-shadow: 0 6px 0 #C9B9A0; }
+  .chunky-cream:active { box-shadow: 0 2px 0 #C9B9A0; }
+  .linkish { @apply min-h-[44px] px-4 bg-transparent border-0 font-semibold text-[15px] underline underline-offset-4 cursor-pointer; font-family: inherit; }
+}
+
+/* keyframes: motion table from the Daybreak design system */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes pop { 0% { opacity: 0; transform: scale(.6); } 70% { opacity: 1; transform: scale(1.07); } 100% { transform: scale(1); } }
+@keyframes sunUp { from { transform: translateY(140px); } to { transform: translateY(0); } }
+@keyframes drop { 0% { opacity: 0; transform: translateY(-90px) scale(.94); } 60% { opacity: 1; transform: translateY(6px) scale(1.01); } 100% { opacity: 1; transform: none; } }
+@keyframes breatheOp { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+@keyframes halo { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+@keyframes ring { from { transform: scale(1); opacity: .5; } to { transform: scale(1.8); opacity: 0; } }
+@keyframes idle { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+@keyframes dotFill { 0% { transform: scale(.4); } 70% { transform: scale(1.3); } 100% { transform: scale(1); } }
+@keyframes draw { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
+@keyframes burst { from { transform: scale(.9); opacity: .7; } to { transform: scale(1.9); opacity: 0; } }
+@keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes nope { 0%, 100% { transform: none; } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(3px); } }
+@keyframes vanish { 0% { transform: none; opacity: 1; } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 100% { transform: scale(.6); opacity: 0; } }
+@keyframes stamp { 0% { opacity: 0; transform: scale(2.4) rotate(-30deg); } 55% { opacity: 1; transform: scale(.92) rotate(-8deg); } 75% { transform: scale(1.04) rotate(-12deg); } 100% { transform: scale(1) rotate(-10deg); } }
+@keyframes thud { 0%, 100% { transform: none; } 30% { transform: translateY(3px); } }
+@keyframes swing { 0% { opacity: 0; transform: translateY(-140px) rotate(-14deg); } 45% { opacity: 1; transform: translateY(8px) rotate(5deg); } 65% { transform: rotate(-3deg); } 82% { transform: rotate(1.5deg); } 100% { transform: rotate(-1.5deg); } }
+@keyframes bell { 0%, 60%, 100% { transform: rotate(0); } 64% { transform: rotate(14deg); } 70% { transform: rotate(-12deg); } 76% { transform: rotate(8deg); } 82% { transform: rotate(-4deg); } }
+@keyframes sunset { from { transform: translateY(-120px); } to { transform: translateY(40px); } }
+@keyframes twinkle { 0%, 100% { opacity: .2; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.2); } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes wobble { 0%, 72%, 100% { transform: rotate(0); } 76% { transform: rotate(-4deg); } 80% { transform: rotate(4deg); } 84% { transform: rotate(-3deg); } 88% { transform: rotate(2deg); } 92% { transform: rotate(0); } }
+@keyframes shake { 0% { transform: translate(0,0) rotate(0); } 10% { transform: translate(-6px,1px) rotate(-5deg); } 20% { transform: translate(7px,-2px) rotate(6deg); } 30% { transform: translate(-8px,2px) rotate(-7deg); } 40% { transform: translate(8px,-1px) rotate(7deg); } 50% { transform: translate(-7px,2px) rotate(-6deg); } 60% { transform: translate(6px,-2px) rotate(6deg) scale(1.03); } 70% { transform: translate(-4px,1px) rotate(-4deg) scale(1.05); } 80% { transform: translate(3px,0) rotate(3deg) scale(1.07); } 90% { transform: scale(1.1) rotate(0); } 100% { transform: scale(.2) rotate(0); opacity: 0; } }
+@keyframes flipIn { 0% { opacity: 0; transform: perspective(900px) rotateY(-90deg) scale(.9); } 60% { opacity: 1; transform: perspective(900px) rotateY(12deg) scale(1.02); } 100% { transform: perspective(900px) rotateY(0) scale(1); } }
+@keyframes s1 { 0% { opacity: 0; transform: translate(0,0) scale(.3); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(-150px,-90px) scale(1); } }
+@keyframes s2 { 0% { opacity: 0; transform: translate(0,0) scale(.3); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(150px,-110px) scale(1); } }
+@keyframes s3 { 0% { opacity: 0; transform: translate(0,0) scale(.3); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(-130px,100px) scale(1); } }
+@keyframes s4 { 0% { opacity: 0; transform: translate(0,0) scale(.3); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(140px,90px) scale(1); } }
+@keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }
+
+/* Reduced motion: movement stops, colours still change. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition-property: background-color, color, border-color, opacity !important;
+    transition-duration: .4s !important;
+  }
+}
+
+@keyframes holdFill { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
