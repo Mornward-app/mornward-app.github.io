@@ -48,7 +48,7 @@ export default function Down() {
         <button type="button" onClick={() => setDeck(true)} className="absolute right-0 top-4 z-10 min-h-[44px] px-3.5 rounded-full border-2 border-ink bg-transparent text-ink font-display text-sm font-extrabold cursor-pointer" data-testid="open-deck">
           Deck {s.opened.length}/{CARDS.length}
         </button>
-        <p className="label m-0 mt-[17vh] [@media(max-height:700px)]:mt-[9vh] text-label" style={{ animation: 'fadeUp .6s ease both' }} data-testid="down-meta">{clock(now)} · {WEEKDAY[now.getDay()]} · MORNING KEPT</p>
+        <p className="label m-0 mt-[clamp(40px,9vh,196px)] text-label" style={{ animation: 'fadeUp .6s ease both' }} data-testid="down-meta">{clock(now)} · {WEEKDAY[now.getDay()]} · MORNING KEPT</p>
         <h1 className="m-0 mt-1.5 text-[58px] [@media(max-height:700px)]:text-[44px] leading-[0.9] font-extrabold tracking-[-0.04em]" style={{ animation: 'fadeUp .7s cubic-bezier(.2,.8,.2,1) .1s both' }}>Phone down.<br />Good morning.</h1>
         <div className="mt-3.5 flex gap-2 flex-wrap">
           <span className="px-3.5 py-2 rounded-full bg-ink text-cream text-[15px] font-semibold" style={{ animation: 'pop .5s cubic-bezier(.2,.9,.3,1.3) .35s both' }}>{doneCount} {doneCount === 1 ? 'thing' : 'things'} done</span>

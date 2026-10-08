@@ -41,7 +41,7 @@ export default function Wake() {
       </div>
 
       <button type="button" aria-label="Tap to begin" onClick={() => actions.go('breathe')} className="absolute inset-0 z-20 w-full h-full border-0 bg-transparent cursor-pointer" style={{ ['--ring' as string]: '#FFF6E5' }} />
-      <p aria-hidden className="mono z-10 absolute bottom-11 m-0 text-[11px] tracking-[0.18em] text-cream" style={{ animation: 'breatheOp 2.4s ease-in-out 2s infinite both' }}>TAP TO BEGIN</p>
+      <p aria-hidden className="mono z-10 absolute m-0 text-[11px] tracking-[0.18em] text-cream" style={{ bottom: 'calc(44px + env(safe-area-inset-bottom))', animation: 'breatheOp 2.4s ease-in-out 2s infinite both' }}>TAP TO BEGIN</p>
     </Frame>
   )
 }

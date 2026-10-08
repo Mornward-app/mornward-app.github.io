@@ -33,5 +33,7 @@ Icons and splash come from `resources/` via `npx capacitor-assets generate` (re-
 ## Notes
 
 - `supabase/` and `tests/db/` are the old beta analytics backend, kept for reference. The app does not use them.
+- Deploy: `.github/workflows/deploy.yml` builds with `npm ci && npm run build` and publishes `dist/` to GitHub Pages on every push to `main` (repo Settings → Pages → Source: GitHub Actions). `public/CNAME` keeps the custom domain.
+- iPhone: `index.html` has `viewport-fit=cover` and the Apple web-app tags, `public/manifest.webmanifest` is standalone, and every screen pads by `env(safe-area-inset-top|bottom)`.
 - `public/sw.js` is a retired kill-switch: browsers that still hold the old PWA service worker fetch it, clear every cache and unregister. `src/lib/retire-sw.ts` does the same on every launch.
 - Design source of truth: `src/tokens.json` and the Daybreak handoff. Night is `#2B2A6B`.

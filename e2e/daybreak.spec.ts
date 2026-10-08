@@ -236,6 +236,17 @@ test('deck loops: after all 21 are open the next card keeps advancing', async ({
   expect((await STATE(page)).day.cardIdx).toBe(2)
 })
 
+test('iPhone home screen: viewport-fit, Apple meta, standalone manifest, icons', async ({ page, request }) => {
+  await page.goto('/')
+  await expect(page.locator('meta[name="viewport"]')).toHaveAttribute('content', /viewport-fit=cover/)
+  await expect(page.locator('meta[name="apple-mobile-web-app-capable"]')).toHaveAttribute('content', 'yes')
+  await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute('href', '/apple-touch-icon.png')
+  const m = await (await request.get('/manifest.webmanifest')).json()
+  expect(m.display).toBe('standalone')
+  expect(m.theme_color).toBe('#2B2A6B')
+  for (const u of ['/apple-touch-icon.png', ...m.icons.map((i: { src: string }) => i.src)]) expect((await request.get(u)).ok(), u).toBe(true)
+})
+
 test('old service worker and caches are retired', async ({ page }) => {
   await page.evaluate(async () => { await caches.open('mornward-old-shell'); })
   await page.evaluate(async () => { await navigator.serviceWorker.register('/sw.js') })
