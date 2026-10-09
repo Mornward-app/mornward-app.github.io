@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli'
 
 const config: CapacitorConfig = {
-  appId: 'app.mornward',
-  appName: 'Mornward',
+  appId: 'com.firstlight.app',
+  appName: 'First Light',
   webDir: 'dist',
   backgroundColor: '#2B2A6B',
   ios: { contentInset: 'never' },

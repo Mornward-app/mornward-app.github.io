@@ -13,7 +13,6 @@ export default function Down() {
   const [stage, setStage] = useState<'sealed' | 'shaking' | 'open'>(s.day.cardOpened ? 'open' : 'sealed')
   const wasOpen = useRef(s.day.cardOpened)
   const [deck, setDeck] = useState(false)
-  const [resting, setResting] = useState(false)
   const timer = useRef<number | undefined>(undefined)
   useEffect(() => () => window.clearTimeout(timer.current), [])
 
@@ -34,7 +33,7 @@ export default function Down() {
   const down = async () => {
     haptic('success')
     await putPhoneDown()
-    setResting(true)
+    actions.go('rest')
   }
 
   return (
@@ -103,14 +102,6 @@ export default function Down() {
 
       {deck && <Deck onClose={() => setDeck(false)} todayIdx={s.day.cardIdx} opened={s.opened} />}
 
-      {resting && (
-        <button type="button" aria-label="Wake the screen" onClick={() => setResting(false)} data-testid="resting"
-          className="absolute inset-0 z-50 w-full h-full border-0 bg-deep text-cream flex flex-col items-center justify-center gap-3 cursor-pointer font-display" style={{ animation: 'fadeUp 1.2s ease both', ['--ring' as string]: '#FFF6E5' }}>
-          <span aria-hidden className="w-[88px] h-[88px] rounded-full bg-sun" style={{ animation: 'halo 6s ease-in-out infinite' }} />
-          <span className="text-[44px] leading-[0.95] font-extrabold tracking-[-0.04em]">See you tonight.</span>
-          <span className="label text-muted-2">TAP TO WAKE THE SCREEN</span>
-        </button>
-      )}
     </Frame>
   )
 }

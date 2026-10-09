@@ -3,6 +3,7 @@ import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics'
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { App } from '@capacitor/app'
 import { actions, checkDay } from './store'
+import { flushWrites } from './storage'
 
 export const isNative = () => Capacitor.isNativePlatform()
 
@@ -15,35 +16,36 @@ export function haptic(kind: Haptic = 'light') {
   } catch { /* no haptics here */ }
 }
 
-const NOTIFICATION_ID = 700
+import { buildReminders, EVENING_ID, MORNING_ID } from './reminder-payload'
 
 export type PushResult = 'scheduled' | 'denied' | 'unsupported'
 
-/** One daily LOCAL notification at the wake time. Permission is asked only from the toggle tap. Nothing leaves the phone. */
-export async function enableMorningPush(hour: number, minute: number, body: string): Promise<PushResult> {
+/**
+ * Two repeating daily LOCAL notifications, scheduled with the OS (UNCalendarNotificationTrigger on iOS), so they
+ * appear on the Lock Screen at the exact minute even when the app is closed. Nothing is sent at set-up time:
+ * the permission is asked, the triggers are registered, and the OS fires them later. Nothing leaves the phone.
+ */
+export async function scheduleReminders(morning: { mins: number; body: string }, evening: { mins: number }, ask = true): Promise<PushResult> {
   try {
     let perm = await LocalNotifications.checkPermissions()
-    if (perm.display !== 'granted') perm = await LocalNotifications.requestPermissions()
+    if (perm.display !== 'granted' && ask) perm = await LocalNotifications.requestPermissions()
     if (perm.display !== 'granted') return 'denied'
-    await LocalNotifications.cancel({ notifications: [{ id: NOTIFICATION_ID }] })
-    await LocalNotifications.schedule({
-      notifications: [{
-        id: NOTIFICATION_ID,
-        title: 'Before the feed.',
-        body,
-        schedule: { on: { hour, minute }, allowWhileIdle: true },
-        smallIcon: 'ic_stat_sun',
-        extra: { open: 'wake' },
-      }],
-    })
+    await LocalNotifications.cancel({ notifications: [{ id: MORNING_ID }, { id: EVENING_ID }] })
+    await LocalNotifications.schedule({ notifications: buildReminders(morning, evening) })
+    if (isNative()) {
+      // confirm the OS really holds both triggers before the app says "alarm set"
+      const { notifications } = await LocalNotifications.getPending()
+      const ids = notifications.map((n) => n.id)
+      if (!ids.includes(MORNING_ID) || !ids.includes(EVENING_ID)) return 'unsupported'
+    }
     return 'scheduled'
   } catch {
     return 'unsupported'
   }
 }
 
-export async function disableMorningPush() {
-  try { await LocalNotifications.cancel({ notifications: [{ id: NOTIFICATION_ID }] }) } catch { /* nothing scheduled */ }
+export async function cancelReminders() {
+  try { await LocalNotifications.cancel({ notifications: [{ id: MORNING_ID }, { id: EVENING_ID }] }) } catch { /* nothing scheduled */ }
 }
 
 /** Android: put the phone down by sending the app to the background. iOS and web cannot, so the caller dims the screen. */
@@ -52,9 +54,12 @@ export async function putPhoneDown(): Promise<boolean> {
   try { await App.minimizeApp(); return true } catch { return false }
 }
 
-/** Notification tap opens the Wake screen. */
+/** Notification tap: morning opens Wake, evening opens Evening Setup. Backgrounding flushes saved state to disk. */
 export function initNative() {
   if (!isNative()) return
-  void LocalNotifications.addListener('localNotificationActionPerformed', () => actions.openFromNotification())
-  void App.addListener('appStateChange', ({ isActive }) => { if (isActive) checkDay() })
+  void LocalNotifications.addListener('localNotificationActionPerformed', (e) => {
+    actions.openFromNotification(e.notification.extra?.open === 'evening' ? 'evening' : 'morning')
+  })
+  void App.addListener('appStateChange', ({ isActive }) => { if (isActive) checkDay(); else void flushWrites() })
+  void App.addListener('backButton', () => { void App.minimizeApp() })
 }

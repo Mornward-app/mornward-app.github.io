@@ -8,7 +8,7 @@ No account. No blocker. No alarm. **Nothing is sent anywhere**: state lives in `
 
 ## Screens (flow order)
 
-`Welcome` (new users only) → `OnbPlan` → `OnbPact` → `OnbHook` → `OnbSleep` → `Wake` → `Breathe` → `Act` → `Down` (`src/screens/`). On `OnbHook` the wake time is set by dragging the sun along the arc (5:00 to 10:00 AM, 15 minute steps) or with the − and + buttons.
+`Welcome` (new users only) → `OnbPlan` → `OnbPact` → `OnbHook` → `OnbSleep` → `Wake` → `Breathe` → `Act` → `Down` → `Rest` (See you tonight, then Plan tomorrow's morning) (`src/screens/`). On `OnbHook` the wake time is set by dragging the sun along the arc (5:00 to 10:00 AM, 15 minute steps) or with the − and + buttons.
 
 ## Develop
 
@@ -26,7 +26,9 @@ npm run ios       # build, cap sync, open Xcode (needs a Mac)
 npm run android   # build, cap sync, open Android Studio
 ```
 
-Plugins: `@capacitor/local-notifications` (one daily notification, id 700, at the wake time; default 7:00 AM; permission asked only from the OnbHook toggle), `@capacitor/haptics`, `@capacitor/app`. Tapping the notification opens `Wake`.
+Plugins: `@capacitor/local-notifications` (two repeating daily notifications: morning at the wake time, default 7:00 AM, and an evening prep reminder, default 9:00 PM; permission asked only from the OnbHook toggle), `@capacitor/preferences` (durable state, mirrored to localStorage), `@capacitor/haptics`, `@capacitor/app`. Tapping the morning notification opens `Wake`; the evening one opens Evening Setup.
+
+iOS bundle id `com.firstlight.app`, display name First Light. On a Mac: `npm ci && npm run ios` (build, `cap sync ios`, open Xcode), pick a signing team under Signing & Capabilities, run on a device.
 
 Icons and splash come from `resources/` via `npx capacitor-assets generate` (re-render with `node resources/render.mjs`).
 

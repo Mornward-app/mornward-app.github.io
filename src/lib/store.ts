@@ -1,18 +1,30 @@
 import { useSyncExternalStore } from 'react'
 import { CARDS } from './cards'
 import { dateKey } from './dates'
+import { readBoth, requestPersistentStorage, writeBoth } from './storage'
 
-export type ScreenId = 'welcome' | 'plan' | 'pact' | 'hook' | 'sleep' | 'wake' | 'breathe' | 'act' | 'down'
+export type ScreenId = 'welcome' | 'plan' | 'pact' | 'hook' | 'sleep' | 'wake' | 'breathe' | 'act' | 'down' | 'rest'
+const SCREENS: ScreenId[] = ['welcome', 'plan', 'pact', 'hook', 'sleep', 'wake', 'breathe', 'act', 'down', 'rest']
 
 export const STORAGE_KEY = 'mornward.daybreak.v1'
 export const MAX_TASKS = 3
 export const MAX_CUSTOM = 3
 export const STARTER_TASKS = ['Water first', 'Short walk', 'Stretch', 'Morning light', 'One quiet minute', 'Check on a friend']
+
 export const DEFAULT_WAKE = 7 * 60 // 7:00 AM
 export const WAKE_MIN = 5 * 60 // the sun slider spans 5:00 AM to 10:00 AM in 15 minute steps
 export const WAKE_MAX = 10 * 60
 export const WAKE_STEP = 15
 export const clampWake = (m: number) => Math.min(WAKE_MAX, Math.max(WAKE_MIN, Math.round(m / WAKE_STEP) * WAKE_STEP))
+
+export const DEFAULT_EVENING = 21 * 60 // 9:00 PM prep reminder
+export const EVE_MIN = 18 * 60
+export const EVE_MAX = 23 * 60
+export const clampEvening = (m: number) => Math.min(EVE_MAX, Math.max(EVE_MIN, Math.round(m / WAKE_STEP) * WAKE_STEP))
+
+/** From 6:00 PM the app opens on Evening Setup; from 4:00 AM an armed morning opens on the Wake screen. */
+export const EVENING_START = 18 * 60
+export const MORNING_START = 4 * 60
 
 export interface DayState {
   date: string
@@ -25,6 +37,8 @@ export interface DayState {
 
 export interface State {
   v: 1
+  /** when this copy was written; on launch the newer of the two stored copies wins */
+  savedAt: number
   screen: ScreenId
   onboarded: boolean
   custom: string[]
@@ -33,8 +47,12 @@ export interface State {
   pact: string
   pactSealed: boolean
   wakeMins: number
+  eveningMins: number
   pushOn: boolean
+  /** date key of the morning that tonight's setup armed, or null while tomorrow is not planned yet */
+  armedFor: string | null
   day: DayState
+  /** days the morning was completed: the sunrises on the week tracker */
   history: string[]
   opened: number[]
   /** total cards ever unsealed; picks the next card, so the deck keeps looping after all 21 are open */
@@ -44,7 +62,8 @@ export interface State {
 export const lastUnpickedStarter = (s: Pick<State, 'picked' | 'hidden'>) =>
   [...STARTER_TASKS].reverse().find((x) => !s.picked.includes(x) && !s.hidden.includes(x)) ?? null
 
-const MORNING_SCREENS: ScreenId[] = ['wake', 'breathe', 'act', 'down']
+const MORNING: ScreenId[] = ['wake', 'breathe', 'act', 'down', 'rest']
+const EDITING: ScreenId[] = ['plan', 'pact', 'hook']
 
 function freshDay(s: Pick<State, 'picked' | 'unlocks'>, date = dateKey()): DayState {
   return { date, breaths: 0, ticked: s.picked.map(() => false), doneAt: null, cardIdx: s.unlocks % CARDS.length, cardOpened: false }
@@ -53,22 +72,24 @@ function freshDay(s: Pick<State, 'picked' | 'unlocks'>, date = dateKey()): DaySt
 function initial(): State {
   const base = { picked: ['Water first', 'Short walk'], opened: [] as number[], unlocks: 0 }
   return {
-    v: 1, screen: 'welcome', onboarded: false, custom: [], hidden: [], picked: base.picked, pact: '', pactSealed: false,
-    wakeMins: DEFAULT_WAKE, pushOn: false, day: freshDay(base), history: [], opened: base.opened, unlocks: 0,
+    v: 1, savedAt: 0, screen: 'welcome', onboarded: false, custom: [], hidden: [], picked: base.picked, pact: '', pactSealed: false,
+    wakeMins: DEFAULT_WAKE, eveningMins: DEFAULT_EVENING, pushOn: false, armedFor: null,
+    day: freshDay(base), history: [], opened: base.opened, unlocks: 0,
   }
 }
 
 const isStrArr = (x: unknown): x is string[] => Array.isArray(x) && x.every((s) => typeof s === 'string')
 const isNumArr = (x: unknown): x is number[] => Array.isArray(x) && x.every((n) => typeof n === 'number')
 
-function load(): State {
-  const base = initial()
+/** Validate a stored copy field by field, so a damaged or older copy can never crash the app. */
+export function parse(raw: string | null): State | null {
+  if (!raw) return null
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return base
     const p = JSON.parse(raw) as Partial<State>
-    const s: State = { ...base }
-    if (typeof p.screen === 'string' && ['welcome', 'plan', 'pact', 'hook', 'sleep', 'wake', 'breathe', 'act', 'down'].includes(p.screen)) s.screen = p.screen as ScreenId
+    if (!p || typeof p !== 'object') return null
+    const s = initial()
+    if (typeof p.savedAt === 'number') s.savedAt = p.savedAt
+    if (typeof p.screen === 'string' && SCREENS.includes(p.screen as ScreenId)) s.screen = p.screen as ScreenId
     if (typeof p.onboarded === 'boolean') s.onboarded = p.onboarded
     if (isStrArr(p.custom)) s.custom = p.custom.slice(0, MAX_CUSTOM)
     if (isStrArr(p.hidden)) s.hidden = p.hidden.filter((h) => STARTER_TASKS.includes(h))
@@ -76,7 +97,9 @@ function load(): State {
     if (typeof p.pact === 'string') s.pact = p.pact
     if (typeof p.pactSealed === 'boolean') s.pactSealed = p.pactSealed
     if (typeof p.wakeMins === 'number' && Number.isFinite(p.wakeMins)) s.wakeMins = clampWake(p.wakeMins)
+    if (typeof p.eveningMins === 'number' && Number.isFinite(p.eveningMins)) s.eveningMins = clampEvening(p.eveningMins)
     if (typeof p.pushOn === 'boolean') s.pushOn = p.pushOn
+    if (typeof p.armedFor === 'string' || p.armedFor === null) s.armedFor = p.armedFor ?? null
     if (isStrArr(p.history)) s.history = p.history
     if (isNumArr(p.opened)) s.opened = p.opened.filter((i) => i >= 0 && i < CARDS.length)
     s.unlocks = typeof p.unlocks === 'number' && p.unlocks >= 0 ? Math.floor(p.unlocks) : s.opened.length
@@ -87,49 +110,100 @@ function load(): State {
       : freshDay(s, typeof d?.date === 'string' ? d.date : dateKey())
     return s
   } catch {
-    return base
+    return null
   }
 }
 
-/** Roll over to a new day: keep history, unseal a new card, route to the right screen for the time of day. */
+const minsOf = (d: Date) => d.getHours() * 60 + d.getMinutes()
+const addDays = (d: Date, n: number) => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() + n); return x }
+/** The morning a setup done right now is for: today before 4:00 AM, otherwise tomorrow. */
+export const nextMorningKey = (now = new Date()) => dateKey(minsOf(now) < MORNING_START ? now : addDays(now, 1))
+
+/** New day: keep history, unseal the next card, and drop yesterday's morning screens. */
 export function rollover(s: State, now = new Date()): State {
   const today = dateKey(now)
   if (s.day.date === today) return s
-  const mins = now.getHours() * 60 + now.getMinutes()
-  const inMorning = mins >= s.wakeMins - 60 && mins < 12 * 60
-  const screen: ScreenId = s.onboarded ? (inMorning ? 'wake' : 'sleep') : s.screen
-  return { ...s, screen, day: freshDay(s, today) }
+  return { ...s, screen: MORNING.includes(s.screen) ? 'sleep' : s.screen, day: freshDay(s, today) }
 }
 
-let state: State = rollover(load())
+/** Start Evening Setup: tomorrow's tasks stay selected, the pact is a fresh note for the next morning. */
+export const beginEvening = (s: State): State => ({ ...s, screen: 'plan', pact: '', pactSealed: false, armedFor: null })
+
+/**
+ * Lifecycle: which screen the app belongs on right now.
+ *  - from 6:00 PM (until 4:00 AM): Evening Setup until tomorrow is armed, then the waiting sun
+ *  - from 4:00 AM, an armed morning opens on the Wake screen
+ *  - a finished morning stays on the completed screens, never back on Wake
+ * Screens the user is actively editing are never yanked away.
+ */
+export function settle(s: State, now = new Date()): State {
+  if (!s.onboarded) return s
+  const mins = minsOf(now)
+  const today = dateKey(now)
+  const done = s.day.date === today && s.day.doneAt !== null
+  const editing = EDITING.includes(s.screen)
+  const night = mins >= EVENING_START || mins < MORNING_START
+
+  if (night) {
+    if (editing) return s
+    if (s.armedFor === nextMorningKey(now)) return s.screen === 'sleep' ? s : { ...s, screen: 'sleep' }
+    return beginEvening(s)
+  }
+  if (editing) return s
+  if (done) return ['down', 'rest', 'sleep'].includes(s.screen) ? s : { ...s, screen: 'down' }
+  if (s.screen === 'sleep') {
+    if (s.armedFor === today || mins < 12 * 60) return { ...s, screen: 'wake' }
+  }
+  return s
+}
+
+let state: State = initial()
+let ready = false
 const listeners = new Set<() => void>()
 
 function persist() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)) } catch { /* private mode: keep working in memory */ }
+  if (!ready) return // never overwrite saved data before it has been read
+  writeBoth(STORAGE_KEY, JSON.stringify(state))
 }
-function set(patch: Partial<State> | ((s: State) => Partial<State>)) {
-  const p = typeof patch === 'function' ? patch(state) : patch
-  state = { ...state, ...p }
+function set(patch: Partial<State>) {
+  state = { ...state, ...patch, savedAt: Date.now() }
   persist()
   listeners.forEach((l) => l())
 }
-persist()
+
+/** Read both stored copies (device Preferences and localStorage), keep the newer, then render. Call once before the first render. */
+export async function hydrate() {
+  const { pref, local } = await readBoth(STORAGE_KEY)
+  const a = parse(pref)
+  const b = parse(local)
+  const best = a && b ? (a.savedAt >= b.savedAt ? a : b) : (a ?? b)
+  state = settle(rollover(best ?? initial()))
+  ready = true
+  persist() // write the winner back to both stores so they agree
+  void requestPersistentStorage()
+}
 
 export const getState = () => state
 export function useStore(): State {
   return useSyncExternalStore((l) => { listeners.add(l); return () => { listeners.delete(l) } }, getState, getState)
 }
 
-/** Re-check the date (the app may stay open overnight). */
-export function checkDay() { const next = rollover(state); if (next !== state) set(next) }
+/** Re-check date and time (the app can stay open overnight, or iOS can bring it back from the background). */
+export function checkDay() { const next = settle(rollover(state)); if (next !== state) set(next) }
 
 export const actions = {
   go(screen: ScreenId) { set({ screen }) },
-  /** Notification tap: land on the Wake screen. */
-  openFromNotification() {
+  /** Notification tap: morning goes to Wake, evening goes to Evening Setup. */
+  openFromNotification(kind: 'morning' | 'evening' = 'morning') {
     checkDay()
-    if (state.onboarded && state.day.doneAt === null) set({ screen: 'wake' })
+    if (!state.onboarded) return
+    if (kind === 'evening') { if (!EDITING.includes(state.screen)) set(beginEvening(state)) }
+    else if (state.day.doneAt === null && !EDITING.includes(state.screen)) set({ screen: 'wake' })
   },
+  /** "Plan Tomorrow's Morning": a new night, same tasks, fresh note. */
+  startEvening() { set(beginEvening(state)) },
+  /** "Set my morning": tomorrow is planned. From now the app waits, and opens on Wake after 4:00 AM. */
+  armMorning() { set({ armedFor: nextMorningKey(), screen: 'sleep' }) },
   togglePick(label: string): 'ok' | 'limit' {
     const on = state.picked.includes(label)
     if (!on && state.picked.length >= MAX_TASKS) return 'limit'
@@ -156,6 +230,7 @@ export const actions = {
   sealPact() { if (state.pact.trim()) set({ pactSealed: true, pact: state.pact.trim() }) },
   unsealPact() { set({ pactSealed: false }) },
   setWake(wakeMins: number) { const w = clampWake(wakeMins); if (w !== state.wakeMins) set({ wakeMins: w }) },
+  setEvening(eveningMins: number) { const e = clampEvening(eveningMins); if (e !== state.eveningMins) set({ eveningMins: e }) },
   setPush(pushOn: boolean) { set({ pushOn }) },
   finishOnboarding() { set({ onboarded: true }) },
   /** Called only for a real hold of at least MIN_HOLD_MS. */
@@ -174,8 +249,4 @@ export const actions = {
     const idx = state.day.cardIdx
     set({ day: { ...state.day, cardOpened: true }, unlocks: state.unlocks + 1, opened: state.opened.includes(idx) ? state.opened : [...state.opened, idx] })
   },
-  /** Start a fresh morning from the Wake screen preview (used by "Good night" in the first evening). */
-  resetMorning() { set({ day: freshDay(state) }) },
 }
-
-export const isMorningScreen = (s: ScreenId) => MORNING_SCREENS.includes(s)

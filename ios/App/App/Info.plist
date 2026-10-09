@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>Mornward</string>
+        <string>First Light</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -43,6 +43,9 @@
       </array>
     </dict>
 	</dict>
+	<!-- the whole app is a dark night sky: keep the status bar text light and keyboards dark -->
+	<key>UIUserInterfaceStyle</key>
+	<string>Dark</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

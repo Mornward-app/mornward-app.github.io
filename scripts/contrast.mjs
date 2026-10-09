@@ -53,6 +53,8 @@ const TEXT = [
   ['welcome italic gold on gradient middle', '#FFE9A8', '#2E2D6E'],
   ['welcome italic gold on gradient bottom', '#FFE9A8', '#523E7C'],
   ['welcome CTA label on amber', c.ink, '#FFB547'],
+  ['alarm badge (sun) on night', c.sun, c.night],
+  ['alarm badge (sun) on deep night', c.sun, c.deep],
   ['sun hint labels on hook card', c.soft, c['hill-night']],
   // buttons and cards
   ['ink on butter button', c.ink, c.sun],

@@ -6,11 +6,13 @@ const STATE = (page: Page) => page.evaluate((k) => JSON.parse(localStorage.getIt
 const patchState = async (page: Page, patch: Record<string, unknown>) => {
   await page.evaluate(([k, p]) => {
     const cur = JSON.parse(localStorage.getItem(k as string) ?? '{}')
-    localStorage.setItem(k as string, JSON.stringify({ ...cur, ...(p as object) }))
+    localStorage.setItem(k as string, JSON.stringify({ ...cur, ...(p as object), savedAt: Date.now() }))
   }, [KEY, patch] as const)
   await page.reload()
 }
-const today = () => { const d = new Date(); const p = (n: number) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}` }
+const NOW = new Date(2026, 9, 9, 8, 0) // every test runs at 8:00 AM on this day unless it sets its own time
+const today = () => { const d = new Date(NOW); const p = (n: number) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}` }
+const tomorrow = () => { const d = new Date(NOW); d.setDate(d.getDate() + 1); const p = (n: number) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}` }
 const rgb = (hex: string) => { const n = parseInt(hex.slice(1), 16); return `rgb(${n >> 16}, ${(n >> 8) & 255}, ${n & 255})` }
 
 async function hold(page: Page, ms: number) {
@@ -26,6 +28,7 @@ const BEGIN = /begin tonight's setup \(45s\)/i
 const begin = (page: Page) => page.getByRole('button', { name: BEGIN }).click()
 
 test.beforeEach(async ({ page }) => {
+  await page.clock.install({ time: NOW })
   await page.goto('/')
   await page.evaluate(() => localStorage.clear())
   await page.reload()
@@ -130,18 +133,22 @@ test('OnbHook: 7:00 AM default, native push toggle schedules, no Add to Home Scr
   await expect(page.getByTestId('wake-time')).toContainText('7:00')
   await expect(page.getByText(/home screen/i)).toHaveCount(0)
   await expect(page.getByText(/add to/i)).toHaveCount(0)
-  await page.getByRole('button', { name: '15 minutes later' }).click()
+  await page.getByRole('button', { name: '15 minutes later', exact: true }).click()
   await expect(page.getByTestId('wake-time')).toContainText('7:15')
-  await page.getByRole('button', { name: '15 minutes earlier' }).click()
+  await page.getByRole('button', { name: '15 minutes earlier', exact: true }).click()
   const sw = page.getByRole('switch')
   await expect(sw).toHaveAttribute('aria-checked', 'false')
   await sw.click()
   await expect(sw).toHaveAttribute('aria-checked', 'true')
-  await expect(page.getByTestId('push-note')).toContainText('One notification at 7:00 AM')
+  await expect(page.getByTestId('alarm-badge')).toContainText('Alarm set for 7:00 AM')
+  await expect(page.getByTestId('alarm-badge')).toContainText('evening 9:00 PM')
   expect((await STATE(page)).pushOn).toBe(true)
   await page.getByRole('button', { name: 'Set my morning' }).click()
   await expect(page.getByTestId('screen-sleep')).toBeVisible()
   await expect(page.getByText('See you at 7:00 AM.')).toBeVisible()
+  await expect(page.getByTestId('sleep-alarm-badge')).toContainText('Alarm set for 7:00 AM')
+  const st = await STATE(page)
+  expect(st.armedFor).toBe(tomorrow())
 })
 
 test('OnbHook: the sun is draggable and stays in sync with the buttons', async ({ page }) => {
@@ -181,23 +188,23 @@ test('OnbHook: the sun is draggable and stays in sync with the buttons', async (
   expect(Math.abs(top.x - (tb.x + tb.width / 2))).toBeLessThan(3)
 
   // buttons stay in step with the sun
-  await page.getByRole('button', { name: '15 minutes later' }).click()
+  await page.getByRole('button', { name: '15 minutes later', exact: true }).click()
   await expect(time).toContainText('7:45')
   await expect(thumb).toHaveAttribute('aria-valuenow', '465')
   await expect(thumb).toHaveAttribute('aria-valuetext', '7:45 AM')
   await page.waitForTimeout(700)
   expect((await centre()).x).toBeGreaterThan(top.x) // the sun moved right with the button
-  await page.getByRole('button', { name: '15 minutes earlier' }).click()
-  await page.getByRole('button', { name: '15 minutes earlier' }).click()
+  await page.getByRole('button', { name: '15 minutes earlier', exact: true }).click()
+  await page.getByRole('button', { name: '15 minutes earlier', exact: true }).click()
   await expect(time).toContainText('7:15')
   // clamps at the ends
   await thumb.focus(); await page.keyboard.press('Home')
   await expect(time).toContainText('5:00')
-  await page.getByRole('button', { name: '15 minutes earlier' }).click()
+  await page.getByRole('button', { name: '15 minutes earlier', exact: true }).click()
   await expect(time).toContainText('5:00')
   await thumb.focus(); await page.keyboard.press('End')
   await expect(time).toContainText('10:00')
-  await page.getByRole('button', { name: '15 minutes later' }).click()
+  await page.getByRole('button', { name: '15 minutes later', exact: true }).click()
   await expect(time).toContainText('10:00')
   await thumb.focus(); await page.keyboard.press('ArrowLeft')
   await expect(time).toContainText('9:45')
@@ -337,7 +344,8 @@ test('Down: unseal today\'s card, 21-card deck, week tracker, put the phone down
   await expect(page.getByTestId('deck-detail')).toContainText('Lally et al.')
   await page.getByRole('button', { name: 'Close' }).click()
   await page.getByTestId('phone-down').click()
-  await expect(page.getByTestId('resting')).toBeVisible()
+  await expect(page.getByTestId('screen-rest')).toBeVisible()
+  await expect(page.getByText('See you tonight.')).toBeVisible()
 })
 
 test('deck source: 21 cards, each with a source, no exclamation marks, no emoji', async () => {
@@ -351,7 +359,7 @@ test('deck source: 21 cards, each with a source, no exclamation marks, no emoji'
 test('next day: a new date rolls over, keeps history, routes to Wake in the morning', async ({ page }) => {
   await patchState(page, { screen: 'down', onboarded: true, history: ['2026-10-07'], opened: [0], unlocks: 1,
     day: { date: '2026-10-07', breaths: 3, ticked: [true, true], doneAt: 'x', cardIdx: 0, cardOpened: true } })
-  await page.clock.install({ time: new Date(2026, 9, 8, 7, 5) })
+  await page.clock.setSystemTime(new Date(2026, 9, 8, 7, 5))
   await page.reload()
   await expect(page.getByTestId('screen-wake')).toBeVisible()
   const s = await STATE(page)
@@ -363,7 +371,7 @@ test('next day: a new date rolls over, keeps history, routes to Wake in the morn
 test('deck loops: after all 21 are open the next card keeps advancing', async ({ page }) => {
   await patchState(page, { screen: 'down', onboarded: true, history: [], opened: Array.from({ length: 21 }, (_, i) => i), unlocks: 23,
     day: { date: '2026-10-07', breaths: 3, ticked: [true, true], doneAt: 'x', cardIdx: 1, cardOpened: true } })
-  await page.clock.install({ time: new Date(2026, 9, 8, 7, 5) })
+  await page.clock.setSystemTime(new Date(2026, 9, 8, 7, 5))
   await page.reload()
   expect((await STATE(page)).day.cardIdx).toBe(2)
 })
@@ -386,4 +394,148 @@ test('old service worker and caches are retired', async ({ page }) => {
   await page.evaluate(async () => { await caches.open('mornward-old-shell') })
   await page.reload()
   await expect.poll(() => page.evaluate(async () => (await caches.keys()).length), { timeout: 10_000 }).toBe(0)
+})
+
+test('OnbHook: evening reminder time is adjustable and persists', async ({ page }) => {
+  await patchState(page, { screen: 'hook' })
+  const eve = page.getByTestId('evening-time')
+  await expect(eve).toHaveText('9:00 PM')
+  await page.getByRole('button', { name: 'Evening reminder 15 minutes later' }).click()
+  await page.getByRole('button', { name: 'Evening reminder 15 minutes later' }).click()
+  await expect(eve).toHaveText('9:30 PM')
+  for (let i = 0; i < 20; i++) await page.getByRole('button', { name: 'Evening reminder 15 minutes later' }).click()
+  await expect(eve).toHaveText('11:00 PM') // clamped
+  await page.reload()
+  await expect(page.getByTestId('evening-time')).toHaveText('11:00 PM')
+})
+
+test('Persistence: state survives losing either stored copy (iOS can purge localStorage)', async ({ page }) => {
+  await begin(page)
+  await page.getByPlaceholder('+ Write your own tiny task...').fill('Read two pages')
+  await page.getByRole('button', { name: 'Add this task' }).click()
+  await expect(page.getByRole('button', { name: 'Read two pages' })).toBeVisible()
+  await page.getByRole('button', { name: /next: your pact/i }).click()
+  await page.getByRole('button', { name: /A clear head before work/ }).click()
+  await page.getByRole('button', { name: /seal my pact/i }).click()
+  const keys = await page.evaluate(() => Object.keys(localStorage))
+  expect(keys).toContain('mornward.daybreak.v1') // synchronous copy
+  expect(keys).toContain('CapacitorStorage.mornward.daybreak.v1') // @capacitor/preferences copy
+
+  // 1) the primary copy is purged: the device copy restores everything
+  await page.evaluate(() => localStorage.removeItem('mornward.daybreak.v1'))
+  await page.reload()
+  await expect(page.getByRole('button', { name: /next: your wake-up push/i })).toBeVisible()
+  expect((await STATE(page)).custom).toEqual(['Read two pages'])
+  expect((await STATE(page)).pactSealed).toBe(true) // rewritten to both stores on launch
+
+  // 2) the device copy is purged: localStorage restores everything
+  await page.evaluate(() => localStorage.removeItem('CapacitorStorage.mornward.daybreak.v1'))
+  await page.reload()
+  await expect(page.getByRole('button', { name: /next: your wake-up push/i })).toBeVisible()
+  expect(await page.evaluate(() => localStorage.getItem('CapacitorStorage.mornward.daybreak.v1'))).not.toBeNull()
+
+  // 3) two different copies: the newer one wins
+  await page.evaluate(() => {
+    const k = 'mornward.daybreak.v1'
+    const a = JSON.parse(localStorage.getItem(k)!)
+    localStorage.setItem('CapacitorStorage.' + k, JSON.stringify({ ...a, wakeMins: 540, savedAt: a.savedAt + 5000 }))
+  })
+  await page.reload()
+  expect((await STATE(page)).wakeMins).toBe(540)
+
+  // 4) damaged copies never crash the app
+  await page.evaluate(() => { localStorage.setItem('mornward.daybreak.v1', '{not json'); localStorage.setItem('CapacitorStorage.mornward.daybreak.v1', '[1,2') })
+  await page.reload()
+  await expect(page.getByTestId('screen-welcome')).toBeVisible()
+})
+
+test('Persistence: tasks, times, pact and progress are still there the next morning', async ({ page }) => {
+  await patchState(page, { screen: 'sleep', onboarded: true, pact: 'A clear head.', pactSealed: true, picked: ['Water first', 'Stretch'], wakeMins: 405, eveningMins: 1290, armedFor: '2026-10-09',
+    history: ['2026-10-07'], day: { date: '2026-10-08', breaths: 0, ticked: [false, false], doneAt: null, cardIdx: 0, cardOpened: false } })
+  await page.clock.setSystemTime(new Date(2026, 9, 9, 6, 50))
+  await page.reload()
+  await expect(page.getByTestId('screen-wake')).toBeVisible()
+  const s = await STATE(page)
+  expect(s.picked).toEqual(['Water first', 'Stretch'])
+  expect(s.wakeMins).toBe(405)
+  expect(s.eveningMins).toBe(1290)
+  expect(s.history).toEqual(['2026-10-07'])
+  expect(s.day.date).toBe('2026-10-09')
+  await expect(page.getByTestId('wake-pact')).toContainText('A clear head.')
+})
+
+test('Lifecycle: Put the phone down leads to See you tonight, which leads to Plan tomorrow, not back to the card', async ({ page }) => {
+  await patchState(page, { screen: 'down', onboarded: true, pact: 'Old note.', pactSealed: true, picked: ['Water first', 'Short walk'],
+    history: [today()], day: { date: today(), breaths: 3, ticked: [true, true], doneAt: new Date().toISOString(), cardIdx: 0, cardOpened: true } })
+  await page.getByTestId('phone-down').click()
+  await expect(page.getByTestId('screen-rest')).toBeVisible()
+  await page.reload() // iOS closed the app: it comes back on the same screen
+  await expect(page.getByTestId('screen-rest')).toBeVisible()
+  await page.getByRole('button', { name: "Back to today's card" }).click()
+  await expect(page.getByTestId('screen-down')).toBeVisible()
+  await page.getByTestId('phone-down').click()
+  await page.getByRole('button', { name: "Plan tomorrow's morning" }).click()
+  await expect(page.getByTestId('screen-plan')).toBeVisible()
+  await expect(page.getByText('TONIGHT · 1 OF 4')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Water first' })).toHaveAttribute('aria-pressed', 'true') // tasks carry over
+  await page.getByRole('button', { name: /next: your pact/i }).click()
+  await expect(page.locator('#pact')).toHaveValue('') // a fresh note for the new night
+  await page.getByRole('button', { name: /A clear head before work/ }).click()
+  await page.getByRole('button', { name: /seal my pact/i }).click()
+  await page.getByRole('button', { name: /next: your wake-up push/i }).click()
+  await page.getByRole('button', { name: '15 minutes later', exact: true }).click()
+  await page.getByRole('button', { name: 'Set my morning' }).click()
+  await expect(page.getByTestId('screen-sleep')).toBeVisible()
+  const s = await STATE(page)
+  expect(s.armedFor).toBe(tomorrow())
+  expect(s.wakeMins).toBe(435)
+  expect(s.pact).toBe('A clear head before work.')
+  // Good night dims the screen; tapping it wakes the screen back to the waiting sun, with no card to loop on
+  await page.getByRole('button', { name: 'Good night' }).click()
+  await expect(page.getByTestId('dim')).toBeVisible()
+  await page.getByTestId('dim').click()
+  await expect(page.getByTestId('screen-sleep')).toBeVisible()
+})
+
+test('Lifecycle: from 6:00 PM a finished morning moves to Evening Setup by itself', async ({ page }) => {
+  const seed = { screen: 'down', onboarded: true, pact: 'Old note.', pactSealed: true, picked: ['Water first'], armedFor: null,
+    history: ['2026-10-08'], day: { date: '2026-10-08', breaths: 3, ticked: [true], doneAt: '2026-10-08T07:30:00.000Z', cardIdx: 0, cardOpened: true } }
+  await page.clock.setSystemTime(new Date(2026, 9, 8, 17, 55))
+  await patchState(page, seed)
+  await expect(page.getByTestId('screen-down')).toBeVisible() // still afternoon
+  await page.clock.fastForward('10:00') // 6:05 PM, app kept open
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
+  await expect(page.getByTestId('screen-plan')).toBeVisible()
+  expect((await STATE(page)).pact).toBe('') // new night, new note
+  await page.clock.setSystemTime(new Date(2026, 9, 8, 18, 5))
+  await patchState(page, { ...seed, screen: 'down', pact: 'Old note.' })
+  await expect(page.getByTestId('screen-plan')).toBeVisible() // cold start after 6 PM
+})
+
+test('Lifecycle: once tomorrow is armed the app waits, then opens the Wake screen after 4:00 AM', async ({ page }) => {
+  const seed = { screen: 'sleep', onboarded: true, pact: 'A note.', pactSealed: true, picked: ['Water first'], armedFor: '2026-10-09',
+    history: ['2026-10-08'], day: { date: '2026-10-08', breaths: 3, ticked: [true], doneAt: '2026-10-08T07:30:00.000Z', cardIdx: 0, cardOpened: true } }
+  for (const [h, m, want] of [[23, 30, 'screen-sleep'], [3, 50, 'screen-sleep'], [4, 5, 'screen-wake']] as const) {
+    await patchState(page, seed)
+    const day = h < 12 ? 9 : 8
+    await page.clock.setSystemTime(new Date(2026, 9, day, h, m))
+    await page.reload()
+    await expect(page.getByTestId(want), `${h}:${m}`).toBeVisible()
+  }
+  // already open at 3:59 AM: crossing 4:00 AM brings the morning ritual up
+  await patchState(page, seed)
+  await page.clock.setSystemTime(new Date(2026, 9, 9, 3, 59))
+  await page.reload()
+  await expect(page.getByTestId('screen-sleep')).toBeVisible()
+  await page.clock.fastForward('02:00')
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
+  await expect(page.getByTestId('screen-wake')).toBeVisible()
+})
+
+test('Lifecycle: a finished morning is never sent back to Wake', async ({ page }) => {
+  await patchState(page, { screen: 'wake', onboarded: true, picked: ['Water first'], armedFor: null, pushOn: false,
+    history: [today()], day: { date: today(), breaths: 3, ticked: [true], doneAt: new Date().toISOString(), cardIdx: 0, cardOpened: true } })
+  await page.clock.setSystemTime(new Date(2026, 9, 9, 11, 0))
+  await page.reload()
+  await expect(page.getByTestId('screen-down')).toBeVisible()
 })

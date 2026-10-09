@@ -10,8 +10,9 @@
     "typecheck": "tsc --noEmit",
     "preview": "vite preview --port 4173",
     "test:contrast": "node scripts/contrast.mjs",
+    "test:unit": "node --test --experimental-strip-types src/lib/*.test.ts",
     "test:e2e": "playwright test",
-    "test": "npm run typecheck && npm run test:contrast && npm run build && npm run test:e2e",
+    "test": "npm run typecheck && npm run test:unit && npm run test:contrast && npm run build && npm run test:e2e",
     "sync": "npm run build && cap sync",
     "ios": "npm run sync && cap open ios",
     "android": "npm run sync && cap open android"
@@ -23,6 +24,7 @@
     "@capacitor/haptics": "^8.0.2",
     "@capacitor/ios": "^8.5.3",
     "@capacitor/local-notifications": "^8.3.1",
+    "@capacitor/preferences": "^8.0.1",
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",
     "@fontsource-variable/geist-mono": "^5.3.0",
     "@fontsource-variable/jetbrains-mono": "^5.3.0",

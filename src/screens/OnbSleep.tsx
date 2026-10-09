@@ -1,4 +1,7 @@
+import { useState } from 'react'
 import { actions, useStore } from '../lib/store'
+import { haptic, putPhoneDown } from '../lib/native'
+import { timeLabel } from '../lib/copy'
 import { fmtMins } from '../lib/dates'
 import { Eyebrow, Frame, Hill, StepBars } from '../components/ui'
 
@@ -7,6 +10,13 @@ const STARS = [{ l: 60, t: 230, s: 4, d: 1 }, { l: 300, t: 280, s: 3, d: 1.6 }, 
 export default function OnbSleep() {
   const s = useStore()
   const f = fmtMins(s.wakeMins)
+  const [dim, setDim] = useState(false)
+  const goodNight = async () => {
+    haptic('success')
+    if (!s.onboarded) { actions.finishOnboarding(); actions.go('wake'); return } // first night: a peek at the morning
+    await putPhoneDown()
+    setDim(true)
+  }
   return (
     <Frame testId="screen-sleep" bg="#16153F" fg="#FFF6E5" className="flex flex-col px-6 pb-[30px]">
       {STARS.map((st, i) => (
@@ -24,12 +34,26 @@ export default function OnbSleep() {
         <p className="m-0 mt-3.5 text-[17px] leading-[25px] text-muted" style={{ animation: 'fadeUp .8s ease .6s both' }}>
           Put the phone down. See you at {f.t} {f.ap}.
         </p>
+        {s.pushOn && (
+          <p className="m-0 mt-4 self-start inline-flex items-center gap-1.5 rounded-full border border-sun/60 px-3 py-1 text-[13px] font-semibold text-sun" role="status" data-testid="sleep-alarm-badge" style={{ animation: 'pop .5s cubic-bezier(.2,.9,.3,1.3) 1s both' }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FFE38A" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5 12.5l4.5 4.5L19 7" /></svg>
+            Alarm set for {timeLabel(s.wakeMins)}
+          </p>
+        )}
         <div className="mt-auto flex flex-col gap-1">
           <button type="button" className="chunky border-2 border-solid border-cream bg-transparent text-cream" style={{ animation: 'fadeUp .8s ease 1.4s both' }}
-            onClick={() => { actions.finishOnboarding(); actions.go('wake') }}>Good night</button>
+            onClick={goodNight}>Good night</button>
           <button type="button" className="linkish text-muted self-center" onClick={() => actions.go('plan')}>Change tomorrow’s plan</button>
         </div>
       </div>
+      {dim && (
+        <button type="button" aria-label="Wake the screen" onClick={() => setDim(false)} data-testid="dim"
+          className="absolute inset-0 z-50 w-full h-full border-0 bg-deep text-cream flex flex-col items-center justify-center gap-3 cursor-pointer font-display" style={{ animation: 'fadeUp 1.2s ease both', ['--ring' as string]: '#FFF6E5' }}>
+          <span aria-hidden className="w-[88px] h-[88px] rounded-full bg-sun" style={{ animation: 'halo 6s ease-in-out infinite' }} />
+          <span className="text-[44px] leading-[0.95] font-extrabold tracking-[-0.04em]">Good night.</span>
+          <span className="label text-muted-2">TAP TO WAKE THE SCREEN</span>
+        </button>
+      )}
     </Frame>
   )
 }
