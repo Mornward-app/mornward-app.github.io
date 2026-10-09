@@ -30,6 +30,15 @@ Plugins: `@capacitor/local-notifications` (two repeating daily notifications: mo
 
 iOS bundle id `app.mornward`, display name Mornward. On a Mac: `npm ci && npm run ios` (build, `cap sync ios`, open Xcode), pick a signing team under Signing & Capabilities, run on a device.
 
+### Open in Xcode with no npm and no CocoaPods
+
+The iOS project uses Swift Package Manager and is committed ready to open:
+
+1. Open `ios/App/App.xcodeproj` in Xcode (15 or later). On first open it downloads the Capacitor package from GitHub, so it needs internet.
+2. Under Signing & Capabilities pick your team, choose your iPhone, press Run.
+
+What makes that work without npm: the built web app is committed in `ios/App/App/public`, the Capacitor config in `ios/App/App/capacitor.config.json`, and the four plugin Swift packages in `ios/App/LocalPackages/` (copied there by `scripts/vendor-ios-plugins.mjs`). After you change anything in `src/` or the plugins, run `npm run sync` on a machine with Node, then `git add -f ios/App/App/public ios/App/App/capacitor.config.json ios/App/App/config.xml ios/App/LocalPackages` and commit, or the Xcode build keeps the old web bundle.
+
 Icons and splash come from `resources/` via `npx capacitor-assets generate` (re-render with `node resources/render.mjs`).
 
 ## Notes

@@ -1,0 +1,21 @@
+{
+	"appId": "app.mornward",
+	"appName": "Mornward",
+	"webDir": "dist",
+	"backgroundColor": "#2B2A6B",
+	"ios": {
+		"contentInset": "never"
+	},
+	"plugins": {
+		"LocalNotifications": {
+			"iconColor": "#FFE38A",
+			"smallIcon": "ic_stat_sun"
+		}
+	},
+	"packageClassList": [
+		"AppPlugin",
+		"HapticsPlugin",
+		"LocalNotificationsPlugin",
+		"PreferencesPlugin"
+	]
+}
