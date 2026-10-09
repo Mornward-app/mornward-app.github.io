@@ -28,7 +28,7 @@ npm run android   # build, cap sync, open Android Studio
 
 Plugins: `@capacitor/local-notifications` (two repeating daily notifications: morning at the wake time, default 7:00 AM, and an evening prep reminder, default 9:00 PM; permission asked only from the OnbHook toggle), `@capacitor/preferences` (durable state, mirrored to localStorage), `@capacitor/haptics`, `@capacitor/app`. Tapping the morning notification opens `Wake`; the evening one opens Evening Setup.
 
-iOS bundle id `com.firstlight.app`, display name First Light. On a Mac: `npm ci && npm run ios` (build, `cap sync ios`, open Xcode), pick a signing team under Signing & Capabilities, run on a device.
+iOS bundle id `app.mornward`, display name Mornward. On a Mac: `npm ci && npm run ios` (build, `cap sync ios`, open Xcode), pick a signing team under Signing & Capabilities, run on a device.
 
 Icons and splash come from `resources/` via `npx capacitor-assets generate` (re-render with `node resources/render.mjs`).
 
