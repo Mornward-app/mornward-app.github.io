@@ -2,6 +2,7 @@ import { actions } from '../lib/store'
 import { haptic } from '../lib/native'
 import { Frame } from '../components/ui'
 import { Hill } from '../components/ui'
+import { PrivacyLink } from '../components/Counts'
 
 const STARS = [{ l: 60, t: 24, s: 3, d: 1 }, { l: 300, t: 40, s: 3, d: 1.6 }, { l: 200, t: 18, s: 2, d: 2.1 }, { l: 110, t: 52, s: 2, d: 0.6 }, { l: 335, t: 20, s: 2, d: 1.2 }] // above the headline, never behind words
 
@@ -25,6 +26,7 @@ export default function Rest() {
           <button type="button" className="chunky chunky-butter" data-testid="plan-tomorrow" style={{ animation: 'pop .6s cubic-bezier(.2,.9,.3,1.2) .6s both' }}
             onClick={() => { haptic('light'); actions.startEvening() }}>Plan tomorrow's morning</button>
           <button type="button" className="linkish text-soft self-center" onClick={() => actions.go('down')}>Back to today's card</button>
+          <PrivacyLink />
         </div>
       </div>
     </Frame>

@@ -1,6 +1,7 @@
 import { actions } from '../lib/store'
 import { haptic } from '../lib/native'
 import { Frame } from '../components/ui'
+import { agreeFromWelcome, ConsentLine } from '../components/Counts'
 
 const STEPS = [
   { label: '01 · TONIGHT (45s)', text: 'Pick 3 tiny off-screen moves & leave a 1-line note for 7am you.' },
@@ -53,7 +54,8 @@ export default function Welcome() {
         </ol>
 
         <div className="mt-auto pt-5">
-          <button type="button" onClick={() => { haptic('light'); actions.go('plan') }}
+          <ConsentLine />
+          <button type="button" onClick={() => { haptic('light'); agreeFromWelcome(); actions.go('plan') }}
             className="chunky chunky-amber font-jakarta" style={{ animation: 'pop .6s cubic-bezier(.2,.9,.3,1.2) .8s both' }}>
             Begin tonight's setup (45s) →
           </button>

@@ -23,7 +23,7 @@ export type PushResult = 'scheduled' | 'denied' | 'unsupported'
 /**
  * Two repeating daily LOCAL notifications, scheduled with the OS (UNCalendarNotificationTrigger on iOS), so they
  * appear on the Lock Screen at the exact minute even when the app is closed. Nothing is sent at set-up time:
- * the permission is asked, the triggers are registered, and the OS fires them later. Nothing leaves the phone.
+ * the permission is asked, the triggers are registered, and the OS fires them later. Nothing about them leaves the phone.
  */
 export async function scheduleReminders(morning: { mins: number; body: string }, evening: { mins: number }, ask = true): Promise<PushResult> {
   try {

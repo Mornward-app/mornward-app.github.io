@@ -29,8 +29,11 @@ const begin = (page: Page) => page.getByRole('button', { name: BEGIN }).click()
 
 test.beforeEach(async ({ page }) => {
   await page.clock.install({ time: NOW })
+  // never reach the real database from tests (the counts have their own tests in counts.spec.ts)
+  await page.route(/supabase\.co/, (r) => r.fulfill({ status: 201, body: '' }))
   await page.goto('/')
-  await page.evaluate(() => localStorage.clear())
+  // the counts question is answered (off), so the one-time notice never covers these screens
+  await page.evaluate(() => { localStorage.clear(); localStorage.setItem('mornward.stats.v1', JSON.stringify({ noStats: true })) })
   await page.reload()
 })
 
@@ -79,7 +82,7 @@ test('Welcome: a user who already onboarded is not sent back to it', async ({ pa
   await expect(page.getByTestId('screen-plan')).toBeVisible()
 })
 
-test('app never talks to Supabase or any other host', async ({ page }) => {
+test('with the counts off, the app never talks to Supabase or any other host', async ({ page }) => {
   const hosts = new Set<string>()
   page.on('request', (r) => { const u = new URL(r.url()); if (u.protocol.startsWith('http')) hosts.add(u.host) })
   await page.reload()
@@ -441,7 +444,7 @@ test('Persistence: state survives losing either stored copy (iOS can purge local
     localStorage.setItem('CapacitorStorage.' + k, JSON.stringify({ ...a, wakeMins: 540, savedAt: a.savedAt + 5000 }))
   })
   await page.reload()
-  expect((await STATE(page)).wakeMins).toBe(540)
+  await expect.poll(async () => (await STATE(page)).wakeMins).toBe(540) // the winner is written back once both copies are read
 
   // 4) damaged copies never crash the app
   await page.evaluate(() => { localStorage.setItem('mornward.daybreak.v1', '{not json'); localStorage.setItem('CapacitorStorage.mornward.daybreak.v1', '[1,2') })

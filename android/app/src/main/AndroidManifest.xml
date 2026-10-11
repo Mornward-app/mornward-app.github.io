@@ -30,6 +30,7 @@
     </application>
 
     <!-- Permissions -->
-    <!-- No INTERNET permission on purpose: Mornward never sends anything, so the OS enforces "Stays on this phone". -->
+    <!-- INTERNET: only for the anonymous, opt-out counts (src/lib/stats.ts). Tasks, the note and times never leave the phone. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <!-- The local-notifications plugin adds POST_NOTIFICATIONS, SCHEDULE_EXACT_ALARM and RECEIVE_BOOT_COMPLETED itself. -->
 </manifest>
