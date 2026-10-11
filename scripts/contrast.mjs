@@ -56,6 +56,13 @@ const TEXT = [
   ['alarm badge (sun) on night', c.sun, c.night],
   ['alarm badge (sun) on deep night', c.sun, c.deep],
   ['sun hint labels on hook card', c.soft, c['hill-night']],
+  // anonymous counts: Welcome's consent line, the one-time notice and Privacy and counts (Rest)
+  ['consent line on its night backing (Welcome)', c.soft, '#2E2D6E'],
+  ['consent links (cream) on its night backing (Welcome)', c.cream, '#2E2D6E'],
+  ['counts sheet text on deep night', c.soft, c.deep],
+  ['counts sheet title and links on deep night', c.cream, c.deep],
+  ['anonymous ID on hill-night', c.cream, c['hill-night']],
+  ['Privacy and counts link on rest sky', c.soft, '#16153F'],
   // buttons and cards
   ['ink on butter button', c.ink, c.sun],
   ['cream on ink button', c.cream, c.ink],

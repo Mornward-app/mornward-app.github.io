@@ -243,3 +243,31 @@ and `testers.first_day` is the first event of any kind. Use `legacy_retention_re
 - **Times:** floating local times (07:00 wherever the phone is).
 - **Delivery:** whether an alert appears is unverified until the real-device checks pass
   (`docs/real-device-checklist.md`).
+
+## The Daybreak app (app_version `daybreak-1`, from 11 October 2026)
+
+The React/Capacitor app (`src/`) replaced the web app on 8 October 2026 and sent nothing until `daybreak-1`. Its rows
+come from `src/lib/stats.ts`, after consent only (Welcome's button, or OK on the one-time notice shown to people who
+set up before counts existed), never after "Turn off". Every row: `event_id`, `device_id`, `day` (the phone's local
+date), `kind`, `app_version = daybreak-1`, and `data` with `run: 0`, `home_screen` (native app or installed web app) and
+`test` (phones opened once with `?test=1`). Each step is counted once per morning (a `track` key kept on the phone).
+
+| Kind | Sent when | `data` |
+| --- | --- | --- |
+| `app_opened` | first open of each local day (launch or coming back to the app) | `platform` ios/android/web, `screen`, `onboarded` |
+| `evening_set` | "Set my morning" (`day` = the day it was set) | `tasks` 0-3, `own` (one is the person's own), `pact` (sealed), `push` (reminder on) |
+| `sun_hold_done` | the third real 3.2 s sun hold | `breaths: 3` |
+| `breaths_skipped` | Skip breathing | `held` 0-2 |
+| `morning_completed` | every task ticked, once per day | `tasks` 1-3, `breathing` held/skipped, `streak` (days in a row), `sunrises` (total) |
+| `card_opened` | the day's card unsealed | — |
+| `history_synced` | once, when someone who used the app before counts existed agrees | `days` (dates of their finished mornings, up to 60), `sunrises`, `streak`, `onboarded` |
+
+Never sent: tasks, the pact, wake or evening times, card choices, anything typed. There is no Low-energy / Recovery mode
+in the app yet, so nothing counts it.
+
+Reports (test devices left out): `daybreak_testers` (one row per device: first and last day, platform, days opened,
+evenings set, sun holds, skips, mornings completed and how many came from `history_synced`, best streak, cards),
+`daybreak_daily` (per local day), `daybreak_retention` (day 0 = first open or first synced morning; `came_back_day1`,
+`morning_day1`, `came_back_week1`, `week1_3plus`; final once the window has passed, else `not_yet_eligible`).
+`daybreak_mornings` merges live and synced mornings. The policy only accepts rows dated within two days of today, so
+mornings from before counts arrive as dates inside one `history_synced` row, not as back-dated rows.
