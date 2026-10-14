@@ -43,7 +43,7 @@ export default function OnbPlan() {
     <Frame testId="screen-plan" bg="#2B2A6B" fg="#FFF6E5" className="flex flex-col px-6 pb-[30px]">
       <StepBars step={1} />
       <Eyebrow className="mt-7 text-muted-2" style={{ animation: 'fadeUp .6s ease both' }}>TONIGHT · 1 OF 4</Eyebrow>
-      <h1 className="h-screen-title m-0 mt-2 text-[48px]" style={{ animation: 'fadeUp .6s ease .08s both' }}>What will you do before the feed?</h1>
+      <h1 className="h-screen-title m-0 mt-2 text-[48px] [@media(max-height:700px)]:text-[38px]" style={{ animation: 'fadeUp .6s ease .08s both' }}>What will you do before the feed?</h1>
 
       <div className="mt-3 min-h-[22px]" aria-live="polite">
         {bumps === 0

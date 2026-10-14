@@ -55,6 +55,12 @@ const TEXT = [
   ['welcome CTA label on amber', c.ink, '#FFB547'],
   ['alarm badge (sun) on night', c.sun, c.night],
   ['alarm badge (sun) on deep night', c.sun, c.deep],
+  ['pre-prompt eyebrow (ember) on cream', c.ember, c.cream],
+  ['pre-prompt body on cream', c.label, c.cream],
+  ['Pact chips on night', c.cream, c.night],
+  ['Pact chip selected (ink on sun)', c.ink, c.sun],
+  ['Pact card text on hill-night', c.cream, c['hill-night']],
+  ['Pick a line link on hill-night? (muted on night)', c.muted, c.night],
   ['sun hint labels on hook card', c.soft, c['hill-night']],
   // anonymous counts: Welcome's consent line, the one-time notice and Privacy and counts (Rest)
   ['consent line on its night backing (Welcome)', c.soft, '#2E2D6E'],

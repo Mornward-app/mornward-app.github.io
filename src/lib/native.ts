@@ -44,6 +44,23 @@ export async function scheduleReminders(morning: { mins: number; body: string },
   }
 }
 
+export type PermState = 'granted' | 'denied' | 'prompt'
+
+/** Where notification permission stands, without asking. 'prompt' means iOS has never asked: it can only ask once, so we explain first. */
+export async function getPermissionState(): Promise<PermState> {
+  try {
+    const p = await LocalNotifications.checkPermissions()
+    return p.display === 'granted' ? 'granted' : p.display === 'denied' ? 'denied' : 'prompt'
+  } catch { return 'prompt' }
+}
+
+/** iOS: the app's page in Settings, where a refused permission can be turned back on. */
+export async function openSystemSettings() {
+  // Capacitor hands non-web URL schemes to iOS, so this opens the app's page in Settings. Nothing happens on the web.
+  if (!isNative()) return
+  try { window.location.assign('app-settings:') } catch { /* cannot open Settings */ }
+}
+
 export async function cancelReminders() {
   try { await LocalNotifications.cancel({ notifications: [{ id: MORNING_ID }, { id: EVENING_ID }] }) } catch { /* nothing scheduled */ }
 }

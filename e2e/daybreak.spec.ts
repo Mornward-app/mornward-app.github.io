@@ -114,19 +114,34 @@ test('OnbPlan: custom task input is live, limit shakes, state persists', async (
   expect((await STATE(page)).custom).toEqual(['Read two pages'])
 })
 
-test('OnbPact: starter chips fill the pact, seal persists across reload', async ({ page }) => {
+test('OnbPact: tap-first, typing is optional, seal persists across reload', async ({ page }) => {
   await begin(page)
   await page.getByRole('button', { name: /next: your pact/i }).click()
   const seal = page.getByRole('button', { name: /seal my pact/i })
   await expect(seal).toHaveAttribute('aria-disabled', 'true')
+  await expect(page.locator('#pact')).toHaveCount(0) // no empty box to stare at
   const chips = page.getByRole('group', { name: 'Starter pacts' }).getByRole('button')
-  await expect(chips).toHaveCount(3)
+  await expect(chips).toHaveCount(7) // six lines and Write my own
+  // one tap picks a line and arms the seal
   await chips.nth(1).click()
+  await expect(chips.nth(1)).toHaveAttribute('aria-pressed', 'true')
+  await expect(seal).toHaveAttribute('aria-disabled', 'false')
+  expect((await STATE(page)).pact).toBe('For my family, before my phone.')
+  // writing is one optional tap away
+  await page.getByRole('button', { name: 'Write my own' }).click()
   await expect(page.locator('#pact')).toHaveValue('For my family, before my phone.')
+  await page.locator('#pact').fill('Mine again.')
+  expect((await STATE(page)).pact).toBe('Mine again.')
+  await expect(chips).toHaveCount(0) // while writing, the list gives way to the box
+  await page.getByTestId('pick-a-line').click()
+  await expect(page.locator('#pact')).toHaveCount(0)
+  await expect(chips).toHaveCount(7)
+  await chips.nth(0).click()
   await seal.click()
+  await expect(page.getByTestId('pact-card')).toHaveText('“To feel like myself again.”')
   await expect(page.getByText('sealed')).toBeVisible()
   await page.reload()
-  await expect(page.locator('#pact')).toHaveValue('For my family, before my phone.')
+  await expect(page.getByTestId('pact-card')).toContainText('To feel like myself again.')
   await expect(page.getByRole('button', { name: /next: your wake-up push/i })).toBeVisible()
 })
 
@@ -482,7 +497,8 @@ test('Lifecycle: Put the phone down leads to See you tonight, which leads to Pla
   await expect(page.getByText('TONIGHT · 1 OF 4')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Water first' })).toHaveAttribute('aria-pressed', 'true') // tasks carry over
   await page.getByRole('button', { name: /next: your pact/i }).click()
-  await expect(page.locator('#pact')).toHaveValue('') // a fresh note for the new night
+  await expect(page.getByRole('button', { name: /seal my pact/i })).toHaveAttribute('aria-disabled', 'true') // a fresh note for the new night
+  expect((await STATE(page)).pact).toBe('')
   await page.getByRole('button', { name: /A clear head before work/ }).click()
   await page.getByRole('button', { name: /seal my pact/i }).click()
   await page.getByRole('button', { name: /next: your wake-up push/i }).click()
@@ -541,4 +557,58 @@ test('Lifecycle: a finished morning is never sent back to Wake', async ({ page }
   await page.clock.setSystemTime(new Date(2026, 9, 9, 11, 0))
   await page.reload()
   await expect(page.getByTestId('screen-down')).toBeVisible()
+})
+
+test('OnbHook: two-step permission asks in our words first, iOS only after Continue', async ({ page }) => {
+  await patchState(page, { screen: 'hook' })
+  await page.evaluate(() => {
+    const w = window as unknown as { __asked: number; __perm: string }
+    w.__asked = 0; w.__perm = 'default'
+    Object.defineProperty(Notification, 'permission', { get: () => w.__perm, configurable: true })
+    Notification.requestPermission = async () => { w.__asked++; w.__perm = 'granted'; return 'granted' }
+  })
+  const asked = () => page.evaluate(() => (window as unknown as { __asked: number }).__asked)
+  const sw = page.getByRole('switch')
+  await sw.click()
+  const dlg = page.getByRole('dialog', { name: 'Let Mornward nudge you?' })
+  await expect(dlg).toBeVisible()
+  await expect(dlg).toContainText('STEP 1 OF 2')
+  await expect(dlg).toContainText('7:00 AM')
+  await expect(dlg).toContainText('9:00 PM')
+  await expect(page.getByTestId('pp-continue')).toBeFocused()
+  expect(await asked()).toBe(0) // the system dialog has not been used up
+  await page.getByTestId('pp-not-now').click()
+  await expect(dlg).toHaveCount(0)
+  await expect(sw).toHaveAttribute('aria-checked', 'false')
+  await expect(page.getByTestId('push-note')).toContainText('No problem')
+  expect(await asked()).toBe(0)
+  await page.keyboard.press('Escape') // nothing open: no effect
+  await sw.click()
+  await expect(dlg).toBeVisible()
+  await page.keyboard.press('Escape') // Escape means Not now
+  await expect(dlg).toHaveCount(0)
+  expect(await asked()).toBe(0)
+  await sw.click()
+  await page.getByTestId('pp-continue').click() // step 2: only now does iOS get asked
+  await expect(sw).toHaveAttribute('aria-checked', 'true')
+  await expect(page.getByTestId('alarm-badge')).toContainText('Alarm set for 7:00 AM')
+  expect(await asked()).toBe(1)
+  await sw.click() // off, then on again: permission is known, so no second explanation
+  await expect(sw).toHaveAttribute('aria-checked', 'false')
+  await sw.click()
+  await expect(sw).toHaveAttribute('aria-checked', 'true')
+  await expect(dlg).toHaveCount(0)
+  expect(await asked()).toBe(1)
+})
+
+test('OnbHook: a refused permission points to Settings instead of asking again', async ({ page }) => {
+  await patchState(page, { screen: 'hook' })
+  await page.evaluate(() => {
+    Object.defineProperty(Notification, 'permission', { get: () => 'denied', configurable: true })
+    Notification.requestPermission = async () => { throw new Error('must not ask again') }
+  })
+  await page.getByRole('switch').click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page.getByTestId('push-note')).toContainText('Turn them on in Settings')
+  await expect(page.getByTestId('open-settings')).toBeVisible()
 })
