@@ -12,7 +12,6 @@ import Breathe from './screens/Breathe'
 import Act from './screens/Act'
 import Down from './screens/Down'
 import Rest from './screens/Rest'
-import { CountsNotice } from './components/Counts'
 
 const SCREENS: Record<ScreenId, () => React.JSX.Element> = {
   welcome: Welcome, plan: OnbPlan, pact: OnbPact, hook: OnbHook, sleep: OnbSleep, wake: Wake, breathe: Breathe, act: Act, down: Down, rest: Rest,
@@ -32,7 +31,6 @@ export default function App() {
   return (
     <div className="mx-auto h-full w-full max-w-[430px]">
       <Screen key={screen} />
-      <CountsNotice screen={screen} />
     </div>
   )
 }

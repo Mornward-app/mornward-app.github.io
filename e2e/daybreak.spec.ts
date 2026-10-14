@@ -27,14 +27,21 @@ async function hold(page: Page, ms: number) {
 const BEGIN = /begin tonight's setup \(45s\)/i
 const begin = (page: Page) => page.getByRole('button', { name: BEGIN }).click()
 
+// Every test doubles as a network guard: any request that leaves localhost fails the test.
+const offHost = new WeakMap<Page, string[]>()
+
 test.beforeEach(async ({ page }) => {
+  const hosts: string[] = []
+  offHost.set(page, hosts)
+  page.on('request', (r) => { const u = new URL(r.url()); if (u.protocol.startsWith('http') && u.host !== 'localhost:4173') hosts.push(u.host) })
   await page.clock.install({ time: NOW })
-  // never reach the real database from tests (the counts have their own tests in counts.spec.ts)
-  await page.route(/supabase\.co/, (r) => r.fulfill({ status: 201, body: '' }))
   await page.goto('/')
-  // the counts question is answered (off), so the one-time notice never covers these screens
-  await page.evaluate(() => { localStorage.clear(); localStorage.setItem('mornward.stats.v1', JSON.stringify({ noStats: true })) })
+  await page.evaluate(() => localStorage.clear())
   await page.reload()
+})
+
+test.afterEach(async ({ page }) => {
+  expect(offHost.get(page), 'the app must make no request to any other host').toEqual([])
 })
 
 test('Welcome: first screen for a new user, explains the ritual, begins at step 1', async ({ page }) => {
@@ -82,7 +89,7 @@ test('Welcome: a user who already onboarded is not sent back to it', async ({ pa
   await expect(page.getByTestId('screen-plan')).toBeVisible()
 })
 
-test('with the counts off, the app never talks to Supabase or any other host', async ({ page }) => {
+test('Mornward is strictly local: through setup, no request leaves localhost', async ({ page }) => {
   const hosts = new Set<string>()
   page.on('request', (r) => { const u = new URL(r.url()); if (u.protocol.startsWith('http')) hosts.add(u.host) })
   await page.reload()
@@ -90,7 +97,7 @@ test('with the counts off, the app never talks to Supabase or any other host', a
   await page.getByRole('button', { name: /next: your pact/i }).click()
   await page.getByRole('button', { name: /A clear head before work/ }).click()
   await page.getByRole('button', { name: /seal my pact/i }).click()
-  expect([...hosts]).toEqual(['localhost:4173'])
+  expect([...hosts]).toEqual(['localhost:4173']) // and every one of them is the app's own files
 })
 
 test('OnbPlan: custom task input is live, limit shakes, state persists', async ({ page }) => {
@@ -611,4 +618,34 @@ test('OnbHook: a refused permission points to Settings instead of asking again',
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await expect(page.getByTestId('push-note')).toContainText('Turn them on in Settings')
   await expect(page.getByTestId('open-settings')).toBeVisible()
+})
+
+test('Terms and privacy: Welcome and the See you tonight screen link to terms.html', async ({ page }) => {
+  const w = page.getByTestId('terms-line')
+  await expect(w).toContainText('Nothing leaves your phone')
+  await expect(w.getByRole('link', { name: 'terms and privacy' })).toHaveAttribute('href', 'https://mornward.app/terms.html')
+  await expect(page.getByText(/anonymous counts/i)).toHaveCount(0)
+  await patchState(page, { screen: 'rest', onboarded: true, picked: ['Water first'],
+    day: { date: today(), breaths: 3, ticked: [true], doneAt: new Date().toISOString(), cardIdx: 0, cardOpened: true } })
+  await expect(page.getByTestId('terms-link')).toHaveAttribute('href', 'https://mornward.app/terms.html')
+  await expect(page.getByTestId('terms-link')).toHaveAttribute('target', '_blank')
+  await expect(page.getByText(/restore purchases/i)).toHaveCount(0) // hidden until real in-app purchases exist
+})
+
+test('the page that terms links to makes no third-party requests and says nothing is collected', async ({ page }) => {
+  await page.goto('/terms.html')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Mornward collects nothing.')
+  await expect(page.locator('body')).not.toContainText(/Supabase/i)
+  expect(await page.locator('link[rel=stylesheet], script[src]').count()).toBe(0)
+})
+
+test('an earlier beta\'s anonymous-count data is removed from the phone on launch', async ({ page }) => {
+  await page.evaluate(() => {
+    localStorage.setItem('mornward.stats.v1', JSON.stringify({ deviceId: 'abc', agreed: { version: 'beta-5' } }))
+    localStorage.setItem('CapacitorStorage.mornward.stats.v1', JSON.stringify({ deviceId: 'abc' }))
+  })
+  await page.reload()
+  await expect(page.getByTestId('screen-welcome')).toBeVisible()
+  await expect.poll(() => page.evaluate(() => [localStorage.getItem('mornward.stats.v1'), localStorage.getItem('CapacitorStorage.mornward.stats.v1')])).toEqual([null, null])
+  expect((await STATE(page)).screen).toBe('welcome') // the app's own state is untouched
 })

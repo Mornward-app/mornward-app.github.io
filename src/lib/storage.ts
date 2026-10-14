@@ -15,6 +15,16 @@ export async function readBoth(key: string): Promise<{ pref: string | null; loca
   return { pref, local }
 }
 
+/** Keys an earlier beta used for the anonymous counts. Removed on launch so no device ID is left behind. */
+export const LEGACY_KEYS = ['mornward.stats.v1']
+
+export async function purgeLegacyKeys() {
+  for (const key of LEGACY_KEYS) {
+    try { localStorage.removeItem(key) } catch { /* storage blocked */ }
+    try { await Preferences.remove({ key }) } catch { /* plugin unavailable */ }
+  }
+}
+
 const latest = new Map<string, string>()
 let running = false
 let idle: Array<() => void> = []

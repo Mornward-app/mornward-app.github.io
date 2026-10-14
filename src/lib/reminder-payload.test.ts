@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { buildReminders, EVENING_ID, MORNING_ID } from './reminder-payload.ts'
+import { buildReminders, CHIME_READY, EVENING_ID, MORNING_ID } from './reminder-payload.ts'
 
 test('morning and evening are two repeating daily triggers at the chosen minute', () => {
   const [m, e] = buildReminders({ mins: 7 * 60 + 15, body: 'Water first.' }, { mins: 21 * 60 + 30 })
@@ -23,4 +23,14 @@ test('copy has no exclamation marks and no emoji', () => {
   for (const n of buildReminders({ mins: 420, body: 'Water first.' }, { mins: 1260 })) {
     assert.doesNotMatch(n.title + n.body, /!|\p{Extended_Pictographic}/u)
   }
+})
+
+test('the morning chime is stubbed: default iOS sound now, chime.wav once the file is added', () => {
+  const [m, e] = buildReminders({ mins: 420, body: 'x' }, { mins: 1260 })
+  assert.equal(CHIME_READY, false)
+  assert.equal('sound' in m, false) // no key, so iOS plays its default notification sound
+  assert.equal('sound' in e, false)
+  const [ready, eve] = buildReminders({ mins: 420, body: 'x' }, { mins: 1260 }, true)
+  assert.equal(ready.sound, 'chime.wav')
+  assert.equal('sound' in eve, false) // only the morning gets the chime
 })

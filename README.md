@@ -4,7 +4,7 @@ A one-minute morning ritual before the feed. Native iOS and Android app (Capacit
 
 Tonight: pick up to 3 tiny tasks, seal a one-line pact, set a wake time, allow one local push. Morning: read the pact, hold the sun for 3 breaths, do the tasks for real and tick them, unseal one of 21 science cards, put the phone down.
 
-No account. No blocker. No alarm. **Anonymous privacy-first counts only (no PII, no accounts, opt-out switch included).** Tasks, the pact and times stay on the phone (`mornward.daybreak.v1`, device Preferences + `localStorage`); notifications are local. A few anonymous counts (opened, evening set, sun held, morning completed with streak and total, card opened) go to Supabase after consent, and can be turned off on Welcome or under Privacy and counts. Details: `public/terms.html`, `supabase/METRICS.md`. Android declares INTERNET for these counts only.
+No account. No blocker. No alarm. **Nothing is sent anywhere**: state lives on the phone (`@capacitor/preferences`, mirrored to `localStorage`, key `mornward.daybreak.v1`), notifications are local, the app makes no network requests, and the Android build declares no INTERNET permission. Tests fail if that changes. Terms and privacy: `public/terms.html`.
 
 ## Screens (flow order)
 
@@ -26,7 +26,7 @@ npm run ios       # build, cap sync, open Xcode (needs a Mac)
 npm run android   # build, cap sync, open Android Studio
 ```
 
-Plugins: `@capacitor/local-notifications` (two repeating daily notifications: morning at the wake time, default 7:00 AM, and an evening prep reminder, default 9:00 PM; permission asked only from the OnbHook toggle), `@capacitor/preferences` (durable state, mirrored to localStorage), `@capacitor/haptics`, `@capacitor/app`. Tapping the morning notification opens `Wake`; the evening one opens Evening Setup.
+Plugins: `@capacitor/local-notifications` (two repeating daily notifications: morning at the wake time, default 7:00 AM, and an evening prep reminder, default 9:00 PM; permission asked only from the OnbHook toggle), `@capacitor/preferences` (durable state, mirrored to localStorage), `@capacitor/haptics`, `@capacitor/app`. Tapping the morning notification opens `Wake`; the evening one opens Evening Setup. The morning chime is stubbed: the iOS default sound plays until `chime.wav` is added in Xcode and `CHIME_READY` is set in `src/lib/reminder-payload.ts`.
 
 iOS bundle id `app.mornward`, display name Mornward. On a Mac: `npm ci && npm run ios` (build, `cap sync ios`, open Xcode), pick a signing team under Signing & Capabilities, run on a device.
 
@@ -43,7 +43,7 @@ Icons and splash come from `resources/` via `npx capacitor-assets generate` (re-
 
 ## Notes
 
-- `supabase/` is the analytics backend: insert-only `events` table, payload checks, report views. Daybreak counts need `supabase/migrations/20261011000000_daybreak_counts.sql` (run it before shipping a build that sends new kinds). Reports: `daybreak_testers`, `daybreak_daily`, `daybreak_retention`. `tests/db/run.sh` runs the database tests on a local Postgres.
+- `supabase/` and `tests/db/` are the old beta analytics backend, kept as history. Version 1 does not use them: no counts, no network. Existing records are deleted within 90 days after the beta ends (see `public/terms.html`).
 - Deploy: `.github/workflows/deploy.yml` builds with `npm ci && npm run build` and publishes `dist/` to GitHub Pages on every push to `main` (repo Settings → Pages → Source: GitHub Actions). `public/CNAME` keeps the custom domain.
 - iPhone: `index.html` has `viewport-fit=cover` and the Apple web-app tags, `public/manifest.webmanifest` is standalone, and every screen pads by `env(safe-area-inset-top|bottom)`.
 - `public/sw.js` is a retired kill-switch: browsers that still hold the old PWA service worker fetch it, clear every cache and unregister. `src/lib/retire-sw.ts` does the same on every launch.

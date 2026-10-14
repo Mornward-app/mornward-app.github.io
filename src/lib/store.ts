@@ -1,8 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import { CARDS } from './cards'
 import { dateKey } from './dates'
-import { readBoth, requestPersistentStorage, writeBoth } from './storage'
-import { streakOf, track, trackOpen } from './stats'
+import { purgeLegacyKeys, readBoth, requestPersistentStorage, writeBoth } from './storage'
 
 export type ScreenId = 'welcome' | 'plan' | 'pact' | 'hook' | 'sleep' | 'wake' | 'breathe' | 'act' | 'down' | 'rest'
 const SCREENS: ScreenId[] = ['welcome', 'plan', 'pact', 'hook', 'sleep', 'wake', 'breathe', 'act', 'down', 'rest']
@@ -34,8 +33,6 @@ export interface DayState {
   doneAt: string | null
   cardIdx: number
   cardOpened: boolean
-  /** breathing was skipped this morning (only counted, never shown) */
-  breathSkipped?: boolean
 }
 
 export interface State {
@@ -109,8 +106,7 @@ export function parse(raw: string | null): State | null {
     const d = p.day
     s.day = d && typeof d.date === 'string' && Array.isArray(d.ticked) && d.ticked.length === s.picked.length
       ? { date: d.date, breaths: Math.min(3, Math.max(0, d.breaths | 0)), ticked: d.ticked.map(Boolean), doneAt: d.doneAt ?? null,
-          cardIdx: typeof d.cardIdx === 'number' ? d.cardIdx % CARDS.length : s.unlocks % CARDS.length, cardOpened: !!d.cardOpened,
-          ...(d.breathSkipped === true ? { breathSkipped: true } : {}) }
+          cardIdx: typeof d.cardIdx === 'number' ? d.cardIdx % CARDS.length : s.unlocks % CARDS.length, cardOpened: !!d.cardOpened }
       : freshDay(s, typeof d?.date === 'string' ? d.date : dateKey())
     return s
   } catch {
@@ -185,6 +181,7 @@ export async function hydrate() {
   ready = true
   persist() // write the winner back to both stores so they agree
   void requestPersistentStorage()
+  void purgeLegacyKeys()
 }
 
 export const getState = () => state
@@ -193,7 +190,7 @@ export function useStore(): State {
 }
 
 /** Re-check date and time (the app can stay open overnight, or iOS can bring it back from the background). */
-export function checkDay() { const next = settle(rollover(state)); if (next !== state) set(next); trackOpen(state.screen, state.onboarded) }
+export function checkDay() { const next = settle(rollover(state)); if (next !== state) set(next) }
 
 export const actions = {
   go(screen: ScreenId) { set({ screen }) },
@@ -207,13 +204,7 @@ export const actions = {
   /** "Plan Tomorrow's Morning": a new night, same tasks, fresh note. */
   startEvening() { set(beginEvening(state)) },
   /** "Set my morning": tomorrow is planned. From now the app waits, and opens on Wake after 4:00 AM. */
-  armMorning() {
-    const armedFor = nextMorningKey()
-    set({ armedFor, screen: 'sleep' })
-    track('evening_set', `${armedFor}#evening`, {
-      tasks: state.picked.length, own: state.picked.some((p) => state.custom.includes(p)), pact: state.pactSealed, push: state.pushOn,
-    })
-  },
+  armMorning() { set({ armedFor: nextMorningKey(), screen: 'sleep' }) },
   togglePick(label: string): 'ok' | 'limit' {
     const on = state.picked.includes(label)
     if (!on && state.picked.length >= MAX_TASKS) return 'limit'
@@ -244,17 +235,8 @@ export const actions = {
   setPush(pushOn: boolean) { set({ pushOn }) },
   finishOnboarding() { set({ onboarded: true }) },
   /** Called only for a real hold of at least MIN_HOLD_MS. */
-  countBreath() {
-    if (state.day.breaths >= 3) return
-    set({ day: { ...state.day, breaths: state.day.breaths + 1 } })
-    if (state.day.breaths === 3) track('sun_hold_done', `${state.day.date}#sun`, { breaths: 3 }, state.day.date)
-  },
-  skipBreathing() {
-    const held = state.day.breaths
-    if (held >= 3) return
-    set({ day: { ...state.day, breaths: 3, breathSkipped: true } })
-    track('breaths_skipped', `${state.day.date}#skip`, { held }, state.day.date)
-  },
+  countBreath() { if (state.day.breaths < 3) set({ day: { ...state.day, breaths: state.day.breaths + 1 } }) },
+  skipBreathing() { set({ day: { ...state.day, breaths: 3 } }) },
   tick(i: number) {
     const ticked = state.day.ticked.map((v, k) => (k === i ? !v : v))
     const all = ticked.length > 0 && ticked.every(Boolean)
@@ -262,14 +244,10 @@ export const actions = {
     const history = all ? (state.history.includes(today) ? state.history : [...state.history, today])
       : state.history.filter((d) => d !== today)
     set({ day: { ...state.day, ticked, doneAt: all ? new Date().toISOString() : null }, history })
-    if (all) track('morning_completed', `${state.day.date}#done`, {
-      tasks: ticked.length, breathing: state.day.breathSkipped ? 'skipped' : 'held', streak: streakOf(history), sunrises: history.length,
-    }, state.day.date)
   },
   openCard() {
     if (state.day.cardOpened) return
     const idx = state.day.cardIdx
     set({ day: { ...state.day, cardOpened: true }, unlocks: state.unlocks + 1, opened: state.opened.includes(idx) ? state.opened : [...state.opened, idx] })
-    track('card_opened', `${state.day.date}#card`, {}, state.day.date)
   },
 }
